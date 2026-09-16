@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Biểu đồ tọa độ customer cho Solomon testcase RC101">
+  <title>RC101 · Solomon Visualizer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <a class="eyebrow" href="index.html">Solomon Visualizer</a>
+        <h1>RC101</h1>
+        <p class="subtitle">Phân bố customer theo tọa độ X–Y</p>
+      </div>
+      <nav class="case-nav" aria-label="Chuyển testcase">
+        <a href="r211.html" aria-label="Testcase trước">←</a>
+        <a href="index.html" aria-label="Danh sách testcase">Tất cả</a>
+        <a href="rc102.html" aria-label="Testcase sau">→</a>
+      </nav>
+    </header>
+
+    <section class="visualizer" aria-labelledby="chart-title">
+      <div class="toolbar">
+        <div>
+          <h2 id="chart-title">Bản đồ customer</h2>
+          <p id="point-summary">25 customer + depot</p>
+        </div>
+        <div class="toolbar-controls">
+          <div class="picker-group">
+            <span class="picker-label">Customer</span>
+            <div class="count-picker" role="group" aria-label="Số customer hiển thị">
+              <button type="button" data-count="25" aria-pressed="true">25</button>
+              <button type="button" data-count="100" aria-pressed="false">100</button>
+            </div>
+          </div>
+          <div class="picker-group">
+            <span class="picker-label">Risk</span>
+            <div class="count-picker risk-picker" role="group" aria-label="Số risk hiển thị">
+              <button type="button" data-risk-count="0" aria-pressed="true">0</button>
+              <button type="button" data-risk-count="1" aria-pressed="false">1</button>
+              <button type="button" data-risk-count="5" aria-pressed="false">5</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <svg id="customer-chart" role="img" aria-labelledby="chart-title chart-description"></svg>
+        <p id="chart-description" class="sr-only">
+          Biểu đồ tọa độ các customer và vùng risk. Depot được ký hiệu bằng hình thoi màu cam;
+          tâm risk được ký hiệu bằng hình tam giác có số thứ tự.
+        </p>
+      </div>
+
+      <div class="legend" aria-label="Chú giải">
+        <span><i class="legend-dot customer-dot"></i>Customer</span>
+        <span><i class="legend-dot depot-dot"></i>Depot (0)</span>
+        <span><i class="legend-risk"></i>Risk và vùng ảnh hưởng</span>
+        <span class="hint">Rê chuột vào một điểm để xem tọa độ</span>
+      </div>
+    </section>
+  </main>
+
+  <script>window.SOLOMON_CASE={"name":"RC101","points":[{"id":0,"x":40,"y":50},{"id":1,"x":25,"y":85},{"id":2,"x":22,"y":75},{"id":3,"x":22,"y":85},{"id":4,"x":20,"y":80},{"id":5,"x":20,"y":85},{"id":6,"x":18,"y":75},{"id":7,"x":15,"y":75},{"id":8,"x":15,"y":80},{"id":9,"x":10,"y":35},{"id":10,"x":10,"y":40},{"id":11,"x":8,"y":40},{"id":12,"x":8,"y":45},{"id":13,"x":5,"y":35},{"id":14,"x":5,"y":45},{"id":15,"x":2,"y":40},{"id":16,"x":0,"y":40},{"id":17,"x":0,"y":45},{"id":18,"x":44,"y":5},{"id":19,"x":42,"y":10},{"id":20,"x":42,"y":15},{"id":21,"x":40,"y":5},{"id":22,"x":40,"y":15},{"id":23,"x":38,"y":5},{"id":24,"x":38,"y":15},{"id":25,"x":35,"y":5},{"id":26,"x":95,"y":30},{"id":27,"x":95,"y":35},{"id":28,"x":92,"y":30},{"id":29,"x":90,"y":35},{"id":30,"x":88,"y":30},{"id":31,"x":88,"y":35},{"id":32,"x":87,"y":30},{"id":33,"x":85,"y":25},{"id":34,"x":85,"y":35},{"id":35,"x":67,"y":85},{"id":36,"x":65,"y":85},{"id":37,"x":65,"y":82},{"id":38,"x":62,"y":80},{"id":39,"x":60,"y":80},{"id":40,"x":60,"y":85},{"id":41,"x":58,"y":75},{"id":42,"x":55,"y":80},{"id":43,"x":55,"y":85},{"id":44,"x":55,"y":82},{"id":45,"x":20,"y":82},{"id":46,"x":18,"y":80},{"id":47,"x":2,"y":45},{"id":48,"x":42,"y":5},{"id":49,"x":42,"y":12},{"id":50,"x":72,"y":35},{"id":51,"x":55,"y":20},{"id":52,"x":25,"y":30},{"id":53,"x":20,"y":50},{"id":54,"x":55,"y":60},{"id":55,"x":30,"y":60},{"id":56,"x":50,"y":35},{"id":57,"x":30,"y":25},{"id":58,"x":15,"y":10},{"id":59,"x":10,"y":20},{"id":60,"x":15,"y":60},{"id":61,"x":45,"y":65},{"id":62,"x":65,"y":35},{"id":63,"x":65,"y":20},{"id":64,"x":45,"y":30},{"id":65,"x":35,"y":40},{"id":66,"x":41,"y":37},{"id":67,"x":64,"y":42},{"id":68,"x":40,"y":60},{"id":69,"x":31,"y":52},{"id":70,"x":35,"y":69},{"id":71,"x":65,"y":55},{"id":72,"x":63,"y":65},{"id":73,"x":2,"y":60},{"id":74,"x":20,"y":20},{"id":75,"x":5,"y":5},{"id":76,"x":60,"y":12},{"id":77,"x":23,"y":3},{"id":78,"x":8,"y":56},{"id":79,"x":6,"y":68},{"id":80,"x":47,"y":47},{"id":81,"x":49,"y":58},{"id":82,"x":27,"y":43},{"id":83,"x":37,"y":31},{"id":84,"x":57,"y":29},{"id":85,"x":63,"y":23},{"id":86,"x":21,"y":24},{"id":87,"x":12,"y":24},{"id":88,"x":24,"y":58},{"id":89,"x":67,"y":5},{"id":90,"x":37,"y":47},{"id":91,"x":49,"y":42},{"id":92,"x":53,"y":43},{"id":93,"x":61,"y":52},{"id":94,"x":57,"y":48},{"id":95,"x":56,"y":37},{"id":96,"x":55,"y":54},{"id":97,"x":4,"y":18},{"id":98,"x":26,"y":52},{"id":99,"x":26,"y":35},{"id":100,"x":31,"y":67}],"risks":[{"id":1,"x":0.775238,"y":43.1564,"radius":4},{"id":2,"x":90.6512,"y":32.4673,"radius":10},{"id":3,"x":55.8228,"y":87.3607,"radius":5},{"id":4,"x":43.1086,"y":2.21236,"radius":6},{"id":5,"x":47.0388,"y":46.0008,"radius":2}]};</script>
+  <script src="viewer.js"></script>
+</body>
+</html>
