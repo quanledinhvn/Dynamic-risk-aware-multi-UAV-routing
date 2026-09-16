@@ -112,8 +112,8 @@ CUST NO.   XCOORD.   YCOORD.   DEMAND    READY TIME   DUE DATE   SERVICE TIME
 RISK
 RISK NO.   XCOORD.   YCOORD. RADIUS
 
-    1      6.83269    46.7004 5
-    2      99.9168    30.9082 10
-    3      58.1218    81.4684 8
-    4      47.4977    5.12674 7
-    5      3.35734    6.1409  4
+    1      7          47      5
+    2      100        31      10
+    3      58         81      8
+    4      47         5       7
+    5      3          6       4

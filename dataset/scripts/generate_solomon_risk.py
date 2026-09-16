@@ -65,8 +65,8 @@ def offset_center(
         angle = rng.uniform(0, math.tau)
         center = Point(
             host.customer_id,
-            host.x + math.cos(angle) * offset,
-            host.y + math.sin(angle) * offset,
+            round(host.x + math.cos(angle) * offset),
+            round(host.y + math.sin(angle) * offset),
         )
         if distance(center, depot) <= radius:
             continue
