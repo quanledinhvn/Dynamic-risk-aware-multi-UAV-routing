@@ -1,0 +1,2 @@
+- Đây là dự án nghiên cứu thuộc học phần Phân tích và Thiết kế thuật toán trong chương trình Thạc sĩ Khoa học máy tính tại HUST.
+- Dự án thực hiện Đề tài 1: Dynamic Risk-Aware Multi-UAV Routing. Đọc nội dung đề bài tại [debai.md](./debai.md).
