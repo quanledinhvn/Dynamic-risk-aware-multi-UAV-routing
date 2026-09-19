@@ -1,2 +1,4 @@
 - Đây là dự án nghiên cứu thuộc học phần Phân tích và Thiết kế thuật toán trong chương trình Thạc sĩ Khoa học máy tính tại HUST.
 - Dự án thực hiện Đề tài 1: Dynamic Risk-Aware Multi-UAV Routing. Đọc nội dung đề bài tại [debai.md](./debai.md).
+- Khi soạn tài liệu Markdown với mục đích ghi vào file, viết công thức nội dòng bằng `$...$` và công thức khối bằng `$$...$$`; không đặt biểu thức toán học trong backtick.
+- Khi trả lời trực tiếp trong hội thoại, không dùng ký tự `$` để bao công thức hoặc ký hiệu toán học; dùng cú pháp hiển thị toán học phù hợp với giao diện hỏi–đáp (chẳng hạn `\(...\)` cho công thức nội dòng và `\[...\]` cho công thức khối).

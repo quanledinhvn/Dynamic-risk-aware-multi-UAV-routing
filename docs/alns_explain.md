@@ -1478,4 +1478,3 @@ Trong đề tài Dynamic risk-aware multi-UAV routing, phần có giá trị ngh
 - cơ chế tái tối ưu nhanh khi có sự kiện động;
 - thực nghiệm đủ chặt chẽ để chứng minh từng cải tiến thực sự có tác dụng.
 
-Tài liệu minh họa tương tác đi kèm: [`alns_visual_guide.html`](./alns_visual_guide.html).
