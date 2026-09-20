@@ -2,10 +2,11 @@
 
 from dataclasses import dataclass
 import math
+import time
 
 import numpy as np
 
-from .adaptive import AdaptivePool
+from .adaptive import AdaptivePool, OperatorStats
 from .config import ALNSConfig
 from .destroy import (
     RandomRemoval,
@@ -30,12 +31,42 @@ class Acceptance:
 
 @dataclass(frozen=True)
 class SearchResult:
+    initial_solution: Solution
+    final_current: Solution
     best_solution: Solution
+    d_ref: float
     evaluation: SolutionEvaluation
+    iterations: int
+    seed: int
+    runtime_seconds: float
+    operator_stats: tuple[OperatorStats, ...]
 
 
 class SearchInvariantError(RuntimeError):
     """Raised when the search produces an invalid final result."""
+
+
+class ALNSSolver:
+    def __init__(
+        self,
+        instance: Instance,
+        config: ALNSConfig,
+        *,
+        destroy_operators=None,
+        repair_operators=None,
+    ):
+        self.instance = instance
+        self.config = config
+        self.destroy_operators = destroy_operators
+        self.repair_operators = repair_operators
+
+    def run(self) -> SearchResult:
+        return _run_alns(
+            self.instance,
+            self.config,
+            destroy_operators_override=self.destroy_operators,
+            repair_operators_override=self.repair_operators,
+        )
 
 
 def accept_score(
@@ -82,7 +113,14 @@ def classify_reward(candidate, current, best, acceptance, config) -> float:
     return 0.0
 
 
-def run_alns(instance: Instance, config: ALNSConfig) -> SearchResult:
+def _run_alns(
+    instance: Instance,
+    config: ALNSConfig,
+    *,
+    destroy_operators_override=None,
+    repair_operators_override=None,
+) -> SearchResult:
+    started = time.perf_counter()
     config.validate()
     rng = np.random.default_rng(config.seed)
     initial, d_ref = build_initial_solution(instance, config.alpha, config.beta)
@@ -96,14 +134,18 @@ def run_alns(instance: Instance, config: ALNSConfig) -> SearchResult:
         config.related_demand_weight,
         config.related_risk_weight,
     )
-    destroy_operators = (
-        RandomRemoval(),
-        WorstRemoval(config.removal_determinism),
-        RelatedRemoval(related_weights, config.removal_determinism),
-        RouteRemoval(),
-        RiskPriorityRemoval(config.removal_determinism),
+    destroy_operators = destroy_operators_override or (
+            RandomRemoval(),
+            WorstRemoval(config.removal_determinism),
+            RelatedRemoval(related_weights, config.removal_determinism),
+            RouteRemoval(),
+            RiskPriorityRemoval(config.removal_determinism),
+        )
+    repair_operators = repair_operators_override or (
+        GreedyRepair(),
+        Regret2Repair(),
+        RiskPriorityRepair(),
     )
-    repair_operators = (GreedyRepair(), Regret2Repair(), RiskPriorityRepair())
     destroy_by_name = {operator.name: operator for operator in destroy_operators}
     repair_by_name = {operator.name: operator for operator in repair_operators}
     destroy_pool = AdaptivePool(
@@ -172,7 +214,40 @@ def run_alns(instance: Instance, config: ALNSConfig) -> SearchResult:
             "best solution failed final feasibility audit: "
             + ", ".join(final_evaluation.violations)
         )
-    return SearchResult(best, final_evaluation)
+    operator_stats = tuple(
+        OperatorStats(
+            f"destroy:{stats.name}",
+            stats.weight,
+            stats.total_uses,
+            stats.segment_uses,
+            stats.segment_score,
+        )
+        for stats in destroy_pool.snapshot()
+    ) + tuple(
+        OperatorStats(
+            f"repair:{stats.name}",
+            stats.weight,
+            stats.total_uses,
+            stats.segment_uses,
+            stats.segment_score,
+        )
+        for stats in repair_pool.snapshot()
+    )
+    return SearchResult(
+        initial_solution=initial,
+        final_current=current,
+        best_solution=best,
+        d_ref=d_ref,
+        evaluation=final_evaluation,
+        iterations=config.iterations,
+        seed=config.seed,
+        runtime_seconds=time.perf_counter() - started,
+        operator_stats=operator_stats,
+    )
+
+
+def run_alns(instance: Instance, config: ALNSConfig) -> SearchResult:
+    return ALNSSolver(instance, config).run()
 
 
 def accept_candidate(

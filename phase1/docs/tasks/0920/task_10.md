@@ -21,7 +21,7 @@
 - Consumes: `parse_instance`, `run_alns`.
 - Produces: regression coverage for same-seed reproducibility, different-seed validity, failed-repair isolation and C101 smoke search.
 
-- [ ] **Step 1: Write end-to-end reproducibility tests**
+- [x] **Step 1: Write end-to-end reproducibility tests**
 
 ```python
 def comparable(result):
@@ -44,13 +44,13 @@ def test_failed_repair_does_not_change_current_solution(solver_with_failing_repa
     assert result.final_current == result.initial_solution
 ```
 
-- [ ] **Step 2: Run integration tests before adjustment**
+- [x] **Step 2: Run integration tests before adjustment**
 
 Run: `cd phase1 && uv run pytest tests/test_integration.py -v`
 
 Expected: tests reveal any untracked RNG source, runtime field in equality, mutable state leak or missing final audit.
 
-- [ ] **Step 3: Make reproducible fields explicit**
+- [x] **Step 3: Make reproducible fields explicit**
 
 ```python
 @dataclass(frozen=True)
@@ -68,13 +68,13 @@ class SearchResult:
 
 Exclude only `runtime_seconds` from reproducibility comparison. Search code must not call `random`, `np.random.*` global functions, wall-clock time for decisions, or unordered set/dict iteration for tie-breaking. Sort every equal-cost choice by customer id, route index and position.
 
-- [ ] **Step 4: Run the full suite twice**
+- [x] **Step 4: Run the full suite twice**
 
 Run: `cd phase1 && uv run pytest tests -q && uv run pytest tests -q`
 
 Expected: both runs pass with identical test counts; the same-seed test compares routes, metrics and operator statistics exactly.
 
-- [ ] **Step 5: Commit reproducibility guarantees**
+- [x] **Step 5: Commit reproducibility guarantees**
 
 ```bash
 git add phase1/src/uav_routing/alns.py phase1/tests/test_integration.py
