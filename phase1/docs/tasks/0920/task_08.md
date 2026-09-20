@@ -21,7 +21,7 @@
 - Consumes: named operator sequences and shared `Generator`.
 - Produces: `AdaptivePool`, `select(rng)`, `record(name, reward)`, `update_segment()` and serializable `OperatorStats`.
 
-- [ ] **Step 1: Write deterministic selection and update-formula tests**
+- [x] **Step 1: Write deterministic selection and update-formula tests**
 
 ```python
 def test_roulette_uses_normalized_positive_weights():
@@ -45,7 +45,7 @@ def test_unused_operator_keeps_weight_and_floor_is_enforced():
     assert pool.weight("b") == 1.0
 ```
 
-- [ ] **Step 2: Add an importable adaptive-pool stub, then verify behavioral RED**
+- [x] **Step 2: Add an importable adaptive-pool stub, then verify behavioral RED**
 
 ```python
 @dataclass(frozen=True)
@@ -89,7 +89,7 @@ Run: `cd phase1 && uv run pytest tests/test_adaptive.py -v`
 
 Expected: module imports and tests collect; calls fail at the specific unimplemented adaptive behavior.
 
-- [ ] **Step 3: Implement cumulative-probability selection and updates**
+- [x] **Step 3: Implement cumulative-probability selection and updates**
 
 ```python
 probabilities = weights / weights.sum()
@@ -100,13 +100,13 @@ self.weights[index] = max(minimum_weight, new_weight)
 
 Track both all-run selection count and per-segment count/score. Reject duplicate names, empty pools, non-positive starting/floor weights, and unknown names. `snapshot()` returns name, final weight, total uses, segment uses and segment score in stable input order.
 
-- [ ] **Step 4: Run adaptive tests over a fixed seeded draw sequence**
+- [x] **Step 4: Run adaptive tests over a fixed seeded draw sequence**
 
 Run: `cd phase1 && uv run pytest tests/test_adaptive.py -v`
 
 Expected: exact selected-name sequence for seed 42 matches the committed test fixture.
 
-- [ ] **Step 5: Commit adaptive mechanism**
+- [x] **Step 5: Commit adaptive mechanism**
 
 ```bash
 git add phase1/src/uav_routing/adaptive.py phase1/tests/test_adaptive.py
