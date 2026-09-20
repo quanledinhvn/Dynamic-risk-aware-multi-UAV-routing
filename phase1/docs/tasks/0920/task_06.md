@@ -21,7 +21,7 @@
 - Consumes: partial `Solution`, `Evaluator`, `Instance`, `d_ref`, weights.
 - Produces: `Insertion(customer_id, route_index, position, delta_k, delta_f, solution)`; `feasible_insertions(partial: Solution, customer_id: int, context: RepairContext) -> tuple[Insertion, ...]`; `best_insertion(partial: Solution, customer_id: int, context: RepairContext) -> Insertion | None`.
 
-- [ ] **Step 1: Write insertion enumeration and lexicographic-choice tests**
+- [x] **Step 1: Write insertion enumeration and lexicographic-choice tests**
 
 ```python
 def test_enumerates_all_feasible_existing_and_new_route_positions(context):
@@ -36,7 +36,7 @@ def test_new_route_is_absent_at_vehicle_limit(context_at_limit):
     assert all(x.delta_k == 0 for x in feasible_insertions(Solution(((1,), (2,))), 3, context_at_limit))
 ```
 
-- [ ] **Step 2: Add importable insertion-engine stubs, then verify behavioral RED**
+- [x] **Step 2: Add importable insertion-engine stubs, then verify behavioral RED**
 
 ```python
 @dataclass(frozen=True)
@@ -67,7 +67,7 @@ Run: `cd phase1 && uv run pytest tests/test_insertion.py -v`
 
 Expected: module imports and tests collect; insertion calls fail at their stubs rather than during import.
 
-- [ ] **Step 3: Implement route-wide reevaluation for every insertion**
+- [x] **Step 3: Implement route-wide reevaluation for every insertion**
 
 ```python
 base = context.evaluate_partial(partial)
@@ -82,13 +82,13 @@ return tuple(sorted(choices, key=lambda x: (x.delta_k, x.delta_f, x.route_index,
 
 `RepairContext.evaluate_partial` must compute distance and risk-delay numerator only over assigned customers while using the fixed global `d_ref`; it must call `Evaluator.route` for every affected route and must never treat the partial result as a valid complete candidate. Enumerate a new singleton route only if current route count is below `max_vehicles`.
 
-- [ ] **Step 4: Run insertion tests and evaluator regression suite**
+- [x] **Step 4: Run insertion tests and evaluator regression suite**
 
 Run: `cd phase1 && uv run pytest tests/test_insertion.py tests/test_evaluator.py -v`
 
 Expected: all tests pass, including a case where insertion shifts a downstream customer past its due date and is excluded.
 
-- [ ] **Step 5: Commit insertion engine**
+- [x] **Step 5: Commit insertion engine**
 
 ```bash
 git add phase1/src/uav_routing/repair.py phase1/tests/test_insertion.py
