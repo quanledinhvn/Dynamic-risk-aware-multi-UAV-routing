@@ -22,7 +22,7 @@
 - Consumes: parser, config and `run_alns`.
 - Produces: command `uv run python -m uav_routing.cli solve`; `result_to_dict(result: SearchResult, instance: Instance, config: ALNSConfig) -> dict[str, object]`.
 
-- [ ] **Step 1: Write CLI success, schema and invalid-argument tests**
+- [x] **Step 1: Write CLI success, schema and invalid-argument tests**
 
 ```python
 def test_solve_writes_required_json_fields(tmp_path, c101_path):
@@ -39,7 +39,7 @@ def test_cli_rejects_weights_that_do_not_sum_to_one(c101_path):
     assert "sum to 1" in completed.stderr
 ```
 
-- [ ] **Step 2: Add an executable CLI scaffold, then verify behavioral RED**
+- [x] **Step 2: Add an executable CLI scaffold, then verify behavioral RED**
 
 ```python
 def result_to_dict(result: SearchResult, instance: Instance, config: ALNSConfig) -> dict[str, object]:
@@ -56,7 +56,7 @@ Run: `cd phase1 && uv run pytest tests/test_cli.py -v`
 
 Expected: module imports and subprocess reaches `main`; schema and exit-code assertions fail because CLI behavior is not implemented.
 
-- [ ] **Step 3: Implement argument mapping, console summary and atomic JSON write**
+- [x] **Step 3: Implement argument mapping, console summary and atomic JSON write**
 
 ```python
 parser = argparse.ArgumentParser(prog="uav-routing")
@@ -72,13 +72,13 @@ solve.add_argument("--output", type=Path)
 
 Serialize plain Python scalars, not NumPy scalar objects. Write JSON to `output.with_suffix(output.suffix + ".tmp")`, then replace the target after success. Convert domain/config/parser errors with `parser.error(str(exc))` so invalid user input exits 2 with a concise message; unexpected exceptions retain a traceback.
 
-- [ ] **Step 4: Run CLI tests and the requested smoke command**
+- [x] **Step 4: Run CLI tests and the requested smoke command**
 
 Run: `cd phase1 && uv run pytest tests/test_cli.py -v && uv run python -m uav_routing.cli solve --instance ../dataset/solomon_risk/c101.txt --customers 25 --iterations 10 --seed 42 --alpha 0.5 --beta 0.5 --output results/c101-seed42-smoke.json`
 
 Expected: tests pass; command exits 0; JSON says `feasible: true` and includes 25 scheduled customer stops.
 
-- [ ] **Step 5: Commit CLI and defaults**
+- [x] **Step 5: Commit CLI and defaults**
 
 ```bash
 git add phase1/src/uav_routing/cli.py phase1/configs/default.json phase1/tests/test_cli.py

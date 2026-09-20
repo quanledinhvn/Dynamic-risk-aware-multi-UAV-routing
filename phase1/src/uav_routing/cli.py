@@ -1,0 +1,117 @@
+"""Command-line interface for solving one Solomon-RISK instance."""
+
+import argparse
+from collections.abc import Sequence
+import json
+from pathlib import Path
+
+from .alns import SearchInvariantError, SearchResult, run_alns
+from .config import ALNSConfig
+from .initial import InitialSolutionError
+from .models import Instance
+from .parser import InstanceFormatError, parse_instance
+
+
+def result_to_dict(
+    result: SearchResult, instance: Instance, config: ALNSConfig
+) -> dict[str, object]:
+    evaluation = result.evaluation
+    routes = []
+    for route_index, (route, route_evaluation) in enumerate(
+        zip(result.best_solution.routes, evaluation.routes, strict=True), start=1
+    ):
+        routes.append(
+            {
+                "route_index": route_index,
+                "customers": list(route),
+                "distance": float(route_evaluation.distance),
+                "load": float(route_evaluation.load),
+                "depot_return": float(route_evaluation.depot_return),
+                "schedule": [
+                    {
+                        "customer_id": stop.customer_id,
+                        "arrival": float(stop.arrival),
+                        "service_start": float(stop.service_start),
+                        "departure": float(stop.departure),
+                    }
+                    for stop in route_evaluation.schedule
+                ],
+            }
+        )
+    return {
+        "instance": instance.name,
+        "customers": len(instance.customers),
+        "seed": result.seed,
+        "iterations": result.iterations,
+        "alpha": float(config.alpha),
+        "beta": float(config.beta),
+        "vehicles": evaluation.vehicle_count,
+        "distance": float(evaluation.distance),
+        "risk_delay": float(evaluation.risk_delay),
+        "objective": float(evaluation.objective),
+        "runtime_seconds": float(result.runtime_seconds),
+        "feasible": bool(evaluation.feasible),
+        "operators": [
+            {
+                "name": stats.name,
+                "weight": float(stats.weight),
+                "total_uses": stats.total_uses,
+                "segment_uses": stats.segment_uses,
+                "segment_score": float(stats.segment_score),
+            }
+            for stats in result.operator_stats
+        ],
+        "routes": routes,
+    }
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="uav-routing")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    solve = subparsers.add_parser("solve", help="solve one Solomon-RISK instance")
+    solve.add_argument("--instance", type=Path, required=True)
+    solve.add_argument("--customers", type=int, default=25)
+    solve.add_argument("--iterations", type=int, default=10_000)
+    solve.add_argument("--seed", type=int, default=42)
+    solve.add_argument("--alpha", type=float, default=0.5)
+    solve.add_argument("--beta", type=float, default=0.5)
+    solve.add_argument("--output", type=Path)
+    args = parser.parse_args(argv)
+
+    try:
+        config = ALNSConfig(
+            iterations=args.iterations,
+            seed=args.seed,
+            alpha=args.alpha,
+            beta=args.beta,
+        )
+        config.validate()
+        instance = parse_instance(args.instance, args.customers)
+        result = run_alns(instance, config)
+        payload = result_to_dict(result, instance, config)
+        if args.output is not None:
+            _write_json_atomic(args.output, payload)
+    except (
+        FileNotFoundError,
+        OSError,
+        ValueError,
+        InstanceFormatError,
+        InitialSolutionError,
+        SearchInvariantError,
+    ) as exc:
+        parser.error(str(exc))
+    print(json.dumps(payload, ensure_ascii=False))
+    return 0
+
+
+def _write_json_atomic(path: Path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    temporary.replace(path)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
