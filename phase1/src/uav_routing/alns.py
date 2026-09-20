@@ -1,8 +1,8 @@
 """Acceptance policy and orchestration for adaptive large neighborhood search."""
 
-from dataclasses import dataclass
 import math
 import time
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -42,6 +42,25 @@ class SearchResult:
     operator_stats: tuple[OperatorStats, ...]
 
 
+@dataclass
+class _SearchState:
+    current: Solution
+    current_evaluation: SolutionEvaluation
+    best: Solution
+    best_evaluation: SolutionEvaluation
+    temperature: float
+
+
+@dataclass(frozen=True)
+class _SearchResources:
+    evaluator: Evaluator
+    repair_context: RepairContext
+    destroy_by_name: dict
+    repair_by_name: dict
+    destroy_pool: AdaptivePool
+    repair_pool: AdaptivePool
+
+
 class SearchInvariantError(RuntimeError):
     """Raised when the search produces an invalid final result."""
 
@@ -77,17 +96,24 @@ def accept_score(
 ) -> Acceptance:
     if temperature <= 0:
         raise ValueError("temperature must be positive")
+
     if candidate[0] < current[0]:
         return Acceptance(True, "improve", 1.0)
+
     if candidate[0] > current[0]:
         return Acceptance(False, "reject", 0.0)
+
     delta = candidate[1] - current[1]
+
     if delta < 0:
         return Acceptance(True, "improve", 1.0)
+
     if delta == 0:
         return Acceptance(True, "equal", 1.0)
+
     probability = math.exp(-delta / temperature)
     accepted = float(rng.random()) < probability
+
     return Acceptance(
         accepted,
         "accepted_worse" if accepted else "reject",
@@ -98,18 +124,23 @@ def accept_score(
 def cool_temperature(temperature: float, cooling_rate: float, minimum: float) -> float:
     if temperature <= 0 or minimum <= 0:
         raise ValueError("temperatures must be positive")
+
     if not 0 < cooling_rate <= 1:
         raise ValueError("cooling_rate must be in (0, 1]")
+
     return max(minimum, temperature * cooling_rate)
 
 
 def classify_reward(candidate, current, best, acceptance, config) -> float:
     if lexicographically_better(candidate, best):
         return config.reward_best
+
     if lexicographically_better(candidate, current):
         return config.reward_improve
+
     if acceptance.accepted and candidate != current:
         return config.reward_accepted
+
     return 0.0
 
 
@@ -122,32 +153,73 @@ def _run_alns(
 ) -> SearchResult:
     started = time.perf_counter()
     config.validate()
+
     rng = np.random.default_rng(config.seed)
+
     initial, d_ref = build_initial_solution(instance, config.alpha, config.beta)
+
+    resources = _build_search_resources(
+        instance,
+        config,
+        d_ref,
+        destroy_operators_override,
+        repair_operators_override,
+    )
+
+    initial_evaluation = resources.evaluator.solution(initial)
+    state = _SearchState(
+        current=initial,
+        current_evaluation=initial_evaluation,
+        best=initial,
+        best_evaluation=initial_evaluation,
+        temperature=config.initial_temperature,
+    )
+
+    _run_iterations(state, resources, instance, config, rng)
+
+    final_evaluation = _audit_best_solution(
+        instance,
+        state.best,
+        d_ref,
+        config,
+    )
+
+    return SearchResult(
+        initial_solution=initial,
+        final_current=state.current,
+        best_solution=state.best,
+        d_ref=d_ref,
+        evaluation=final_evaluation,
+        iterations=config.iterations,
+        seed=config.seed,
+        runtime_seconds=time.perf_counter() - started,
+        operator_stats=_operator_stats(
+            resources.destroy_pool,
+            resources.repair_pool,
+        ),
+    )
+
+
+def _build_search_resources(
+    instance: Instance,
+    config: ALNSConfig,
+    d_ref: float,
+    destroy_override,
+    repair_override,
+) -> _SearchResources:
     evaluator = Evaluator(instance, d_ref, config.alpha, config.beta)
     repair_context = RepairContext(
         instance, evaluator, d_ref, config.alpha, config.beta
     )
-    related_weights = RelatednessWeights(
-        config.related_distance_weight,
-        config.related_time_weight,
-        config.related_demand_weight,
-        config.related_risk_weight,
+    destroy_operators, repair_operators = _operators(
+        config,
+        destroy_override,
+        repair_override,
     )
-    destroy_operators = destroy_operators_override or (
-            RandomRemoval(),
-            WorstRemoval(config.removal_determinism),
-            RelatedRemoval(related_weights, config.removal_determinism),
-            RouteRemoval(),
-            RiskPriorityRemoval(config.removal_determinism),
-        )
-    repair_operators = repair_operators_override or (
-        GreedyRepair(),
-        Regret2Repair(),
-        RiskPriorityRepair(),
-    )
+
     destroy_by_name = {operator.name: operator for operator in destroy_operators}
     repair_by_name = {operator.name: operator for operator in repair_operators}
+
     destroy_pool = AdaptivePool(
         tuple(destroy_by_name), 1.0, config.reaction_factor, config.minimum_weight
     )
@@ -155,94 +227,159 @@ def _run_alns(
         tuple(repair_by_name), 1.0, config.reaction_factor, config.minimum_weight
     )
 
-    current = initial
-    current_evaluation = evaluator.solution(current)
-    best = current
-    best_evaluation = current_evaluation
-    temperature = config.initial_temperature
+    return _SearchResources(
+        evaluator=evaluator,
+        repair_context=repair_context,
+        destroy_by_name=destroy_by_name,
+        repair_by_name=repair_by_name,
+        destroy_pool=destroy_pool,
+        repair_pool=repair_pool,
+    )
 
+
+def _run_iterations(
+    state: _SearchState,
+    resources: _SearchResources,
+    instance: Instance,
+    config: ALNSConfig,
+    rng: np.random.Generator,
+) -> None:
     for iteration in range(config.iterations):
-        q = int(rng.integers(config.q_min, config.q_max + 1))
-        destroy_name = destroy_pool.select(rng)
-        repair_name = repair_pool.select(rng)
-        destroyed = destroy_by_name[destroy_name].apply(
-            current, instance, evaluator, rng, q
-        )
-        repaired = repair_by_name[repair_name].apply(
-            destroyed.partial, destroyed.removed, repair_context
-        )
-        reward = 0.0
-        if repaired.success and repaired.solution is not None:
-            candidate = repaired.solution
-            candidate_evaluation = evaluator.solution(candidate)
-            if candidate_evaluation.feasible:
-                acceptance = accept_score(
-                    candidate_evaluation.score,
-                    current_evaluation.score,
-                    temperature,
-                    rng,
-                )
-                reward = classify_reward(
-                    candidate_evaluation.score,
-                    current_evaluation.score,
-                    best_evaluation.score,
-                    acceptance,
-                    config,
-                )
-                if lexicographically_better(
-                    candidate_evaluation.score, best_evaluation.score
-                ):
-                    best = candidate
-                    best_evaluation = candidate_evaluation
-                if acceptance.accepted:
-                    current = candidate
-                    current_evaluation = candidate_evaluation
-        destroy_pool.record(destroy_name, reward)
-        repair_pool.record(repair_name, reward)
+        _search_step(state, resources, instance, config, rng)
+
         if (iteration + 1) % config.segment_length == 0:
-            destroy_pool.update_segment()
-            repair_pool.update_segment()
-        temperature = cool_temperature(
-            temperature, config.cooling_rate, config.minimum_temperature
+            resources.destroy_pool.update_segment()
+            resources.repair_pool.update_segment()
+
+        state.temperature = cool_temperature(
+            state.temperature, config.cooling_rate, config.minimum_temperature
         )
 
-    final_evaluation = Evaluator(
-        instance, d_ref, config.alpha, config.beta
-    ).solution(best)
-    if not final_evaluation.feasible:
+
+def _operators(config, destroy_override, repair_override):
+    related_weights = RelatednessWeights(
+        config.related_distance_weight,
+        config.related_time_weight,
+        config.related_demand_weight,
+        config.related_risk_weight,
+    )
+    destroy_operators = destroy_override or (
+        RandomRemoval(),
+        WorstRemoval(config.removal_determinism),
+        RelatedRemoval(related_weights, config.removal_determinism),
+        RouteRemoval(),
+        RiskPriorityRemoval(config.removal_determinism),
+    )
+    repair_operators = repair_override or (
+        GreedyRepair(),
+        Regret2Repair(),
+        RiskPriorityRepair(),
+    )
+
+    return destroy_operators, repair_operators
+
+
+def _search_step(
+    state: _SearchState,
+    resources: _SearchResources,
+    instance: Instance,
+    config: ALNSConfig,
+    rng: np.random.Generator,
+) -> None:
+    q = int(rng.integers(config.q_min, config.q_max + 1))
+    destroy_name = resources.destroy_pool.select(rng)
+    repair_name = resources.repair_pool.select(rng)
+
+    destroyed = resources.destroy_by_name[destroy_name].apply(
+        state.current, instance, resources.evaluator, rng, q
+    )
+    repaired = resources.repair_by_name[repair_name].apply(
+        destroyed.partial, destroyed.removed, resources.repair_context
+    )
+    reward = _candidate_reward(
+        repaired,
+        state,
+        resources.evaluator,
+        config,
+        rng,
+    )
+
+    resources.destroy_pool.record(destroy_name, reward)
+    resources.repair_pool.record(repair_name, reward)
+
+
+def _candidate_reward(repaired, state, evaluator, config, rng) -> float:
+    if not repaired.success or repaired.solution is None:
+        return 0.0
+
+    candidate = repaired.solution
+    candidate_evaluation = evaluator.solution(candidate)
+
+    if not candidate_evaluation.feasible:
+        return 0.0
+
+    acceptance = accept_score(
+        candidate_evaluation.score,
+        state.current_evaluation.score,
+        state.temperature,
+        rng,
+    )
+    reward = classify_reward(
+        candidate_evaluation.score,
+        state.current_evaluation.score,
+        state.best_evaluation.score,
+        acceptance,
+        config,
+    )
+
+    if lexicographically_better(
+        candidate_evaluation.score, state.best_evaluation.score
+    ):
+        state.best = candidate
+        state.best_evaluation = candidate_evaluation
+
+    if acceptance.accepted:
+        state.current = candidate
+        state.current_evaluation = candidate_evaluation
+
+    return reward
+
+
+def _audit_best_solution(
+    instance: Instance,
+    best: Solution,
+    d_ref: float,
+    config: ALNSConfig,
+) -> SolutionEvaluation:
+    evaluation = Evaluator(instance, d_ref, config.alpha, config.beta).solution(best)
+
+    if not evaluation.feasible:
         raise SearchInvariantError(
             "best solution failed final feasibility audit: "
-            + ", ".join(final_evaluation.violations)
+            + ", ".join(evaluation.violations)
         )
-    operator_stats = tuple(
-        OperatorStats(
-            f"destroy:{stats.name}",
-            stats.weight,
-            stats.total_uses,
-            stats.segment_uses,
-            stats.segment_score,
-        )
-        for stats in destroy_pool.snapshot()
-    ) + tuple(
-        OperatorStats(
-            f"repair:{stats.name}",
-            stats.weight,
-            stats.total_uses,
-            stats.segment_uses,
-            stats.segment_score,
-        )
-        for stats in repair_pool.snapshot()
+
+    return evaluation
+
+
+def _operator_stats(
+    destroy_pool: AdaptivePool, repair_pool: AdaptivePool
+) -> tuple[OperatorStats, ...]:
+    return _prefixed_stats("destroy", destroy_pool) + _prefixed_stats(
+        "repair", repair_pool
     )
-    return SearchResult(
-        initial_solution=initial,
-        final_current=current,
-        best_solution=best,
-        d_ref=d_ref,
-        evaluation=final_evaluation,
-        iterations=config.iterations,
-        seed=config.seed,
-        runtime_seconds=time.perf_counter() - started,
-        operator_stats=operator_stats,
+
+
+def _prefixed_stats(prefix: str, pool: AdaptivePool) -> tuple[OperatorStats, ...]:
+    return tuple(
+        OperatorStats(
+            f"{prefix}:{stats.name}",
+            stats.weight,
+            stats.total_uses,
+            stats.segment_uses,
+            stats.segment_score,
+        )
+        for stats in pool.snapshot()
     )
 
 

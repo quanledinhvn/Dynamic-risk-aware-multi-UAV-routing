@@ -3,10 +3,23 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from uav_routing.parser import InstanceFormatError, parse_instance
-
+from uav_routing.parser import (
+    InstanceFormatError,
+    _read_instance_structure,
+    parse_instance,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_reads_instance_name_lines_and_section_positions():
+    path = FIXTURES / "tiny_valid.txt"
+
+    name, lines, sections = _read_instance_structure(path)
+
+    assert name == "TINY"
+    assert lines[0] == "TINY"
+    assert sections == {"VEHICLE": 2, "CUSTOMER": 6, "RISK": 13}
 
 
 def valid_text_without_depot():
@@ -42,6 +55,7 @@ HEADER
 
 def test_parse_limits_customers_and_builds_derived_arrays():
     instance = parse_instance(FIXTURES / "tiny_valid.txt", customer_limit=2)
+
     assert instance.name == "TINY"
     assert instance.max_vehicles == 2
     assert instance.capacity == 10
@@ -63,8 +77,10 @@ def test_parse_limits_customers_and_builds_derived_arrays():
 def test_malformed_input_reports_path_and_reason(tmp_path, content, message):
     path = tmp_path / "bad.txt"
     path.write_text(content)
+
     with pytest.raises(InstanceFormatError, match=message) as error:
         parse_instance(path, customer_limit=2)
+
     assert str(path) in str(error.value)
 
 
@@ -80,10 +96,13 @@ def test_rejects_insufficient_customers():
 
 
 def test_rejects_duplicate_customer_ids(tmp_path):
-    content = (FIXTURES / "tiny_valid.txt").read_text().replace(
-        "2 6 8 3 0 60 1", "1 6 8 3 0 60 1"
+    content = (
+        (FIXTURES / "tiny_valid.txt")
+        .read_text()
+        .replace("2 6 8 3 0 60 1", "1 6 8 3 0 60 1")
     )
     path = tmp_path / "duplicate.txt"
     path.write_text(content)
+
     with pytest.raises(InstanceFormatError, match="duplicate"):
         parse_instance(path, customer_limit=2)

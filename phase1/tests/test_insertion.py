@@ -1,10 +1,8 @@
-import pytest
+from helpers import make_instance
 
 from uav_routing.evaluator import Evaluator
 from uav_routing.models import Customer, Solution
 from uav_routing.repair import RepairContext, best_insertion, feasible_insertions
-
-from helpers import make_instance
 
 
 def make_context(max_vehicles=2):
@@ -17,6 +15,7 @@ def make_context(max_vehicles=2):
         max_vehicles=max_vehicles,
         priorities=(0.1, 0.2, 0.9),
     )
+
     return RepairContext(
         instance=instance,
         evaluator=Evaluator(instance, 10, 0.5, 0.5),
@@ -28,6 +27,7 @@ def make_context(max_vehicles=2):
 
 def test_enumerates_all_feasible_existing_and_new_route_positions():
     insertions = feasible_insertions(Solution(((1, 2),)), 3, make_context())
+
     assert {(item.route_index, item.position) for item in insertions} == {
         (0, 0),
         (0, 1),
@@ -38,12 +38,14 @@ def test_enumerates_all_feasible_existing_and_new_route_positions():
 
 def test_existing_route_beats_cheaper_new_route_because_delta_k_is_primary():
     chosen = best_insertion(Solution(((1,),)), 2, make_context())
+
     assert chosen is not None
     assert chosen.delta_k == 0
 
 
 def test_new_route_is_absent_at_vehicle_limit():
     choices = feasible_insertions(Solution(((1,), (2,))), 3, make_context(2))
+
     assert choices
     assert all(item.delta_k == 0 for item in choices)
 
@@ -64,7 +66,9 @@ def test_insertion_that_breaks_downstream_due_date_is_excluded():
         0.5,
         0.5,
     )
+
     choices = feasible_insertions(Solution(((1, 2),)), 3, context)
+
     assert (0, 1) not in {(item.route_index, item.position) for item in choices}
 
 
@@ -79,5 +83,6 @@ def test_choices_are_sorted_by_lexicographic_cost_and_stable_ties():
         (item.delta_k, item.delta_f, item.route_index, item.position)
         for item in choices
     ]
+
     assert keys == sorted(keys)
     assert choices[0] == best_insertion(Solution(((1,),)), 2, make_context())

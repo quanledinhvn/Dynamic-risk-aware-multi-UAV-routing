@@ -36,6 +36,7 @@ def test_default_config_is_valid():
 )
 def test_invalid_config_is_rejected(changes):
     config = replace(ALNSConfig(), **changes)
+
     with pytest.raises(ValueError):
         config.validate()
 
@@ -76,12 +77,14 @@ def test_real_parameters_must_be_finite_numbers(changes):
 
 def test_solution_routes_are_immutable():
     solution = Solution(routes=((1, 2),))
+
     with pytest.raises(TypeError):
         solution.routes[0][0] = 9
 
 
 def test_from_dict_constructs_and_validates():
     assert ALNSConfig.from_dict({"iterations": 50}).iterations == 50
+
     with pytest.raises(ValueError, match="iterations"):
         ALNSConfig.from_dict({"iterations": 0})
 

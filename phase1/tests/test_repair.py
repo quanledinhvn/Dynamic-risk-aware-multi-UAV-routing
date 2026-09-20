@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from helpers import make_instance
 
 from uav_routing.destroy import RandomRemoval
 from uav_routing.evaluator import Evaluator
@@ -13,8 +14,6 @@ from uav_routing.repair import (
     best_insertion,
 )
 
-from helpers import make_instance
-
 
 def broad_context():
     instance = make_instance(
@@ -23,6 +22,7 @@ def broad_context():
         priorities=(0.1, 0.9, 0.5, 0.2, 0.3),
     )
     evaluator = Evaluator(instance, 20, 0.5, 0.5)
+
     return instance, evaluator, RepairContext(instance, evaluator, 20, 0.5, 0.5)
 
 
@@ -32,10 +32,12 @@ def broad_context():
 def test_repair_restores_complete_feasible_solution(repair):
     instance, evaluator, context = broad_context()
     original = Solution(((1, 2, 3), (4, 5)))
+
     destroyed = RandomRemoval().apply(
         original, instance, evaluator, np.random.default_rng(4), q=2
     )
     result = repair.apply(destroyed.partial, destroyed.removed, context)
+
     assert result.success
     assert result.solution is not None
     assert evaluator.solution(result.solution).feasible
@@ -52,15 +54,16 @@ def test_regret2_prioritizes_customer_with_one_best_delta_k_position():
     )
     evaluator = Evaluator(instance, 20, 0.5, 0.5)
     context = RepairContext(instance, evaluator, 20, 0.5, 0.5)
-    choice = Regret2Repair().choose_customer(
-        (2, 3), context, partial=Solution(((1,),))
-    )
+
+    choice = Regret2Repair().choose_customer((2, 3), context, partial=Solution(((1,),)))
+
     assert choice is not None
     assert choice.customer_id == 3
 
 
 def test_risk_priority_order_is_priority_due_id():
     instance, _, _ = broad_context()
+
     assert RiskPriorityRepair().ordered((3, 1, 2), instance) == (2, 3, 1)
 
 
@@ -68,7 +71,9 @@ def test_failed_repair_is_atomic():
     _, _, context = broad_context()
     partial = Solution(((1, 2),))
     before = partial
+
     result = GreedyRepair().apply(partial, (99,), context)
+
     assert result == RepairResult(False, None)
     assert partial == before
 
@@ -78,7 +83,9 @@ def test_failed_repair_is_atomic():
 )
 def test_duplicate_removed_customer_fails_without_partial_result(repair):
     _, _, context = broad_context()
+
     result = repair.apply(Solution(((1,),)), (2, 2, 3, 4, 5), context)
+
     assert result == RepairResult(False, None)
 
 
@@ -101,6 +108,7 @@ def test_failed_repair_discards_solution_after_a_successful_insertion(repair):
     partial = Solution(((1,),))
 
     first = best_insertion(partial, 2, context)
+
     assert first is not None
     assert best_insertion(first.solution, 3, context) is None
 

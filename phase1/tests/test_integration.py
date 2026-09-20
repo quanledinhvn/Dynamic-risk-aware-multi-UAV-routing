@@ -21,8 +21,10 @@ def comparable(result):
 def test_same_seed_produces_identical_search_result():
     instance = c101_25()
     config = replace(ALNSConfig(), iterations=50, seed=123, segment_length=10)
+
     first = run_alns(instance, config)
     second = run_alns(instance, config)
+
     assert comparable(first) == comparable(second)
     assert first.initial_solution == second.initial_solution
     assert first.final_current == second.final_current
@@ -31,20 +33,22 @@ def test_same_seed_produces_identical_search_result():
 def test_final_solution_is_complete_and_independently_feasible():
     instance = c101_25()
     config = replace(ALNSConfig(), iterations=50)
+
     result = run_alns(instance, config)
-    checked = Evaluator(instance, result.d_ref, 0.5, 0.5).solution(
-        result.best_solution
-    )
+    checked = Evaluator(instance, result.d_ref, 0.5, 0.5).solution(result.best_solution)
+
     assert checked.feasible
-    assert sorted(customer for route in result.best_solution.routes for customer in route) == [
-        customer.id for customer in instance.customers
-    ]
+    assert sorted(
+        customer for route in result.best_solution.routes for customer in route
+    ) == [customer.id for customer in instance.customers]
 
 
 def test_different_seed_still_returns_valid_solution():
     instance = c101_25()
+
     first = run_alns(instance, replace(ALNSConfig(), iterations=10, seed=1))
     second = run_alns(instance, replace(ALNSConfig(), iterations=10, seed=2))
+
     assert first.evaluation.feasible
     assert second.evaluation.feasible
 
@@ -64,7 +68,9 @@ def test_failed_repair_does_not_change_current_solution():
         destroy_operators=(RandomRemoval(),),
         repair_operators=(FailingRepair(),),
     )
+
     result = solver.run()
+
     assert result.final_current == result.initial_solution
     assert result.operator_stats[0].total_uses == 1
     assert result.operator_stats[1].total_uses == 1

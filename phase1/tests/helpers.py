@@ -3,7 +3,7 @@ from dataclasses import replace
 import numpy as np
 
 from uav_routing.geometry import euclidean_distance_matrix
-from uav_routing.models import Customer, Instance, RiskZone
+from uav_routing.models import Customer, Instance
 
 
 def make_instance(
@@ -18,6 +18,7 @@ def make_instance(
     depot = depot or Customer(0, 0, 0, 0, 0, 100, 0)
     nodes = (depot, *customers)
     customer_priorities = priorities or tuple(0.0 for _ in customers)
+
     return Instance(
         name=name,
         depot=depot,
@@ -32,6 +33,7 @@ def make_instance(
 
 def with_depot_due(instance: Instance, due_date: float) -> Instance:
     depot = replace(instance.depot, due_date=due_date)
+
     return replace(
         instance,
         depot=depot,

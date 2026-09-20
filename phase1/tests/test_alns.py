@@ -28,24 +28,28 @@ class StubRng:
 
 def test_fewer_vehicles_is_always_accepted():
     result = accept_score((2, 99), (3, 0), 0.01, np.random.default_rng(1))
+
     assert result.accepted
     assert result.kind == "improve"
 
 
 def test_more_vehicles_is_always_rejected():
     result = accept_score((3, 0), (2, 99), 100, np.random.default_rng(1))
+
     assert not result.accepted
     assert result.probability == 0
 
 
 def test_equal_vehicle_improvement_and_equal_score_are_accepted():
     rng = np.random.default_rng(1)
+
     assert accept_score((2, 0.9), (2, 1.0), 0.01, rng).kind == "improve"
     assert accept_score((2, 1.0), (2, 1.0), 0.01, rng).kind == "equal"
 
 
 def test_worse_equal_vehicle_candidate_uses_sa_probability():
     result = accept_score((2, 1.1), (2, 1.0), 0.5, StubRng(0.1))
+
     assert result.probability == pytest.approx(math.exp(-0.1 / 0.5))
     assert result.accepted
     assert result.kind == "accepted_worse"
@@ -72,6 +76,7 @@ def test_temperature_respects_floor():
 )
 def test_reward_precedence(candidate, current, best, acceptance, expected):
     config = ALNSConfig()
+
     assert classify_reward(candidate, current, best, acceptance, config) == expected
 
 
@@ -80,10 +85,14 @@ def test_twenty_iteration_search_returns_feasible_best_not_worse_than_initial():
     instance = parse_instance(path, 25)
     config = replace(ALNSConfig(), iterations=20, seed=7, segment_length=5)
     initial, d_ref = build_initial_solution(instance, config.alpha, config.beta)
-    initial_eval = Evaluator(instance, d_ref, config.alpha, config.beta).solution(initial)
+    initial_eval = Evaluator(instance, d_ref, config.alpha, config.beta).solution(
+        initial
+    )
+
     result = run_alns(instance, config)
+
     assert result.evaluation.feasible
     assert result.evaluation.score <= initial_eval.score
-    assert sorted(customer for route in result.best_solution.routes for customer in route) == list(
-        range(1, 26)
-    )
+    assert sorted(
+        customer for route in result.best_solution.routes for customer in route
+    ) == list(range(1, 26))

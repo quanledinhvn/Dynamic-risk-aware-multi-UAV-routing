@@ -1,14 +1,14 @@
 """Command-line interface for solving one Solomon-RISK instance."""
 
 import argparse
-from collections.abc import Sequence
 import json
+from collections.abc import Sequence
 from pathlib import Path
 
 from .alns import SearchInvariantError, SearchResult, run_alns
 from .config import ALNSConfig
 from .initial import InitialSolutionError
-from .models import Instance
+from .models import Instance, Route, RouteEvaluation
 from .parser import InstanceFormatError, parse_instance
 
 
@@ -16,28 +16,13 @@ def result_to_dict(
     result: SearchResult, instance: Instance, config: ALNSConfig
 ) -> dict[str, object]:
     evaluation = result.evaluation
-    routes = []
-    for route_index, (route, route_evaluation) in enumerate(
-        zip(result.best_solution.routes, evaluation.routes, strict=True), start=1
-    ):
-        routes.append(
-            {
-                "route_index": route_index,
-                "customers": list(route),
-                "distance": float(route_evaluation.distance),
-                "load": float(route_evaluation.load),
-                "depot_return": float(route_evaluation.depot_return),
-                "schedule": [
-                    {
-                        "customer_id": stop.customer_id,
-                        "arrival": float(stop.arrival),
-                        "service_start": float(stop.service_start),
-                        "departure": float(stop.departure),
-                    }
-                    for stop in route_evaluation.schedule
-                ],
-            }
+    routes = [
+        _route_to_dict(route_index, route, route_evaluation)
+        for route_index, (route, route_evaluation) in enumerate(
+            zip(result.best_solution.routes, evaluation.routes, strict=True), start=1
         )
+    ]
+
     return {
         "instance": instance.name,
         "customers": len(instance.customers),
@@ -66,31 +51,11 @@ def result_to_dict(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="uav-routing")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    solve = subparsers.add_parser("solve", help="solve one Solomon-RISK instance")
-    solve.add_argument("--instance", type=Path, required=True)
-    solve.add_argument("--customers", type=int, default=25)
-    solve.add_argument("--iterations", type=int, default=10_000)
-    solve.add_argument("--seed", type=int, default=42)
-    solve.add_argument("--alpha", type=float, default=0.5)
-    solve.add_argument("--beta", type=float, default=0.5)
-    solve.add_argument("--output", type=Path)
+    parser = _build_parser()
     args = parser.parse_args(argv)
 
     try:
-        config = ALNSConfig(
-            iterations=args.iterations,
-            seed=args.seed,
-            alpha=args.alpha,
-            beta=args.beta,
-        )
-        config.validate()
-        instance = parse_instance(args.instance, args.customers)
-        result = run_alns(instance, config)
-        payload = result_to_dict(result, instance, config)
-        if args.output is not None:
-            _write_json_atomic(args.output, payload)
+        payload = _solve(args)
     except (
         FileNotFoundError,
         OSError,
@@ -100,16 +65,79 @@ def main(argv: Sequence[str] | None = None) -> int:
         SearchInvariantError,
     ) as exc:
         parser.error(str(exc))
+
     print(json.dumps(payload, ensure_ascii=False))
+
     return 0
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="uav-routing")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    solve = subparsers.add_parser("solve", help="solve one Solomon-RISK instance")
+
+    solve.add_argument("--instance", type=Path, required=True)
+    solve.add_argument("--customers", type=int, default=25)
+    solve.add_argument("--iterations", type=int, default=10_000)
+    solve.add_argument("--seed", type=int, default=42)
+    solve.add_argument("--alpha", type=float, default=0.5)
+    solve.add_argument("--beta", type=float, default=0.5)
+    solve.add_argument("--output", type=Path)
+
+    return parser
+
+
+def _solve(args: argparse.Namespace) -> dict[str, object]:
+    config = ALNSConfig(
+        iterations=args.iterations,
+        seed=args.seed,
+        alpha=args.alpha,
+        beta=args.beta,
+    )
+    config.validate()
+
+    instance = parse_instance(args.instance, args.customers)
+    result = run_alns(instance, config)
+    payload = result_to_dict(result, instance, config)
+
+    if args.output is not None:
+        _write_json_atomic(args.output, payload)
+
+    return payload
+
+
+def _route_to_dict(
+    route_index: int,
+    route: Route,
+    route_evaluation: RouteEvaluation,
+) -> dict[str, object]:
+    return {
+        "route_index": route_index,
+        "customers": list(route),
+        "distance": float(route_evaluation.distance),
+        "load": float(route_evaluation.load),
+        "depot_return": float(route_evaluation.depot_return),
+        "schedule": [
+            {
+                "customer_id": stop.customer_id,
+                "arrival": float(stop.arrival),
+                "service_start": float(stop.service_start),
+                "departure": float(stop.departure),
+            }
+            for stop in route_evaluation.schedule
+        ],
+    }
 
 
 def _write_json_atomic(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+
     temporary = path.with_suffix(path.suffix + ".tmp")
+
     temporary.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
+
     temporary.replace(path)
 
 

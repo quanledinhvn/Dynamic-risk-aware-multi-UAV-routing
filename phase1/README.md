@@ -1,72 +1,79 @@
-# Phase 1 — Static Risk-Aware Multi-UAV Routing
+# Giai đoạn 1 — Định tuyến đa UAV tĩnh có xét đến rủi ro
 
-This package implements a reproducible Adaptive Large Neighborhood Search (ALNS) baseline for the static phase of the Dynamic Risk-Aware Multi-UAV Routing project. It uses Solomon VRPTW instances extended with circular risk zones and does not depend on an external optimization solver.
+Phương pháp cơ sở ALNS có khả năng tái lập cho bài toán định tuyến đa UAV tĩnh. Dữ liệu VRPTW Solomon được bổ sung các vùng rủi ro hình tròn; chương trình không cần bộ giải tối ưu hóa bên ngoài.
 
-## Scope
+## Phạm vi
 
-- Homogeneous UAVs start at and return to one depot.
-- Capacity, customer time windows, the depot return deadline, the fleet limit, and exactly-once service are hard constraints.
-- Euclidean distance is also travel time because speed is fixed to 1.
-- The default study uses the first 25 customers of `C101`, `C102`, `C103`, `R101`, `R102`, `R103`, `RC101`, `RC102`, and `RC103`.
-- Battery, wind, no-fly zones, uncertainty, and online changes are reserved for later phases.
+- Các UAV đồng nhất xuất phát từ và quay về cùng một kho.
+- Ràng buộc cứng: tải trọng, cửa sổ thời gian, hạn về kho, số UAV tối đa và phục vụ mỗi khách hàng đúng một lần.
+- Khoảng cách Euclid bằng thời gian di chuyển vì vận tốc cố định là `1`.
+- Mặc định: 25 khách hàng đầu tiên của `C101`, `C102`, `C103`, `R101`, `R102`, `R103`, `RC101`, `RC102`, `RC103`.
+- Chưa xét: pin, gió, vùng cấm bay, bất định và thay đổi trực tuyến.
 
-## Installation
+## Cài đặt
 
-Python 3.11 or newer and [uv](https://docs.astral.sh/uv/) are required.
+- Python 3.11 trở lên.
+- [uv](https://docs.astral.sh/uv/).
 
 ```bash
 cd phase1
 uv sync
 ```
 
-Runtime code depends only on NumPy. Tests use pytest.
+Chương trình dùng NumPy; kiểm thử dùng pytest.
 
-## Input format
+## Định dạng đầu vào
 
-An input file contains the exact section headings `VEHICLE`, `CUSTOMER`, and `RISK`, in that order. The vehicle data row has `NUMBER CAPACITY`; every depot/customer row has seven numeric fields (`id`, coordinates, demand, ready time, due date, service time); every risk row has four numeric fields (`id`, center coordinates, radius). Depot id must be `0`, ids must be unique, capacities and radii must be positive, and the file must contain at least the requested number of non-depot customers.
+- Các phần theo đúng thứ tự: `VEHICLE`, `CUSTOMER`, `RISK`.
+- Phương tiện: `NUMBER CAPACITY`.
+- Kho/khách hàng: 7 trường số gồm `id`, `x`, `y`, nhu cầu, thời điểm sẵn sàng, hạn phục vụ và thời gian phục vụ.
+- Vùng rủi ro: 4 trường số gồm `id`, tọa độ tâm `x`, `y` và bán kính.
+- Kho có ID `0`; mọi ID phải duy nhất.
+- Tải trọng và bán kính phải dương.
+- Số khách hàng trong tệp không được ít hơn giá trị yêu cầu.
 
-## Model and objective
+## Mô hình và hàm mục tiêu
 
-For customer $i$ and risk zone $z$, priority is derived from radial influence:
+Mức ưu tiên của khách hàng $i$ đối với vùng rủi ro $z$:
 
 $$
 p_i=\max_{z}\max\left(0,1-\frac{d_{iz}}{r_z}\right).
 $$
 
-If service starts at $s_i$ in time window $[e_i,l_i]$, normalized delay is:
+Độ trễ chuẩn hóa khi bắt đầu phục vụ tại $s_i$ trong cửa sổ $[e_i,l_i]$:
 
 $$
 q_i=\frac{s_i-e_i}{\max(1,l_i-e_i)}.
 $$
 
-The priority-weighted risk delay is:
+Độ trễ rủi ro có trọng số:
 
 $$
 R(S)=\frac{\sum_i p_iq_i}{\sum_i p_i},
 $$
 
-with $R(S)=0$ when all priorities are zero. The deterministic greedy initial solution $S_0$ defines the fixed reference distance:
+Quy ước $R(S)=0$ nếu mọi mức ưu tiên đều bằng `0`. Nghiệm tham lam xác định $S_0$ cho khoảng cách tham chiếu:
 
 $$
 D_{\mathrm{ref}}=D(S_0).
 $$
 
-The secondary objective is:
+Hàm mục tiêu thứ cấp:
 
 $$
 F(S)=\alpha\frac{D(S)}{D_{\mathrm{ref}}}+\beta R(S),
 \qquad \alpha+\beta=1.
 $$
 
-Solutions are compared lexicographically by:
+So sánh nghiệm theo thứ tự từ điển:
 
 $$
 \operatorname{Score}(S)=(K(S),F(S)),
 $$
 
-so reducing the number of UAVs always takes priority over improving distance-risk cost.
+Vì vậy, giảm số UAV được ưu tiên hơn giảm chi phí khoảng cách–rủi ro.
 
-## Solve one instance
+## Giải một bộ dữ liệu
 
 ```bash
 uv run python -m uav_routing.cli solve \
@@ -79,11 +86,18 @@ uv run python -m uav_routing.cli solve \
   --output results/c101-seed42.json
 ```
 
-The command prints the result as JSON and optionally writes it atomically. The JSON contains instance metadata, seed, iterations, vehicle count, distance, risk delay, objective, runtime, feasibility, final operator weights/use counts, routes, and each stop's arrival, service-start, and departure times.
+Kết quả JSON gồm:
 
-## Run the benchmark
+- Bộ dữ liệu, seed, số vòng lặp và thời gian chạy.
+- Số UAV, khoảng cách, độ trễ rủi ro, giá trị mục tiêu và tính khả thi.
+- Lộ trình và thời điểm đến, phục vụ, rời đi tại mỗi điểm.
+- Trọng số và số lần sử dụng các toán tử.
 
-The committed development configuration uses ten seeds (`0` through `9`), 25 customers, and 10,000 iterations for all nine target instances:
+Tùy chọn `--output` ghi tệp theo cơ chế nguyên tử.
+
+## Chạy benchmark
+
+Cấu hình mặc định: 9 bộ dữ liệu, 25 khách hàng, 10 seed (`0`–`9`) và 10.000 vòng lặp.
 
 ```bash
 uv run python -m uav_routing.experiment \
@@ -91,7 +105,7 @@ uv run python -m uav_routing.experiment \
   --output-dir results/benchmark
 ```
 
-For a fast smoke run without changing the committed defaults:
+Kiểm tra nhanh mà không sửa cấu hình:
 
 ```bash
 uv run python -m uav_routing.experiment \
@@ -101,18 +115,22 @@ uv run python -m uav_routing.experiment \
   --output-dir results/smoke
 ```
 
-`raw.csv` has one row per instance/seed with columns `instance`, `customers`, `seed`, `iterations`, `vehicles`, `distance`, `risk_delay`, `objective`, `runtime_seconds`, and `feasible`. `aggregate.csv` groups by instance, customer count, iterations, alpha, and beta; it reports run count plus mean, sample standard deviation, numeric best, and numeric worst for solution metrics, and mean/sample standard deviation for runtime. With one run, standard deviation is `0`.
+- `raw.csv`: một dòng cho mỗi cặp bộ dữ liệu/seed.
+- `aggregate.csv`: thống kê theo bộ dữ liệu, số khách hàng, số vòng lặp, `alpha`, `beta`.
+- Chỉ số tổng hợp: số lượt chạy, trung bình, độ lệch chuẩn mẫu, tốt nhất và kém nhất; độ lệch chuẩn bằng `0` nếu chỉ có một lượt.
+- Kết quả được lưu nguyên tử sau mỗi lượt chạy.
+- Benchmark dừng nếu gặp nghiệm không khả thi.
 
-Results are checkpointed atomically after every completed run. Any infeasible run aborts the benchmark instead of silently entering the aggregate.
+## Khả năng tái lập
 
-## Reproducibility
+- Mỗi lượt chạy dùng một `numpy.random.Generator` khởi tạo từ seed.
+- Cùng đầu vào, giới hạn khách hàng, cấu hình và seed sẽ cho cùng lộ trình, giá trị mục tiêu và thống kê toán tử.
+- Thời gian chạy có thể khác nhau.
 
-Every search decision uses one `numpy.random.Generator` created from the run seed. With the same input file, customer limit, configuration, and seed, routes, objective components, and operator statistics are identical. Runtime is measured but is not expected to be identical.
-
-## Tests
+## Kiểm thử
 
 ```bash
 uv run pytest tests -q
 ```
 
-The suite covers parsing, geometry, hard constraints, objective calculation, deterministic initialization, destroy/repair invariants, adaptive weights, acceptance, reproducibility, CLI output, and benchmark aggregation.
+Bao phủ bộ phân tích cú pháp, hình học, ràng buộc, hàm mục tiêu, ALNS, khả năng tái lập, CLI và benchmark.

@@ -1,7 +1,7 @@
 import csv
+import statistics
 from dataclasses import replace
 from pathlib import Path
-import statistics
 
 from uav_routing.config import ALNSConfig
 from uav_routing.experiment import BenchmarkConfig, run_benchmark, write_results
@@ -9,6 +9,7 @@ from uav_routing.experiment import BenchmarkConfig, run_benchmark, write_results
 
 def fake_solver(path, config, customer_limit):
     offset = 0 if Path(path).stem == "c101" else 1
+
     return {
         "instance": Path(path).stem,
         "customers": customer_limit,
@@ -32,7 +33,9 @@ def test_benchmark_runs_cartesian_product_in_stable_order():
         alns=replace(ALNSConfig(), iterations=4),
         customer_limit=7,
     )
+
     rows = run_benchmark(config, solver=fake_solver)
+
     assert len(rows) == 6
     assert [(row["instance"], row["seed"]) for row in rows] == [
         ("c101", 1),
@@ -53,8 +56,10 @@ def test_raw_and_aggregate_csv_have_stable_schema(tmp_path):
     config = BenchmarkConfig(
         (Path("c101.txt"),), (1, 2), replace(ALNSConfig(), iterations=4), 7
     )
+
     rows = run_benchmark(config, solver=fake_solver)
     raw, aggregate = write_results(rows, tmp_path)
+
     assert read_header(raw) == [
         "instance",
         "customers",
@@ -99,10 +104,13 @@ def test_aggregate_values_use_sample_standard_deviation(tmp_path):
     config = BenchmarkConfig(
         (Path("c101.txt"),), (1, 2, 3), replace(ALNSConfig(), iterations=4), 7
     )
+
     rows = run_benchmark(config, solver=fake_solver)
     _, aggregate = write_results(rows, tmp_path)
+
     with aggregate.open(newline="") as handle:
         row = next(csv.DictReader(handle))
+
     assert float(row["distance_mean"]) == statistics.fmean([101, 102, 103])
     assert float(row["distance_std"]) == statistics.stdev([101, 102, 103])
     assert float(row["distance_best"]) == 101
@@ -113,9 +121,11 @@ def test_infeasible_run_aborts_benchmark():
     def infeasible(path, config, customer_limit):
         row = fake_solver(path, config, customer_limit)
         row["feasible"] = False
+
         return row
 
     config = BenchmarkConfig((Path("c101.txt"),), (1,), ALNSConfig(), 7)
+
     try:
         run_benchmark(config, solver=infeasible)
     except RuntimeError as exc:

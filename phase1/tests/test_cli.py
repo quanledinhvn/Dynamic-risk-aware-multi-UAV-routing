@@ -1,8 +1,7 @@
 import json
-from pathlib import Path
 import subprocess
 import sys
-
+from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
 C101 = ROOT.parent / "dataset/solomon_risk/c101.txt"
@@ -33,8 +32,11 @@ def test_solve_writes_required_json_fields(tmp_path):
         "--output",
         str(output),
     )
+
     assert completed.returncode == 0, completed.stderr
+
     data = json.loads(output.read_text())
+
     assert {
         "instance",
         "customers",
@@ -61,11 +63,13 @@ def test_cli_rejects_weights_that_do_not_sum_to_one():
     completed = run_cli(
         "solve", "--instance", str(C101), "--alpha", ".7", "--beta", ".7"
     )
+
     assert completed.returncode == 2
     assert "sum to 1" in completed.stderr
 
 
 def test_cli_reports_input_errors_without_traceback(tmp_path):
     completed = run_cli("solve", "--instance", str(tmp_path / "missing.txt"))
+
     assert completed.returncode == 2
     assert "Traceback" not in completed.stderr
