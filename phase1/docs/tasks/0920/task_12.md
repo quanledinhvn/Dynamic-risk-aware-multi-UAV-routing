@@ -24,7 +24,7 @@
 - Consumes: CLI-equivalent solve configuration and nine dataset paths.
 - Produces: `uv run python -m uav_routing.experiment --config configs/benchmark.json`; raw CSV and aggregate CSV with stable schemas.
 
-- [ ] **Step 1: Write benchmark matrix and CSV aggregation tests**
+- [x] **Step 1: Write benchmark matrix and CSV aggregation tests**
 
 ```python
 def test_benchmark_runs_cartesian_product(tmp_path, fake_solver):
@@ -42,7 +42,7 @@ def test_raw_and_aggregate_csv_have_stable_schema(tmp_path, sample_rows):
     assert read_header(aggregate) == ["instance", "customers", "iterations", "alpha", "beta", "runs", "vehicles_mean", "vehicles_std", "vehicles_best", "vehicles_worst", "distance_mean", "distance_std", "distance_best", "distance_worst", "risk_delay_mean", "risk_delay_std", "risk_delay_best", "risk_delay_worst", "objective_mean", "objective_std", "objective_best", "objective_worst", "runtime_mean", "runtime_std"]
 ```
 
-- [ ] **Step 2: Add importable experiment stubs, then verify behavioral RED**
+- [x] **Step 2: Add importable experiment stubs, then verify behavioral RED**
 
 ```python
 @dataclass(frozen=True)
@@ -62,7 +62,7 @@ Run: `cd phase1 && uv run pytest tests/test_experiment.py -v`
 
 Expected: module imports and tests collect; benchmark and CSV calls fail at their respective stubs.
 
-- [ ] **Step 3: Implement sequential benchmark and statistically explicit aggregation**
+- [x] **Step 3: Implement sequential benchmark and statistically explicit aggregation**
 
 ```python
 for instance_path in config.instance_paths:
@@ -78,7 +78,7 @@ Use instance order `c101,c102,c103,r101,r102,r103,rc101,rc102,rc103` and seed or
 
 README must include: Phase 1 scope; installation; input format; feasibility rules; formulas for $p_i$, $q_i$, $R(S)$, $D_{ref}$, $F(S)$ and lexicographic score; single-run command; benchmark command; output schemas; seed/reproducibility statement; test command; and the nine-instance scope.
 
-- [ ] **Step 4: Run all acceptance checks**
+- [x] **Step 4: Run all acceptance checks**
 
 Run:
 
@@ -91,7 +91,7 @@ uv run python -m uav_routing.experiment --config configs/benchmark.json --iterat
 
 Expected: complete test suite passes; single result is feasible with 25 unique customers; smoke benchmark produces 9 raw rows and 9 aggregate rows, one per target instance. The reduced CLI overrides are for smoke verification only; committed benchmark defaults remain 10 seeds and 10,000 iterations.
 
-- [ ] **Step 5: Commit reproducible experiment delivery**
+- [x] **Step 5: Commit reproducible experiment delivery**
 
 ```bash
 git add phase1/src/uav_routing/experiment.py phase1/configs/benchmark.json phase1/tests/test_experiment.py phase1/README.md phase1/results/.gitkeep
