@@ -21,7 +21,7 @@
 - Consumes: `Instance`, `Solution`, `RouteEvaluation`, `SolutionEvaluation`.
 - Produces: `Evaluator(instance, d_ref, alpha, beta)`, `Evaluator.route(route)`, `Evaluator.solution(solution)`, `lexicographically_better(left, right) -> bool`.
 
-- [ ] **Step 1: Write tests covering schedule, every hard constraint and objective**
+- [x] **Step 1: Write tests covering schedule, every hard constraint and objective**
 
 ```python
 def test_route_schedule_includes_wait_service_and_return(tiny_instance):
@@ -59,7 +59,7 @@ def test_lexicographic_score_prefers_vehicle_count_before_objective():
     assert lexicographically_better((2, 0.9), (2, 1.0))
 ```
 
-- [ ] **Step 2: Add an importable evaluator stub, then verify behavioral RED**
+- [x] **Step 2: Add an importable evaluator stub, then verify behavioral RED**
 
 ```python
 class Evaluator:
@@ -80,7 +80,7 @@ Run: `cd phase1 && uv run pytest tests/test_evaluator.py -v`
 
 Expected: module imports and tests collect; tests fail only when evaluator behavior is invoked.
 
-- [ ] **Step 3: Implement one-pass route scheduling and solution aggregation**
+- [x] **Step 3: Implement one-pass route scheduling and solution aggregation**
 
 ```python
 arrival = departure + distance(previous_id, customer_id)
@@ -94,13 +94,13 @@ score = (len(solution.routes), objective)
 
 Reject `d_ref <= 0`, invalid weights, empty routes, unknown customer ids, repeated or missing customers, excessive route count, capacity violation, customer service start after due date, and depot return after depot due date. Store stable violation codes shown in tests. Build a private `customer_id -> matrix_index` map once in `Evaluator.__init__` so customer ids need not be contiguous.
 
-- [ ] **Step 4: Run evaluator tests and prior tests**
+- [x] **Step 4: Run evaluator tests and prior tests**
 
 Run: `cd phase1 && uv run pytest tests/test_evaluator.py tests/test_parser.py tests/test_geometry.py tests/test_config.py -v`
 
 Expected: all tests pass; risk delay assertions also verify `0 <= result.risk_delay <= 1` for feasible fixtures.
 
-- [ ] **Step 5: Commit the oracle**
+- [x] **Step 5: Commit the oracle**
 
 ```bash
 git add phase1/src/uav_routing/evaluator.py phase1/tests/test_evaluator.py
