@@ -21,7 +21,7 @@
 - Consumes: Task 6 insertion engine.
 - Produces: `RepairResult(success: bool, solution: Solution | None)` and `GreedyRepair`, `Regret2Repair`, `RiskPriorityRepair` with `name` and `apply(partial, removed, context) -> RepairResult`.
 
-- [ ] **Step 1: Write success, ordering, infinite-regret and atomic-failure tests**
+- [x] **Step 1: Write success, ordering, infinite-regret and atomic-failure tests**
 
 ```python
 @pytest.mark.parametrize("repair", [GreedyRepair(), Regret2Repair(), RiskPriorityRepair()])
@@ -43,7 +43,7 @@ def test_failed_repair_is_atomic(partial, context):
     assert partial == before
 ```
 
-- [ ] **Step 2: Add importable repair-operator stubs, then verify behavioral RED**
+- [x] **Step 2: Add importable repair-operator stubs, then verify behavioral RED**
 
 ```python
 @dataclass(frozen=True)
@@ -73,7 +73,7 @@ Run: `cd phase1 && uv run pytest tests/test_repair.py -v`
 
 Expected: imports and test collection succeed; operator behavior fails at the shared stub.
 
-- [ ] **Step 3: Implement the three customer-selection policies**
+- [x] **Step 3: Implement the three customer-selection policies**
 
 ```python
 # Greedy: global best pair
@@ -89,13 +89,13 @@ ordered = sorted(removed, key=lambda cid: (-priority[cid], customer[cid].due_dat
 
 After every insertion, recompute choices against the updated partial solution. If any remaining customer has no feasible insertion when selected, return `RepairResult(False, None)`. On success, call the complete `Evaluator.solution`; return failure if it is not feasible or complete.
 
-- [ ] **Step 4: Run repair and destroy integration tests**
+- [x] **Step 4: Run repair and destroy integration tests**
 
 Run: `cd phase1 && uv run pytest tests/test_repair.py tests/test_insertion.py tests/test_destroy.py -v`
 
 Expected: every destroy/repair pair restores the customer set on the small fixture whenever repair reports success.
 
-- [ ] **Step 5: Commit repair neighborhoods**
+- [x] **Step 5: Commit repair neighborhoods**
 
 ```bash
 git add phase1/src/uav_routing/repair.py phase1/tests/test_repair.py
