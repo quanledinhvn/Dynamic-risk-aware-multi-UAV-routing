@@ -24,7 +24,7 @@
 - Consumes: `Customer`, `RiskZone`, `Instance` from Task 1.
 - Produces: `parse_instance(path: Path, customer_limit: int) -> Instance`, `euclidean_distance_matrix(nodes: tuple[Customer, ...]) -> np.ndarray`, `compute_risk_priorities(customers: tuple[Customer, ...], zones: tuple[RiskZone, ...]) -> np.ndarray`.
 
-- [ ] **Step 1: Write parser and geometry tests from explicit fixtures**
+- [x] **Step 1: Write parser and geometry tests from explicit fixtures**
 
 ```python
 def test_parse_limits_customers_and_builds_derived_arrays(tmp_path):
@@ -59,7 +59,7 @@ def test_malformed_input_reports_path_and_reason(tmp_path, content, message):
         parse_instance(path, customer_limit=2)
 ```
 
-- [ ] **Step 2: Add importable parser/geometry stubs, then verify behavioral RED**
+- [x] **Step 2: Add importable parser/geometry stubs, then verify behavioral RED**
 
 ```python
 class InstanceFormatError(ValueError):
@@ -79,7 +79,7 @@ Run: `cd phase1 && uv run pytest tests/test_parser.py tests/test_geometry.py -v`
 
 Expected: both modules import and tests collect; calls fail at the stubs with `NotImplementedError`, not during import or collection.
 
-- [ ] **Step 3: Implement strict section parsing and vectorized formulas**
+- [x] **Step 3: Implement strict section parsing and vectorized formulas**
 
 ```python
 def euclidean_distance_matrix(nodes: tuple[Customer, ...]) -> np.ndarray:
@@ -97,13 +97,13 @@ def compute_risk_priorities(customers, zones):
 
 Parser requirements: locate `VEHICLE`, `CUSTOMER`, and `RISK` sections by exact stripped heading; parse vehicle row as two numbers; parse customer rows as seven numbers until `RISK`; require depot id 0; retain the first `customer_limit` non-depot rows in file order; reject non-positive limit, insufficient customers, non-positive vehicle/capacity/radius, duplicate customer ids, and malformed row widths. Build matrix in index order `(depot, *customers)` and priority array aligned to that same index order.
 
-- [ ] **Step 4: Verify fixtures and all nine target files**
+- [x] **Step 4: Verify fixtures and all nine target files**
 
 Run: `cd phase1 && uv run pytest tests/test_parser.py tests/test_geometry.py -v && uv run python -c 'from pathlib import Path; from uav_routing.parser import parse_instance; [parse_instance(p, 25) for p in sorted(Path("../dataset/solomon_risk").glob("[crCR]*10[1-3].txt")) if p.stem.lower() in {"c101","c102","c103","r101","r102","r103","rc101","rc102","rc103"}]'`
 
 Expected: tests pass; exactly nine target files parse without exception.
 
-- [ ] **Step 5: Commit input and geometry**
+- [x] **Step 5: Commit input and geometry**
 
 ```bash
 git add phase1/src/uav_routing/parser.py phase1/src/uav_routing/geometry.py phase1/tests/test_parser.py phase1/tests/test_geometry.py phase1/tests/fixtures/tiny_valid.txt
