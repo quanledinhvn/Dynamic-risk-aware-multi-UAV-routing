@@ -76,7 +76,7 @@ def lexicographically_better(left: tuple[int, float], right: tuple[int, float]) 
     raise NotImplementedError("score comparison is not implemented")
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_evaluator.py -v`
+Run: `cd phase1 && uv run pytest tests/test_evaluator.py -v`
 
 Expected: module imports and tests collect; tests fail only when evaluator behavior is invoked.
 
@@ -96,7 +96,7 @@ Reject `d_ref <= 0`, invalid weights, empty routes, unknown customer ids, repeat
 
 - [ ] **Step 4: Run evaluator tests and prior tests**
 
-Run: `cd phase1 && python -m pytest tests/test_evaluator.py tests/test_parser.py tests/test_geometry.py tests/test_config.py -v`
+Run: `cd phase1 && uv run pytest tests/test_evaluator.py tests/test_parser.py tests/test_geometry.py tests/test_config.py -v`
 
 Expected: all tests pass; risk delay assertions also verify `0 <= result.risk_delay <= 1` for feasible fixtures.
 

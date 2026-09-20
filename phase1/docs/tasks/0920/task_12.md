@@ -22,7 +22,7 @@
 
 **Interfaces:**
 - Consumes: CLI-equivalent solve configuration and nine dataset paths.
-- Produces: `python -m uav_routing.experiment --config configs/benchmark.json`; raw CSV and aggregate CSV with stable schemas.
+- Produces: `uv run python -m uav_routing.experiment --config configs/benchmark.json`; raw CSV and aggregate CSV with stable schemas.
 
 - [ ] **Step 1: Write benchmark matrix and CSV aggregation tests**
 
@@ -58,7 +58,7 @@ def write_results(rows: list[dict[str, object]], output_dir: Path) -> tuple[Path
     raise NotImplementedError("CSV output is not implemented")
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_experiment.py -v`
+Run: `cd phase1 && uv run pytest tests/test_experiment.py -v`
 
 Expected: module imports and tests collect; benchmark and CSV calls fail at their respective stubs.
 
@@ -84,9 +84,9 @@ Run:
 
 ```bash
 cd phase1
-python -m pytest tests -q
-python -m uav_routing.cli solve --instance ../dataset/solomon_risk/c101.txt --customers 25 --iterations 50 --seed 42 --output results/c101-acceptance.json
-python -m uav_routing.experiment --config configs/benchmark.json --iterations 2 --seeds 0 --output-dir results/smoke
+uv run pytest tests -q
+uv run python -m uav_routing.cli solve --instance ../dataset/solomon_risk/c101.txt --customers 25 --iterations 50 --seed 42 --output results/c101-acceptance.json
+uv run python -m uav_routing.experiment --config configs/benchmark.json --iterations 2 --seeds 0 --output-dir results/smoke
 ```
 
 Expected: complete test suite passes; single result is feasible with 25 unique customers; smoke benchmark produces 9 raw rows and 9 aggregate rows, one per target instance. The reduced CLI overrides are for smoke verification only; committed benchmark defaults remain 10 seeds and 10,000 iterations.

@@ -75,7 +75,7 @@ def compute_risk_priorities(customers, zones) -> np.ndarray:
     raise NotImplementedError("risk priority is not implemented")
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_parser.py tests/test_geometry.py -v`
+Run: `cd phase1 && uv run pytest tests/test_parser.py tests/test_geometry.py -v`
 
 Expected: both modules import and tests collect; calls fail at the stubs with `NotImplementedError`, not during import or collection.
 
@@ -99,7 +99,7 @@ Parser requirements: locate `VEHICLE`, `CUSTOMER`, and `RISK` sections by exact 
 
 - [ ] **Step 4: Verify fixtures and all nine target files**
 
-Run: `cd phase1 && python -m pytest tests/test_parser.py tests/test_geometry.py -v && python -c 'from pathlib import Path; from uav_routing.parser import parse_instance; [parse_instance(p, 25) for p in sorted(Path("../dataset/solomon_risk").glob("[crCR]*10[1-3].txt")) if p.stem.lower() in {"c101","c102","c103","r101","r102","r103","rc101","rc102","rc103"}]'`
+Run: `cd phase1 && uv run pytest tests/test_parser.py tests/test_geometry.py -v && uv run python -c 'from pathlib import Path; from uav_routing.parser import parse_instance; [parse_instance(p, 25) for p in sorted(Path("../dataset/solomon_risk").glob("[crCR]*10[1-3].txt")) if p.stem.lower() in {"c101","c102","c103","r101","r102","r103","rc101","rc102","rc103"}]'`
 
 Expected: tests pass; exactly nine target files parse without exception.
 

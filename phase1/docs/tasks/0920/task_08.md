@@ -85,7 +85,7 @@ class AdaptivePool:
         raise NotImplementedError("statistics snapshot is not implemented")
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_adaptive.py -v`
+Run: `cd phase1 && uv run pytest tests/test_adaptive.py -v`
 
 Expected: module imports and tests collect; calls fail at the specific unimplemented adaptive behavior.
 
@@ -102,7 +102,7 @@ Track both all-run selection count and per-segment count/score. Reject duplicate
 
 - [ ] **Step 4: Run adaptive tests over a fixed seeded draw sequence**
 
-Run: `cd phase1 && python -m pytest tests/test_adaptive.py -v`
+Run: `cd phase1 && uv run pytest tests/test_adaptive.py -v`
 
 Expected: exact selected-name sequence for seed 42 matches the committed test fixture.
 

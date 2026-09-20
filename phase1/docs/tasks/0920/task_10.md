@@ -46,7 +46,7 @@ def test_failed_repair_does_not_change_current_solution(solver_with_failing_repa
 
 - [ ] **Step 2: Run integration tests before adjustment**
 
-Run: `cd phase1 && python -m pytest tests/test_integration.py -v`
+Run: `cd phase1 && uv run pytest tests/test_integration.py -v`
 
 Expected: tests reveal any untracked RNG source, runtime field in equality, mutable state leak or missing final audit.
 
@@ -70,7 +70,7 @@ Exclude only `runtime_seconds` from reproducibility comparison. Search code must
 
 - [ ] **Step 4: Run the full suite twice**
 
-Run: `cd phase1 && python -m pytest tests -q && python -m pytest tests -q`
+Run: `cd phase1 && uv run pytest tests -q && uv run pytest tests -q`
 
 Expected: both runs pass with identical test counts; the same-seed test compares routes, metrics and operator statistics exactly.
 

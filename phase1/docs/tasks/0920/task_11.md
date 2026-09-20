@@ -20,7 +20,7 @@
 
 **Interfaces:**
 - Consumes: parser, config and `run_alns`.
-- Produces: command `python -m uav_routing.cli solve`; `result_to_dict(result: SearchResult, instance: Instance, config: ALNSConfig) -> dict[str, object]`.
+- Produces: command `uv run python -m uav_routing.cli solve`; `result_to_dict(result: SearchResult, instance: Instance, config: ALNSConfig) -> dict[str, object]`.
 
 - [ ] **Step 1: Write CLI success, schema and invalid-argument tests**
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_cli.py -v`
+Run: `cd phase1 && uv run pytest tests/test_cli.py -v`
 
 Expected: module imports and subprocess reaches `main`; schema and exit-code assertions fail because CLI behavior is not implemented.
 
@@ -74,7 +74,7 @@ Serialize plain Python scalars, not NumPy scalar objects. Write JSON to `output.
 
 - [ ] **Step 4: Run CLI tests and the requested smoke command**
 
-Run: `cd phase1 && python -m pytest tests/test_cli.py -v && python -m uav_routing.cli solve --instance ../dataset/solomon_risk/c101.txt --customers 25 --iterations 10 --seed 42 --alpha 0.5 --beta 0.5 --output results/c101-seed42-smoke.json`
+Run: `cd phase1 && uv run pytest tests/test_cli.py -v && uv run python -m uav_routing.cli solve --instance ../dataset/solomon_risk/c101.txt --customers 25 --iterations 10 --seed 42 --alpha 0.5 --beta 0.5 --output results/c101-seed42-smoke.json`
 
 Expected: tests pass; command exits 0; JSON says `feasible: true` and includes 25 scheduled customer stops.
 

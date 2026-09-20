@@ -63,7 +63,7 @@ def best_insertion(partial: Solution, customer_id: int, context: RepairContext) 
     raise NotImplementedError("best insertion is not implemented")
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_insertion.py -v`
+Run: `cd phase1 && uv run pytest tests/test_insertion.py -v`
 
 Expected: module imports and tests collect; insertion calls fail at their stubs rather than during import.
 
@@ -84,7 +84,7 @@ return tuple(sorted(choices, key=lambda x: (x.delta_k, x.delta_f, x.route_index,
 
 - [ ] **Step 4: Run insertion tests and evaluator regression suite**
 
-Run: `cd phase1 && python -m pytest tests/test_insertion.py tests/test_evaluator.py -v`
+Run: `cd phase1 && uv run pytest tests/test_insertion.py tests/test_evaluator.py -v`
 
 Expected: all tests pass, including a case where insertion shifts a downstream customer past its due date and is excluded.
 

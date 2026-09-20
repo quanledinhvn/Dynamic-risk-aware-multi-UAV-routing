@@ -52,7 +52,7 @@ def build_initial_solution(instance: Instance, alpha: float, beta: float) -> tup
     raise NotImplementedError("initial construction is not implemented")
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_initial.py -v`
+Run: `cd phase1 && uv run pytest tests/test_initial.py -v`
 
 Expected: module imports and tests collect; ordering and construction calls fail at their stubs.
 
@@ -68,7 +68,7 @@ For each customer, enumerate positions `0..len(route)` in existing routes, keep 
 
 - [ ] **Step 4: Verify determinism on C101 and full unit suite**
 
-Run: `cd phase1 && python -m pytest tests/test_initial.py -v && python -m pytest tests -q`
+Run: `cd phase1 && uv run pytest tests/test_initial.py -v && uv run pytest tests -q`
 
 Expected: all tests pass; repeated C101 construction has identical routes and `d_ref`.
 

@@ -14,8 +14,8 @@
 ---
 
 **Files:**
-- Create: `phase1/pyproject.toml`
-- Create: `phase1/src/uav_routing/__init__.py`
+- Modify: `phase1/pyproject.toml`
+- Modify: `phase1/src/uav_routing/__init__.py`
 - Create: `phase1/src/uav_routing/models.py`
 - Create: `phase1/src/uav_routing/config.py`
 - Create: `phase1/tests/test_config.py`
@@ -55,9 +55,9 @@ def test_from_dict_constructs_and_validates():
         ALNSConfig.from_dict({"iterations": 0})
 ```
 
-- [ ] **Step 2: Add an importable scaffold, then verify behavioral RED**
+- [ ] **Step 2: Extend the existing uv package with importable domain/config scaffolds, then verify behavioral RED**
 
-Create package metadata and the dataclasses from “Stable interface contracts”. In `config.py`, declare all public fields but deliberately leave validation behavior neutral:
+Keep the `uv` package metadata created during Phase 1 setup. Add the dataclasses from “Stable interface contracts”; in `config.py`, declare all public fields but deliberately leave validation behavior neutral:
 
 ```python
 @dataclass(frozen=True)
@@ -91,7 +91,7 @@ class ALNSConfig:
         return cls(**values)
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_config.py -v`
+Run: `cd phase1 && uv run pytest tests/test_config.py -v`
 
 Expected: test collection succeeds; default config and immutable solution tests pass; invalid-config cases fail with `DID NOT RAISE ValueError` because validation behavior is not implemented yet.
 
@@ -139,11 +139,11 @@ Replace the two scaffold methods inside `ALNSConfig` with:
 
 Cách table-driven này được chọn vì không thêm dependency và gom các rule đơn trường lẫn rule liên trường vào cùng một cấu trúc. `pydantic` cũng giảm boilerplate, nhưng chưa cần thiết cho baseline chỉ có một config object; field metadata của `dataclasses` không phù hợp với các rule liên trường như `q_min <= q_max` và `alpha + beta = 1`.
 
-Set `requires-python = ">=3.11"`, runtime dependency `numpy>=2.0`, optional test dependency `pytest>=8.0`, package directory `src`, and pytest `pythonpath = ["src"]` in `pyproject.toml`.
+Keep `requires-python = ">=3.11"`, runtime dependency `numpy>=2.0`, `pytest>=8.0` in `dependency-groups.dev`, the `uv_build` backend, and the `src` package layout in `pyproject.toml`.
 
 - [ ] **Step 4: Run the focused test and package import check**
 
-Run: `cd phase1 && python -m pytest tests/test_config.py -v && python -c 'from uav_routing.config import ALNSConfig; ALNSConfig().validate()'`
+Run: `cd phase1 && uv run pytest tests/test_config.py -v && uv run python -c 'from uav_routing.config import ALNSConfig; ALNSConfig().validate()'`
 
 Expected: all tests pass and the import command exits 0.
 

@@ -66,7 +66,7 @@ def run_alns(instance: Instance, config: ALNSConfig) -> SearchResult:
     raise NotImplementedError("ALNS loop is not implemented")
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_alns.py -v`
+Run: `cd phase1 && uv run pytest tests/test_alns.py -v`
 
 Expected: module imports and tests collect; acceptance, cooling and search tests fail at the invoked stub.
 
@@ -94,7 +94,7 @@ Reward precedence is best-so-far `20`, current improvement `10`, accepted worse 
 
 - [ ] **Step 4: Run ALNS unit tests and a 20-iteration small-instance test**
 
-Run: `cd phase1 && python -m pytest tests/test_alns.py -v && python -m pytest tests -q`
+Run: `cd phase1 && uv run pytest tests/test_alns.py -v && uv run pytest tests -q`
 
 Expected: all tests pass; final best score is no worse than the initial score.
 

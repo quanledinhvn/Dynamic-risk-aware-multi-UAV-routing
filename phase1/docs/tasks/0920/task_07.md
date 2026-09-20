@@ -69,7 +69,7 @@ class RiskPriorityRepair(GreedyRepair):
         raise NotImplementedError("risk-priority ordering is not implemented")
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_repair.py -v`
+Run: `cd phase1 && uv run pytest tests/test_repair.py -v`
 
 Expected: imports and test collection succeed; operator behavior fails at the shared stub.
 
@@ -91,7 +91,7 @@ After every insertion, recompute choices against the updated partial solution. I
 
 - [ ] **Step 4: Run repair and destroy integration tests**
 
-Run: `cd phase1 && python -m pytest tests/test_repair.py tests/test_insertion.py tests/test_destroy.py -v`
+Run: `cd phase1 && uv run pytest tests/test_repair.py tests/test_insertion.py tests/test_destroy.py -v`
 
 Expected: every destroy/repair pair restores the customer set on the small fixture whenever repair reports success.
 

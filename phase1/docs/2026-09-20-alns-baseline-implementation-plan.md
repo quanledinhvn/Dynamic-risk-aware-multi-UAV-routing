@@ -6,7 +6,7 @@
 
 **Architecture:** Luồng dữ liệu một chiều đi từ parser và geometry vào một `Instance` bất biến; `Evaluator` là nguồn duy nhất tính lịch, tính khả thi và score. Các destroy/repair operator chỉ biến đổi `Solution`, còn `run_alns` điều phối selection, acceptance, reward và cooling qua một NumPy `Generator` duy nhất.
 
-**Tech Stack:** Python 3.11+, NumPy, pytest, thư viện chuẩn `dataclasses`, `argparse`, `json`, `csv`, `statistics`, `time`.
+**Tech Stack:** Python 3.11+, uv, NumPy, pytest, thư viện chuẩn `dataclasses`, `argparse`, `json`, `csv`, `statistics`, `time`.
 
 **Spec:** `phase1/docs/2026-09-19-alns-baseline-design.md`
 

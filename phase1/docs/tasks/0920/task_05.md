@@ -83,7 +83,7 @@ class RiskPriorityRemoval(RandomRemoval):
     name = "risk_priority"
 ```
 
-Run: `cd phase1 && python -m pytest tests/test_destroy.py -v`
+Run: `cd phase1 && uv run pytest tests/test_destroy.py -v`
 
 Expected: module imports and tests collect; relatedness and operator calls fail at their `NotImplementedError` stubs.
 
@@ -100,7 +100,7 @@ Use `rng.choice` for random seeds and route selection. WorstRemoval ranks margin
 
 - [ ] **Step 4: Run invariant tests across seeds and the full suite**
 
-Run: `cd phase1 && python -m pytest tests/test_destroy.py -v && python -m pytest tests -q`
+Run: `cd phase1 && uv run pytest tests/test_destroy.py -v && uv run pytest tests -q`
 
 Expected: all operators pass partition invariants for seeds 0–19.
 
