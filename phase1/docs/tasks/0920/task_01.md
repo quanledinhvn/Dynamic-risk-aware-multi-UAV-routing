@@ -24,7 +24,7 @@
 - Consumes: không có.
 - Produces: toàn bộ dataclass trong “Stable interface contracts”; `ALNSConfig.validate() -> None`; `ALNSConfig.from_dict(dict[str, object]) -> ALNSConfig`.
 
-- [ ] **Step 1: Write behavioral configuration and immutability tests**
+- [x] **Step 1: Write behavioral configuration and immutability tests**
 
 ```python
 def test_default_config_is_valid():
@@ -55,7 +55,7 @@ def test_from_dict_constructs_and_validates():
         ALNSConfig.from_dict({"iterations": 0})
 ```
 
-- [ ] **Step 2: Extend the existing uv package with importable domain/config scaffolds, then verify behavioral RED**
+- [x] **Step 2: Extend the existing uv package with importable domain/config scaffolds, then verify behavioral RED**
 
 Keep the `uv` package metadata created during Phase 1 setup. Add the dataclasses from “Stable interface contracts”; in `config.py`, declare all public fields but deliberately leave validation behavior neutral:
 
@@ -95,7 +95,7 @@ Run: `cd phase1 && uv run pytest tests/test_config.py -v`
 
 Expected: test collection succeeds; default config and immutable solution tests pass; invalid-config cases fail with `DID NOT RAISE ValueError` because validation behavior is not implemented yet.
 
-- [ ] **Step 3: Implement declarative validation with one error branch**
+- [x] **Step 3: Implement declarative validation with one error branch**
 
 Replace the two scaffold methods inside `ALNSConfig` with:
 
@@ -141,13 +141,13 @@ Cách table-driven này được chọn vì không thêm dependency và gom các
 
 Keep `requires-python = ">=3.11"`, runtime dependency `numpy>=2.0`, `pytest>=8.0` in `dependency-groups.dev`, the `uv_build` backend, and the `src` package layout in `pyproject.toml`.
 
-- [ ] **Step 4: Run the focused test and package import check**
+- [x] **Step 4: Run the focused test and package import check**
 
 Run: `cd phase1 && uv run pytest tests/test_config.py -v && uv run python -c 'from uav_routing.config import ALNSConfig; ALNSConfig().validate()'`
 
 Expected: all tests pass and the import command exits 0.
 
-- [ ] **Step 5: Commit the foundation**
+- [x] **Step 5: Commit the foundation**
 
 ```bash
 git add phase1/pyproject.toml phase1/src/uav_routing phase1/tests/test_config.py
