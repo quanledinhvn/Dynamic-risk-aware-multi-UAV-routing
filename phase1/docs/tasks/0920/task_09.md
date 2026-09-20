@@ -21,7 +21,7 @@
 - Consumes: Tasks 4, 5, 7 and 8 plus `ALNSConfig`.
 - Produces: `accept_candidate(current, candidate, temperature, rng) -> Acceptance`; `run_alns(instance, config) -> SearchResult`.
 
-- [ ] **Step 1: Write acceptance branch, cooling, reward and orchestration tests**
+- [x] **Step 1: Write acceptance branch, cooling, reward and orchestration tests**
 
 ```python
 def test_fewer_vehicles_is_always_accepted(rng):
@@ -42,7 +42,7 @@ def test_temperature_respects_floor():
     assert cool_temperature(.01, .5, .008) == .008
 ```
 
-- [ ] **Step 2: Add importable ALNS function stubs, then verify behavioral RED**
+- [x] **Step 2: Add importable ALNS function stubs, then verify behavioral RED**
 
 ```python
 @dataclass(frozen=True)
@@ -70,7 +70,7 @@ Run: `cd phase1 && uv run pytest tests/test_alns.py -v`
 
 Expected: module imports and tests collect; acceptance, cooling and search tests fail at the invoked stub.
 
-- [ ] **Step 3: Implement the exact iteration state machine**
+- [x] **Step 3: Implement the exact iteration state machine**
 
 ```python
 rng = np.random.default_rng(config.seed)
@@ -92,13 +92,13 @@ for iteration in range(config.iterations):
 
 Reward precedence is best-so-far `20`, current improvement `10`, accepted worse `2`, otherwise `0`; the same reward goes to the selected destroy and repair. A candidate with equal score is accepted but receives `0`. Copy-on-write immutable solutions ensure rejection and repair failure cannot mutate `current`. At exit, reevaluate `best` through a fresh `Evaluator` and raise `SearchInvariantError` if infeasible.
 
-- [ ] **Step 4: Run ALNS unit tests and a 20-iteration small-instance test**
+- [x] **Step 4: Run ALNS unit tests and a 20-iteration small-instance test**
 
 Run: `cd phase1 && uv run pytest tests/test_alns.py -v && uv run pytest tests -q`
 
 Expected: all tests pass; final best score is no worse than the initial score.
 
-- [ ] **Step 5: Commit the search loop**
+- [x] **Step 5: Commit the search loop**
 
 ```bash
 git add phase1/src/uav_routing/alns.py phase1/tests/test_alns.py
