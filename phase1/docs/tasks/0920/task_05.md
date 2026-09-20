@@ -21,7 +21,7 @@
 - Consumes: current feasible `Solution`, `Instance`, `Evaluator`, one shared `Generator`.
 - Produces: `DestroyResult(partial: Solution, removed: tuple[int, ...])` and classes `RandomRemoval`, `WorstRemoval`, `RelatedRemoval`, `RouteRemoval`, `RiskPriorityRemoval`, each implementing `DestroyOperator.apply(solution, instance, evaluator, rng, q) -> DestroyResult`.
 
-- [ ] **Step 1: Write invariant and operator-specific tests**
+- [x] **Step 1: Write invariant and operator-specific tests**
 
 ```python
 @pytest.mark.parametrize("operator", all_destroy_operators())
@@ -47,7 +47,7 @@ def test_relatedness_combines_four_normalized_terms(instance):
     assert relatedness(instance, 1, 2, weights) == pytest.approx(known_value)
 ```
 
-- [ ] **Step 2: Add importable destroy-operator stubs, then verify behavioral RED**
+- [x] **Step 2: Add importable destroy-operator stubs, then verify behavioral RED**
 
 ```python
 @dataclass(frozen=True)
@@ -87,7 +87,7 @@ Run: `cd phase1 && uv run pytest tests/test_destroy.py -v`
 
 Expected: module imports and tests collect; relatedness and operator calls fail at their `NotImplementedError` stubs.
 
-- [ ] **Step 3: Implement shared removal plus exact selection policies**
+- [x] **Step 3: Implement shared removal plus exact selection policies**
 
 ```python
 def remove_customers(solution: Solution, selected: Collection[int]) -> DestroyResult:
@@ -98,13 +98,13 @@ def remove_customers(solution: Solution, selected: Collection[int]) -> DestroyRe
 
 Use `rng.choice` for random seeds and route selection. WorstRemoval ranks marginal route-objective decrease, then samples index `floor(U^p * remaining_count)` with configurable `p=6`. RelatedRemoval normalizes each term by the maximum non-zero pairwise value and repeatedly selects from similarity rank using the same powered index. RiskPriorityRemoval ranks descending priority and samples within that ranking with powered index. Clamp normal destroy count to `min(q, served_customer_count)`; RouteRemoval always removes the selected full route. Never mutate the input solution.
 
-- [ ] **Step 4: Run invariant tests across seeds and the full suite**
+- [x] **Step 4: Run invariant tests across seeds and the full suite**
 
 Run: `cd phase1 && uv run pytest tests/test_destroy.py -v && uv run pytest tests -q`
 
 Expected: all operators pass partition invariants for seeds 0–19.
 
-- [ ] **Step 5: Commit destroy neighborhoods**
+- [x] **Step 5: Commit destroy neighborhoods**
 
 ```bash
 git add phase1/src/uav_routing/destroy.py phase1/tests/test_destroy.py
