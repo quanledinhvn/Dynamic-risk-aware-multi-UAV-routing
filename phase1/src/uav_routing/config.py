@@ -28,6 +28,45 @@ class ALNSConfig:
     reward_accepted: float = 2.0
 
     def validate(self) -> None:
+        integer_fields = {
+            "iterations": self.iterations,
+            "seed": self.seed,
+            "q_min": self.q_min,
+            "q_max": self.q_max,
+            "segment_length": self.segment_length,
+        }
+        real_fields = {
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "reaction_factor": self.reaction_factor,
+            "initial_temperature": self.initial_temperature,
+            "cooling_rate": self.cooling_rate,
+            "minimum_temperature": self.minimum_temperature,
+            "minimum_weight": self.minimum_weight,
+            "removal_determinism": self.removal_determinism,
+            "related_distance_weight": self.related_distance_weight,
+            "related_time_weight": self.related_time_weight,
+            "related_demand_weight": self.related_demand_weight,
+            "related_risk_weight": self.related_risk_weight,
+            "reward_best": self.reward_best,
+            "reward_improve": self.reward_improve,
+            "reward_accepted": self.reward_accepted,
+        }
+        type_errors = [
+            f"{name} must be an integer"
+            for name, value in integer_fields.items()
+            if isinstance(value, bool) or not isinstance(value, int)
+        ]
+        type_errors.extend(
+            f"{name} must be a finite number"
+            for name, value in real_fields.items()
+            if isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+        )
+        if type_errors:
+            raise ValueError("; ".join(type_errors))
+
         related = (
             self.related_distance_weight,
             self.related_time_weight,

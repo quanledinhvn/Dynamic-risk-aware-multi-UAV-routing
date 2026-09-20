@@ -241,20 +241,4 @@ def _powered_index(
 def _route_cost(evaluator: Evaluator, route: tuple[int, ...]) -> float:
     if not route:
         return 0.0
-    evaluated = evaluator.route(route)
-    weighted_delay = 0.0
-    for stop in evaluated.schedule:
-        customer = evaluator._customers[stop.customer_id]
-        index = evaluator._matrix_index[stop.customer_id]
-        relative_delay = (stop.service_start - customer.ready_time) / max(
-            1.0, customer.due_date - customer.ready_time
-        )
-        weighted_delay += (
-            float(evaluator.instance.risk_priority[index]) * relative_delay
-        )
-    total_priority = float(sum(evaluator.instance.risk_priority[1:]))
-    risk = weighted_delay / total_priority if total_priority > 0 else 0.0
-    return (
-        evaluator.alpha * evaluated.distance / evaluator.d_ref
-        + evaluator.beta * risk
-    )
+    return evaluator.solution(Solution((route,))).objective

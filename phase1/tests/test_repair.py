@@ -10,6 +10,7 @@ from uav_routing.repair import (
     RepairContext,
     RepairResult,
     RiskPriorityRepair,
+    best_insertion,
 )
 
 from helpers import make_instance
@@ -79,3 +80,31 @@ def test_duplicate_removed_customer_fails_without_partial_result(repair):
     _, _, context = broad_context()
     result = repair.apply(Solution(((1,),)), (2, 2, 3, 4, 5), context)
     assert result == RepairResult(False, None)
+
+
+@pytest.mark.parametrize(
+    "repair", [GreedyRepair(), Regret2Repair(), RiskPriorityRepair()]
+)
+def test_failed_repair_discards_solution_after_a_successful_insertion(repair):
+    instance = make_instance(
+        (
+            Customer(1, 1, 0, 1, 0, 100, 0),
+            Customer(2, 2, 0, 1, 0, 100, 0),
+            Customer(3, 3, 0, 1, 0, 100, 0),
+        ),
+        max_vehicles=1,
+        capacity=2,
+        priorities=(0.0, 1.0, 0.0),
+    )
+    evaluator = Evaluator(instance, 10, 0.5, 0.5)
+    context = RepairContext(instance, evaluator, 10, 0.5, 0.5)
+    partial = Solution(((1,),))
+
+    first = best_insertion(partial, 2, context)
+    assert first is not None
+    assert best_insertion(first.solution, 3, context) is None
+
+    result = repair.apply(partial, (2, 3), context)
+
+    assert result == RepairResult(False, None)
+    assert partial == Solution(((1,),))

@@ -26,24 +26,12 @@ class RepairContext:
     beta: float
 
     def evaluate_partial(self, partial: Solution) -> "PartialEvaluation":
-        distance = 0.0
-        weighted_delay = 0.0
-        for route in partial.routes:
-            evaluated = self.evaluator.route(route)
-            distance += evaluated.distance
-            for stop in evaluated.schedule:
-                customer = self.evaluator._customers[stop.customer_id]
-                index = self.evaluator._matrix_index[stop.customer_id]
-                relative_delay = (stop.service_start - customer.ready_time) / max(
-                    1.0, customer.due_date - customer.ready_time
-                )
-                weighted_delay += (
-                    float(self.instance.risk_priority[index]) * relative_delay
-                )
-        total_priority = float(sum(self.instance.risk_priority[1:]))
-        risk_delay = weighted_delay / total_priority if total_priority > 0 else 0.0
-        objective = self.alpha * distance / self.d_ref + self.beta * risk_delay
-        return PartialEvaluation(distance, risk_delay, objective)
+        evaluated = self.evaluator.solution(partial)
+        return PartialEvaluation(
+            evaluated.distance,
+            evaluated.risk_delay,
+            evaluated.objective,
+        )
 
 
 @dataclass(frozen=True)

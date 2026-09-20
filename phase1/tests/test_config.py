@@ -40,6 +40,40 @@ def test_invalid_config_is_rejected(changes):
         config.validate()
 
 
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"iterations": 1.5},
+        {"q_min": True},
+        {"q_max": 2.5},
+        {"segment_length": 10.5},
+        {"seed": False},
+        {"iterations": "10"},
+    ],
+)
+def test_count_fields_require_integers(changes):
+    with pytest.raises(ValueError):
+        replace(ALNSConfig(), **changes).validate()
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"alpha": float("nan")},
+        {"beta": float("inf")},
+        {"initial_temperature": float("inf")},
+        {"minimum_weight": float("nan")},
+        {"related_risk_weight": float("inf")},
+        {"reward_best": float("nan")},
+        {"cooling_rate": True},
+        {"alpha": "0.5"},
+    ],
+)
+def test_real_parameters_must_be_finite_numbers(changes):
+    with pytest.raises(ValueError):
+        replace(ALNSConfig(), **changes).validate()
+
+
 def test_solution_routes_are_immutable():
     solution = Solution(routes=((1, 2),))
     with pytest.raises(TypeError):
