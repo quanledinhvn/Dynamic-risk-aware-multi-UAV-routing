@@ -20,10 +20,26 @@ def _write_executable(path: Path, text: str) -> None:
 
 @pytest.fixture
 def fake_tools(tmp_path: Path) -> tuple[dict[str, str], Path]:
+    isolated_root = tmp_path / "repo"
+    (isolated_root / "scripts").mkdir(parents=True)
+    (isolated_root / "infra/skypilot").mkdir(parents=True)
+    (isolated_root / "phase1/configs").mkdir(parents=True)
+
+    shutil.copy2(SCRIPT, isolated_root / "scripts/sky_benchmark.sh")
+    shutil.copy2(
+        ROOT / "infra/skypilot/benchmark.yaml",
+        isolated_root / "infra/skypilot/benchmark.yaml",
+    )
+    shutil.copy2(
+        DEFAULT_CONFIG,
+        isolated_root / "phase1/configs/benchmark_p1_c25_r1.json",
+    )
+
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
 
     log_path = tmp_path / "commands.jsonl"
+    cwd_log_path = tmp_path / "working-directories.jsonl"
     fake = """#!/usr/bin/env python3
 import json
 import os
@@ -39,8 +55,18 @@ if name == "date":
 with Path(os.environ["FAKE_COMMAND_LOG"]).open("a", encoding="utf-8") as handle:
     handle.write(json.dumps([name, *sys.argv[1:]]) + "\\n")
 
+with Path(os.environ["FAKE_CWD_LOG"]).open("a", encoding="utf-8") as handle:
+    handle.write(json.dumps([name, os.getcwd()]) + "\\n")
+
 selected = os.environ.get("FAKE_FAIL_SUBCOMMAND")
 actual = sys.argv[1] if name == "sky" and len(sys.argv) > 1 else name
+state_action = os.environ.get("FAKE_STATE_ACTION")
+if actual == "logs" and "--follow" in sys.argv and state_action:
+    state_path = Path(os.environ["FAKE_STATE_PATH"])
+    if state_action == "remove":
+        state_path.unlink(missing_ok=True)
+    elif state_action == "malform":
+        state_path.write_text("run_id=../../bad\\nremote_output=/tmp/bad\\n")
 if os.environ.get("FAKE_TERM_SUBCOMMAND") == actual:
     os.kill(os.getppid(), signal.SIGTERM)
 raise SystemExit(23 if selected == actual else 0)
@@ -51,13 +77,21 @@ raise SystemExit(23 if selected == actual else 0)
     env = os.environ.copy()
     env["PATH"] = f"{bin_dir}:{env['PATH']}"
     env["FAKE_COMMAND_LOG"] = str(log_path)
+    env["FAKE_CWD_LOG"] = str(cwd_log_path)
+    env["TEST_REPO_ROOT"] = str(isolated_root)
+    env["FAKE_STATE_PATH"] = str(
+        isolated_root / ".sky-benchmark/uav-benchmark.state"
+    )
 
     return env, log_path
 
 
 def _run(*args: str, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    root = Path(env.get("TEST_REPO_ROOT", ROOT))
+    script = root / "scripts/sky_benchmark.sh"
+
     return subprocess.run(
-        [str(SCRIPT), *args],
+        [str(script), *args],
         cwd="/tmp",
         env=env,
         text=True,
@@ -71,6 +105,23 @@ def _commands(log_path: Path) -> list[list[str]]:
         return []
 
     return [json.loads(line) for line in log_path.read_text().splitlines()]
+
+
+def _repo(env: dict[str, str]) -> Path:
+    return Path(env["TEST_REPO_ROOT"])
+
+
+def _working_directories(env: dict[str, str]) -> list[list[str]]:
+    path = Path(env["FAKE_CWD_LOG"])
+    return [json.loads(line) for line in path.read_text().splitlines()]
+
+
+def test_fake_tools_uses_isolated_repository(fake_tools, tmp_path: Path) -> None:
+    env, _ = fake_tools
+    isolated_root = Path(env["TEST_REPO_ROOT"])
+
+    assert isolated_root.is_relative_to(tmp_path)
+    assert isolated_root != ROOT
 
 
 def test_check_fails_when_sky_is_missing(tmp_path: Path) -> None:
@@ -117,7 +168,10 @@ def test_config_outside_repository_is_rejected_before_sky(
 ) -> None:
     env, log_path = fake_tools
     external = tmp_path / "benchmark.json"
-    shutil.copyfile(DEFAULT_CONFIG, external)
+    shutil.copyfile(
+        _repo(env) / "phase1/configs/benchmark_p1_c25_r1.json",
+        external,
+    )
 
     result = _run("check", "--config", str(external), env=env)
 
@@ -127,13 +181,10 @@ def test_config_outside_repository_is_rejected_before_sky(
 
 
 @pytest.fixture
-def cluster_state() -> Path:
-    path = ROOT / ".sky-benchmark/uav-benchmark.state"
-    path.unlink(missing_ok=True)
-
+def cluster_state(fake_tools) -> Path:
+    env, _ = fake_tools
+    path = _repo(env) / ".sky-benchmark/uav-benchmark.state"
     yield path
-
-    path.unlink(missing_ok=True)
 
 
 def test_launch_passes_defaults_and_records_state_after_success(
@@ -165,7 +216,7 @@ def test_launch_passes_defaults_and_records_state_after_success(
             "BENCHMARK_WORKERS=8",
             "--env",
             "BENCHMARK_OUTPUT_DIR=phase1/results/sky/20260922T120000Z",
-            str(ROOT / "infra/skypilot/benchmark.yaml"),
+            str(_repo(env) / "infra/skypilot/benchmark.yaml"),
         ],
     ]
     assert cluster_state.read_text(encoding="utf-8") == (
@@ -174,12 +225,25 @@ def test_launch_passes_defaults_and_records_state_after_success(
     )
 
 
+def test_launch_runs_sky_from_repository_root(
+    fake_tools, cluster_state: Path
+) -> None:
+    env, _ = fake_tools
+    result = _run("launch", env=env)
+
+    assert result.returncode == 0
+    assert _working_directories(env)[1] == ["sky", str(_repo(env))]
+
+
 def test_launch_preserves_config_path_with_spaces(
     fake_tools, cluster_state: Path
 ) -> None:
     env, log_path = fake_tools
-    config = ROOT / "phase1/configs/benchmark spaced.json"
-    shutil.copyfile(DEFAULT_CONFIG, config)
+    config = _repo(env) / "phase1/configs/benchmark spaced.json"
+    shutil.copyfile(
+        _repo(env) / "phase1/configs/benchmark_p1_c25_r1.json",
+        config,
+    )
 
     try:
         result = _run("launch", "--config", str(config), env=env)
@@ -222,7 +286,7 @@ def test_download_uses_validated_state_paths(
             "-az",
             "--",
             "uav-benchmark:~/sky_workdir/phase1/results/sky/20260922T120000Z/",
-            str(ROOT / "phase1/results/sky/20260922T120000Z") + "/",
+            str(_repo(env) / "phase1/results/sky/20260922T120000Z") + "/",
         ]
     ]
 
@@ -275,6 +339,34 @@ def test_run_orders_launch_logs_download_and_down(
         "rsync",
         "down",
     ]
+
+
+def test_run_stops_before_provision_when_preflight_fails(
+    fake_tools, cluster_state: Path
+) -> None:
+    env, log_path = fake_tools
+    env["FAKE_FAIL_SUBCOMMAND"] = "check"
+
+    result = _run("run", env=env)
+
+    assert result.returncode != 0
+    assert _commands(log_path) == [["sky", "check", "aws"]]
+
+
+@pytest.mark.parametrize("state_action", ["remove", "malform"])
+def test_run_rejects_invalid_state_before_rsync_and_cleans_up(
+    fake_tools, cluster_state: Path, state_action: str
+) -> None:
+    env, log_path = fake_tools
+    env["FAKE_STATE_ACTION"] = state_action
+
+    result = _run("run", env=env)
+    commands = _commands(log_path)
+
+    assert result.returncode != 0
+    assert not any(command[0] == "rsync" for command in commands)
+    assert ["sky", "logs", "uav-benchmark", "--no-follow"] in commands
+    assert commands[-1] == ["sky", "down", "--yes", "uav-benchmark"]
 
 
 @pytest.mark.parametrize("failing_command", ["launch", "logs", "rsync"])

@@ -155,21 +155,26 @@ require_command() {
 }
 
 check_preflight() {
-  require_command sky SkyPilot
-  require_command rsync rsync
+  require_command sky SkyPilot || return $?
+  require_command rsync rsync || return $?
 
   if [[ ! -f "$repo_root/infra/skypilot/benchmark.yaml" ]]; then
     die "Không tìm thấy SkyPilot task YAML."
+    return 1
   fi
 
-  sky check aws
+  sky check aws || return $?
 }
 
 launch_benchmark() {
-  check_preflight
+  local preflight_complete="${1:-false}"
+  local arm_run_cleanup="${2:-false}"
+  if [[ "$preflight_complete" != "true" ]]; then
+    check_preflight || return $?
+  fi
 
   local run_id
-  run_id="$(date -u +%Y%m%dT%H%M%SZ)"
+  run_id="$(date -u +%Y%m%dT%H%M%SZ)" || return $?
 
   local remote_output="phase1/results/sky/$run_id"
   local task_file="$repo_root/infra/skypilot/benchmark.yaml"
@@ -190,22 +195,30 @@ launch_benchmark() {
   fi
 
   launch_args+=("$task_file")
-  sky "${launch_args[@]}" || return $?
+  if [[ "$arm_run_cleanup" == "true" ]]; then
+    cleanup_armed="true"
+  fi
+
+  (
+    cd "$repo_root"
+    sky "${launch_args[@]}"
+  ) || return $?
 
   local state_dir="$repo_root/.sky-benchmark"
   local state_file="$state_dir/$cluster.state"
   local state_tmp="$state_file.tmp.$$"
-  mkdir -p "$state_dir"
+  mkdir -p "$state_dir" || return $?
 
   printf 'run_id=%s\nremote_output=%s\n' \
-    "$run_id" "$remote_output" >"$state_tmp"
-  mv "$state_tmp" "$state_file"
+    "$run_id" "$remote_output" >"$state_tmp" || return $?
+  mv "$state_tmp" "$state_file" || return $?
 }
 
 read_state() {
   local state_file="$repo_root/.sky-benchmark/$cluster.state"
   if [[ ! -f "$state_file" ]]; then
     die "Không tìm thấy state hợp lệ cho cluster $cluster."
+    return 1
   fi
 
   run_id=""
@@ -235,35 +248,37 @@ read_state() {
 
   if [[ "$invalid" == "true" || ! "$run_id" =~ ^[0-9]{8}T[0-9]{6}Z$ ]]; then
     die "Tệp state không hợp lệ: $state_file"
+    return 1
   fi
 
   if [[ "$remote_output" != "phase1/results/sky/$run_id" ]]; then
     die "Tệp state có remote output không hợp lệ."
+    return 1
   fi
 }
 
 download_artifacts() {
-  require_command rsync rsync
-  read_state
+  require_command rsync rsync || return $?
+  read_state || return $?
 
   local local_output="$repo_root/$remote_output"
-  mkdir -p "$(dirname "$local_output")"
+  mkdir -p "$(dirname "$local_output")" || return $?
 
   rsync -az -- \
     "$cluster:~/sky_workdir/$remote_output/" \
-    "$local_output/"
+    "$local_output/" || return $?
 }
 
 follow_logs() {
-  require_command sky SkyPilot
-  sky logs "$cluster" --follow
+  require_command sky SkyPilot || return $?
+  sky logs "$cluster" --follow || return $?
 }
 
 down_cluster() {
-  require_command sky SkyPilot
+  require_command sky SkyPilot || return $?
   printf 'Đang hủy cluster: %s\n' "$cluster" >&2
 
-  sky down --yes "$cluster"
+  sky down --yes "$cluster" || return $?
 }
 
 cleanup_failed_run() {
@@ -303,9 +318,9 @@ run_workflow() {
   trap cleanup_failed_run EXIT
   trap 'exit_for_signal 130' INT
   trap 'exit_for_signal 143' TERM
-  cleanup_armed="true"
 
-  launch_benchmark || return $?
+  check_preflight || return $?
+  launch_benchmark true true || return $?
   follow_logs || return $?
   download_artifacts || return $?
 
