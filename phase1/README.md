@@ -103,6 +103,7 @@ Cấu hình mặc định: 9 bộ dữ liệu, 25 khách hàng, 10 seed (`0`–`
 ```bash
 uv run python -m uav_routing.experiment \
   --config configs/benchmark.json \
+  --workers 8 \
   --output-dir results/benchmark
 ```
 
@@ -113,13 +114,17 @@ uv run python -m uav_routing.experiment \
   --config configs/benchmark.json \
   --iterations 2 \
   --seeds 0 \
+  --workers 2 \
   --output-dir results/smoke
 ```
 
 - `raw.csv`: một dòng cho mỗi cặp bộ dữ liệu/seed.
 - `aggregate.csv`: thống kê theo bộ dữ liệu, số khách hàng, số vòng lặp, `alpha`, `beta`.
 - Chỉ số tổng hợp: số lượt chạy, trung bình, độ lệch chuẩn mẫu, tốt nhất và kém nhất; độ lệch chuẩn bằng `0` nếu chỉ có một lượt.
-- Kết quả được lưu nguyên tử sau mỗi lượt chạy.
+- `--workers N` chạy tối đa `N` cặp bộ dữ liệu/seed đồng thời bằng nhiều process; mặc định là `1`.
+- Khi chạy song song, process chính ghi kết quả mỗi job vào JSON nguyên tử trong `.tmp/<run-id>` và chỉ tạo CSV sau khi mọi job thành công.
+- Thư mục tạm được xóa sau khi tổng hợp thành công và được giữ lại nếu benchmark thất bại.
+- Khi gọi API với `solver` tùy biến và nhiều worker, callable phải hỗ trợ pickle; CLI mặc định luôn dùng solver hợp lệ.
 - Benchmark dừng nếu gặp nghiệm không khả thi.
 
 ## Khả năng tái lập
