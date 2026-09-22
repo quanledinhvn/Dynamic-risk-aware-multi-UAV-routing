@@ -127,6 +127,18 @@ uv run python -m uav_routing.experiment \
 - Khi gọi API với `solver` tùy biến và nhiều worker, callable phải hỗ trợ pickle; CLI mặc định luôn dùng solver hợp lệ.
 - Benchmark dừng nếu gặp nghiệm không khả thi.
 
+## Chạy benchmark trên AWS
+
+Xem hướng dẫn cài đặt, dry run, kiểm soát chi phí và xử lý sự cố tại [runbook SkyPilot](../infra/skypilot/README.md).
+
+Từ thư mục `phase1`, chạy preflight rồi thực hiện toàn bộ luồng benchmark:
+
+```bash
+cd ..
+scripts/sky_benchmark.sh check
+scripts/sky_benchmark.sh run
+```
+
 ## Khả năng tái lập
 
 - Mỗi lượt chạy dùng một `numpy.random.Generator` khởi tạo từ seed.
