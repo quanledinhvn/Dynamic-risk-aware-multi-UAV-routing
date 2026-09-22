@@ -3,11 +3,16 @@
 import argparse
 import csv
 import json
+import pickle
+import shutil
 import statistics
 import sys
 from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, replace
 from pathlib import Path
+from tempfile import gettempdir
+from uuid import uuid4
 
 from .alns import run_alns
 from .cli import result_to_dict
@@ -65,6 +70,7 @@ class BenchmarkConfig:
     customer_limit: int = 25
     risk_limit: int = 5
     checkpoint_dir: Path | None = None
+    workers: int = 1
 
 
 def run_benchmark(
@@ -73,12 +79,22 @@ def run_benchmark(
     _validate_benchmark_config(config)
 
     solve = solver or _solve_one
+
+    if config.workers == 1:
+        return _run_sequential(config, solve)
+
+    return _run_parallel(config, solve)
+
+
+def _run_sequential(
+    config: BenchmarkConfig, solve: Callable
+) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
 
     for instance_path in config.instance_paths:
         for seed in config.seeds:
             alns = replace(config.alns, seed=seed)
-            
+
             alns.validate()
 
             row = solve(
@@ -88,10 +104,7 @@ def run_benchmark(
                 config.risk_limit,
             )
 
-            if not bool(row["feasible"]):
-                raise RuntimeError(
-                    f"infeasible benchmark run: {instance_path} seed={seed}"
-                )
+            _validate_feasible_row(row, instance_path, seed)
 
             rows.append(dict(row))
 
@@ -99,6 +112,117 @@ def run_benchmark(
                 write_results(rows, config.checkpoint_dir)
 
     return rows
+
+
+def _run_parallel(
+    config: BenchmarkConfig, solve: Callable
+) -> list[dict[str, object]]:
+    try:
+        pickle.dumps(solve)
+    except (AttributeError, pickle.PickleError, TypeError) as exc:
+        raise ValueError("parallel benchmark solver must be picklable") from exc
+
+    run_dir = _create_run_directory(config.checkpoint_dir)
+    jobs: list[tuple[int, Path, int, Path]] = []
+
+    index = 0
+
+    for instance_path in config.instance_paths:
+        for seed in config.seeds:
+            result_path = run_dir / f"{index:04d}.json"
+            jobs.append((index, instance_path, seed, result_path))
+
+            index += 1
+
+    futures = {}
+
+    try:
+        with ProcessPoolExecutor(max_workers=config.workers) as executor:
+            for _, instance_path, seed, result_path in jobs:
+                alns = replace(config.alns, seed=seed)
+                alns.validate()
+
+                future = executor.submit(
+                    _solve_job,
+                    solve,
+                    instance_path,
+                    alns,
+                    config.customer_limit,
+                    config.risk_limit,
+                )
+                futures[future] = result_path
+
+            try:
+                for future in as_completed(futures):
+                    row = future.result()
+                    _write_json_atomic(futures[future], row)
+            except BaseException:
+                for future in futures:
+                    future.cancel()
+
+                raise
+
+        rows = [_read_result(path) for _, _, _, path in jobs]
+
+        if config.checkpoint_dir is not None:
+            write_results(rows, config.checkpoint_dir)
+    except BaseException:
+        raise
+    else:
+        shutil.rmtree(run_dir)
+
+        try:
+            run_dir.parent.rmdir()
+        except OSError:
+            pass
+
+    return rows
+
+
+def _solve_job(
+    solve: Callable,
+    instance_path: Path,
+    alns: ALNSConfig,
+    customer_limit: int,
+    risk_limit: int,
+) -> dict[str, object]:
+    row = solve(instance_path, alns, customer_limit, risk_limit)
+    _validate_feasible_row(row, instance_path, alns.seed)
+
+    return dict(row)
+
+
+def _validate_feasible_row(
+    row: dict[str, object], instance_path: Path, seed: int
+) -> None:
+    if not bool(row["feasible"]):
+        raise RuntimeError(
+            f"infeasible benchmark run: {instance_path} seed={seed}"
+        )
+
+
+def _create_run_directory(output_dir: Path | None) -> Path:
+    if output_dir is None:
+        temporary_root = Path(gettempdir()) / "uav-routing-benchmark"
+    else:
+        temporary_root = output_dir / ".tmp"
+
+    run_dir = temporary_root / f"run-{uuid4().hex}"
+    run_dir.mkdir(parents=True, exist_ok=False)
+
+    return run_dir
+
+
+def _write_json_atomic(path: Path, row: dict[str, object]) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    payload = json.dumps(row, indent=2)
+
+    temporary.write_text(payload + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def _read_result(path: Path) -> dict[str, object]:
+    return dict(json.loads(path.read_text(encoding="utf-8")))
 
 
 def write_results(rows: list[dict[str, object]], output_dir: Path) -> tuple[Path, Path]:
@@ -138,6 +262,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--iterations", type=int)
     parser.add_argument("--seeds", type=int, nargs="+")
+    parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--output-dir", type=Path, default=Path("results"))
 
     return parser
@@ -151,12 +276,12 @@ def _benchmark_config_from_args(args: argparse.Namespace) -> BenchmarkConfig:
         alns = replace(alns, iterations=args.iterations)
 
     seeds = tuple(args.seeds) if args.seeds is not None else config.seeds
-
     return replace(
         config,
         seeds=seeds,
         alns=alns,
         checkpoint_dir=args.output_dir,
+        workers=args.workers,
     )
 
 
@@ -264,6 +389,9 @@ def _validate_benchmark_config(config: BenchmarkConfig) -> None:
 
     if not 0 <= config.risk_limit <= 5:
         raise ValueError("risk_limit must be between 0 and 5")
+
+    if config.workers <= 0:
+        raise ValueError("workers must be positive")
 
 
 if __name__ == "__main__":

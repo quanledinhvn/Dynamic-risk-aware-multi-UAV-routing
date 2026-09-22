@@ -11,4 +11,76 @@ uv run python -m uav_routing.cli solve \
 
   uv run python -m uav_routing.experiment \
   --config configs/benchmark.json \
+  --workers 8 \
   --output-dir results/benchmark
+
+
+camber stash cp -r dataset/solomon_risk \
+  stash://quanledinhd/projects/dynamic-risk-aware-uav/dataset/solomon_risk
+
+camber stash cp -r phase1 \
+  stash://quanledinhd/projects/dynamic-risk-aware-uav/phase1 \
+  --use-gitignore \
+  --exclude ".venv/**" \
+  --exclude ".pytest_cache/**" \
+  --exclude ".ruff_cache/**" \
+  --exclude "**/__pycache__/**"
+
+
+
+%%bash
+uv run python -m uav_routing.experiment \
+  --config configs/benchmark.json \
+  --workers 8 \
+  --iterations 2 \
+  --seeds 0 \
+  --output-dir results/smoke-camber
+
+
+
+%%bash
+uv run python -m uav_routing.experiment \
+  --config configs/benchmark.json \
+  --workers 2 \
+  --output-dir results/benchmark
+
+cat > configs/benchmark.json <<'JSON'
+{
+  "instances": [
+    "../dataset/solomon_risk/c101.txt",
+    "../dataset/solomon_risk/c102.txt",
+    "../dataset/solomon_risk/c103.txt",
+    "../dataset/solomon_risk/r101.txt",
+    "../dataset/solomon_risk/r102.txt",
+    "../dataset/solomon_risk/r103.txt",
+    "../dataset/solomon_risk/rc101.txt",
+    "../dataset/solomon_risk/rc102.txt",
+    "../dataset/solomon_risk/rc103.txt"
+  ],
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "customers": 100,
+  "risks": 5,
+  "alns": {
+    "iterations": 5000,
+    "seed": 0,
+    "alpha": 0.5,
+    "beta": 0.5,
+    "q_min": 2,
+    "q_max": 5,
+    "segment_length": 100,
+    "reaction_factor": 0.2,
+    "initial_temperature": 0.05,
+    "cooling_rate": 0.9995,
+    "minimum_temperature": 0.000001,
+    "minimum_weight": 0.1,
+    "removal_determinism": 6.0,
+    "related_distance_weight": 1.0,
+    "related_time_weight": 1.0,
+    "related_demand_weight": 1.0,
+    "related_risk_weight": 1.0,
+    "reward_best": 20.0,
+    "reward_improve": 10.0,
+    "reward_accepted": 2.0
+  }
+}
+JSON

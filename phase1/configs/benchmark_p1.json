@@ -1,0 +1,38 @@
+{
+  "instances": [
+    "../dataset/solomon_risk/c101.txt",
+    "../dataset/solomon_risk/c102.txt",
+    "../dataset/solomon_risk/c103.txt",
+    "../dataset/solomon_risk/r101.txt",
+    "../dataset/solomon_risk/r102.txt",
+    "../dataset/solomon_risk/r103.txt",
+    "../dataset/solomon_risk/rc101.txt",
+    "../dataset/solomon_risk/rc102.txt",
+    "../dataset/solomon_risk/rc103.txt"
+  ],
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "customers": 25,
+  "risks": 0,
+  "alns": {
+    "iterations": 1000,
+    "seed": 0,
+    "alpha": 0.5,
+    "beta": 0.5,
+    "q_min": 2,
+    "q_max": 5,
+    "segment_length": 100,
+    "reaction_factor": 0.2,
+    "initial_temperature": 0.05,
+    "cooling_rate": 0.9995,
+    "minimum_temperature": 0.000001,
+    "minimum_weight": 0.1,
+    "removal_determinism": 6.0,
+    "related_distance_weight": 1.0,
+    "related_time_weight": 1.0,
+    "related_demand_weight": 1.0,
+    "related_risk_weight": 1.0,
+    "reward_best": 20.0,
+    "reward_improve": 10.0,
+    "reward_accepted": 2.0
+  }
+}

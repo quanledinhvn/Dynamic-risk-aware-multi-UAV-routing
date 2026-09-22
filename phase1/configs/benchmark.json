@@ -1,20 +1,12 @@
 {
   "instances": [
-    "../dataset/solomon_risk/c101.txt",
-    "../dataset/solomon_risk/c102.txt",
-    "../dataset/solomon_risk/c103.txt",
-    "../dataset/solomon_risk/r101.txt",
-    "../dataset/solomon_risk/r102.txt",
-    "../dataset/solomon_risk/r103.txt",
-    "../dataset/solomon_risk/rc101.txt",
-    "../dataset/solomon_risk/rc102.txt",
-    "../dataset/solomon_risk/rc103.txt"
+    "../dataset/solomon_risk/c101.txt"
   ],
   "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-  "customers": 25,
+  "customers": 100,
   "risks": 5,
   "alns": {
-    "iterations": 10000,
+    "iterations": 100,
     "seed": 0,
     "alpha": 0.5,
     "beta": 0.5,

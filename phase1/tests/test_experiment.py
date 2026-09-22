@@ -1,10 +1,17 @@
 import csv
+import os
 import statistics
+import time
 from dataclasses import replace
 from pathlib import Path
 
 from uav_routing.config import ALNSConfig
-from uav_routing.experiment import BenchmarkConfig, run_benchmark, write_results
+from uav_routing.experiment import (
+    BenchmarkConfig,
+    _build_parser,
+    run_benchmark,
+    write_results,
+)
 
 
 def fake_solver(path, config, customer_limit, risk_limit):
@@ -25,6 +32,30 @@ def fake_solver(path, config, customer_limit, risk_limit):
         "runtime_seconds": 1.0,
         "feasible": True,
     }
+
+
+def process_solver(path, config, customer_limit, risk_limit):
+    row = fake_solver(path, config, customer_limit, risk_limit)
+    row["process_id"] = os.getpid()
+
+    return row
+
+
+def delayed_solver(path, config, customer_limit, risk_limit):
+    if config.seed == 1:
+        time.sleep(0.1)
+
+    return fake_solver(path, config, customer_limit, risk_limit)
+
+
+def partially_infeasible_solver(path, config, customer_limit, risk_limit):
+    row = fake_solver(path, config, customer_limit, risk_limit)
+
+    if config.seed == 2:
+        time.sleep(0.1)
+        row["feasible"] = False
+
+    return row
 
 
 def test_benchmark_runs_cartesian_product_in_stable_order():
@@ -48,6 +79,99 @@ def test_benchmark_runs_cartesian_product_in_stable_order():
         ("r101", 2),
         ("r101", 3),
     ]
+
+
+def test_parallel_benchmark_runs_in_child_processes():
+    config = BenchmarkConfig(
+        instance_paths=(Path("c101.txt"),),
+        seeds=(1, 2),
+        alns=replace(ALNSConfig(), iterations=4),
+        customer_limit=7,
+        risk_limit=3,
+        workers=2,
+    )
+
+    rows = run_benchmark(config, solver=process_solver)
+
+    assert {row["process_id"] for row in rows}.isdisjoint({os.getpid()})
+
+
+def test_parallel_benchmark_preserves_stable_order(tmp_path):
+    config = BenchmarkConfig(
+        instance_paths=(Path("c101.txt"), Path("r101.txt")),
+        seeds=(1, 2),
+        alns=replace(ALNSConfig(), iterations=4),
+        checkpoint_dir=tmp_path,
+        workers=2,
+    )
+
+    rows = run_benchmark(config, solver=delayed_solver)
+
+    assert [(row["instance"], row["seed"]) for row in rows] == [
+        ("c101", 1),
+        ("c101", 2),
+        ("r101", 1),
+        ("r101", 2),
+    ]
+
+
+def test_parallel_benchmark_removes_temporary_directory_after_success(tmp_path):
+    config = BenchmarkConfig(
+        instance_paths=(Path("c101.txt"),),
+        seeds=(1,),
+        alns=replace(ALNSConfig(), iterations=4),
+        checkpoint_dir=tmp_path,
+        workers=2,
+    )
+
+    run_benchmark(config, solver=fake_solver)
+
+    assert not (tmp_path / ".tmp").exists()
+
+
+def test_parallel_benchmark_retains_completed_jobs_after_failure(tmp_path):
+    config = BenchmarkConfig(
+        instance_paths=(Path("c101.txt"),),
+        seeds=(1, 2),
+        alns=replace(ALNSConfig(), iterations=4),
+        checkpoint_dir=tmp_path,
+        workers=2,
+    )
+
+    try:
+        run_benchmark(config, solver=partially_infeasible_solver)
+    except RuntimeError as exc:
+        assert "infeasible" in str(exc)
+    else:
+        raise AssertionError("parallel benchmark accepted an infeasible row")
+
+    assert list((tmp_path / ".tmp").glob("run-*/*.json"))
+    assert not (tmp_path / "raw.csv").exists()
+
+
+def test_parallel_benchmark_rejects_unpicklable_solver():
+    config = BenchmarkConfig(
+        instance_paths=(Path("c101.txt"),),
+        seeds=(1,),
+        alns=replace(ALNSConfig(), iterations=4),
+        workers=2,
+    )
+
+    def unpicklable_solver(*args):
+        return fake_solver(*args)
+
+    try:
+        run_benchmark(config, solver=unpicklable_solver)
+    except ValueError as exc:
+        assert "picklable" in str(exc)
+    else:
+        raise AssertionError("parallel benchmark accepted an unpicklable solver")
+
+
+def test_cli_defaults_to_one_worker():
+    args = _build_parser().parse_args(["--config", "benchmark.json"])
+
+    assert args.workers == 1
 
 
 def read_header(path):
@@ -168,3 +292,20 @@ def test_benchmark_rejects_risk_count_outside_zero_to_five():
         assert "risk_limit" in str(exc)
     else:
         raise AssertionError("invalid risk_limit was accepted")
+
+
+def test_benchmark_rejects_nonpositive_worker_count():
+    config = BenchmarkConfig(
+        instance_paths=(Path("c101.txt"),),
+        seeds=(1,),
+        alns=ALNSConfig(),
+        customer_limit=7,
+        workers=0,
+    )
+
+    try:
+        run_benchmark(config, solver=fake_solver)
+    except ValueError as exc:
+        assert "workers" in str(exc)
+    else:
+        raise AssertionError("nonpositive worker count was accepted")
