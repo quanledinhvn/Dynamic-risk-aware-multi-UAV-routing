@@ -47,7 +47,7 @@ class Evaluator:
         schedule, violations, load, distance, departure, previous_index = (
             self._build_route_schedule(route)
         )
-        
+
         return_leg = float(self.instance.distance_matrix[previous_index, 0])
         distance += return_leg
         depot_return = departure + return_leg
@@ -68,6 +68,7 @@ class Evaluator:
     ) -> tuple[list[StopSchedule], list[str], float, float, float, int]:
         schedule: list[StopSchedule] = []
         violations: list[str] = []
+
         load = 0.0
         distance = 0.0
         departure = 0.0
@@ -76,6 +77,7 @@ class Evaluator:
         for customer_id in route:
             customer = self._customers[customer_id]
             customer_index = self._matrix_index[customer_id]
+            
             leg = float(self.instance.distance_matrix[previous_index, customer_index])
 
             distance += leg

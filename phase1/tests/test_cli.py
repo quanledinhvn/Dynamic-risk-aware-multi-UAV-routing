@@ -25,6 +25,8 @@ def test_solve_writes_required_json_fields(tmp_path):
         str(C101),
         "--customers",
         "25",
+        "--risks",
+        "0",
         "--iterations",
         "5",
         "--seed",
@@ -40,6 +42,7 @@ def test_solve_writes_required_json_fields(tmp_path):
     assert {
         "instance",
         "customers",
+        "risks",
         "seed",
         "iterations",
         "vehicles",
@@ -51,6 +54,7 @@ def test_solve_writes_required_json_fields(tmp_path):
         "operators",
         "routes",
     } <= data.keys()
+    assert data["risks"] == 0
     assert sum(len(route["schedule"]) for route in data["routes"]) == 25
     assert all(
         {"customer_id", "arrival", "service_start", "departure"} <= stop.keys()
@@ -73,3 +77,10 @@ def test_cli_reports_input_errors_without_traceback(tmp_path):
 
     assert completed.returncode == 2
     assert "Traceback" not in completed.stderr
+
+
+def test_cli_rejects_risk_count_outside_zero_to_five():
+    completed = run_cli("solve", "--instance", str(C101), "--risks", "6")
+
+    assert completed.returncode == 2
+    assert "risks" in completed.stderr

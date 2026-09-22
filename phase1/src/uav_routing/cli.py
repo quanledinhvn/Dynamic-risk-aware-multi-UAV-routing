@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -26,6 +27,7 @@ def result_to_dict(
     return {
         "instance": instance.name,
         "customers": len(instance.customers),
+        "risks": len(instance.risk_zones),
         "seed": result.seed,
         "iterations": result.iterations,
         "alpha": float(config.alpha),
@@ -54,6 +56,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
+    print("ALNS Started", file=sys.stderr)
+
     try:
         payload = _solve(args)
     except (
@@ -66,6 +70,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     ) as exc:
         parser.error(str(exc))
 
+    print("ALNS Completed", file=sys.stderr)
     print(json.dumps(payload, ensure_ascii=False))
 
     return 0
@@ -78,6 +83,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     solve.add_argument("--instance", type=Path, required=True)
     solve.add_argument("--customers", type=int, default=25)
+    solve.add_argument("--risks", type=int, choices=range(6), default=5)
     solve.add_argument("--iterations", type=int, default=10_000)
     solve.add_argument("--seed", type=int, default=42)
     solve.add_argument("--alpha", type=float, default=0.5)
@@ -96,7 +102,7 @@ def _solve(args: argparse.Namespace) -> dict[str, object]:
     )
     config.validate()
 
-    instance = parse_instance(args.instance, args.customers)
+    instance = parse_instance(args.instance, args.customers, args.risks)
     result = run_alns(instance, config)
     payload = result_to_dict(result, instance, config)
 

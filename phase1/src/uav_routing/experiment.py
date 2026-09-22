@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import statistics
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -16,6 +17,7 @@ from .parser import parse_instance
 RAW_FIELDS = (
     "instance",
     "customers",
+    "risks",
     "seed",
     "iterations",
     "vehicles",
@@ -29,6 +31,7 @@ RAW_FIELDS = (
 AGGREGATE_FIELDS = (
     "instance",
     "customers",
+    "risks",
     "iterations",
     "alpha",
     "beta",
@@ -60,6 +63,7 @@ class BenchmarkConfig:
     seeds: tuple[int, ...]
     alns: ALNSConfig
     customer_limit: int = 25
+    risk_limit: int = 5
     checkpoint_dir: Path | None = None
 
 
@@ -77,7 +81,12 @@ def run_benchmark(
             
             alns.validate()
 
-            row = solve(instance_path, alns, config.customer_limit)
+            row = solve(
+                instance_path,
+                alns,
+                config.customer_limit,
+                config.risk_limit,
+            )
 
             if not bool(row["feasible"]):
                 raise RuntimeError(
@@ -108,6 +117,8 @@ def main(argv=None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
 
+    print("Benchmark Started", file=sys.stderr)
+
     try:
         config = _benchmark_config_from_args(args)
         rows = run_benchmark(config)
@@ -115,6 +126,7 @@ def main(argv=None) -> int:
     except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
         parser.error(str(exc))
 
+    print("Benchmark Completed", file=sys.stderr)
     print(f"completed {len(rows)} runs; raw={raw}; aggregate={aggregate}")
 
     return 0
@@ -149,9 +161,12 @@ def _benchmark_config_from_args(args: argparse.Namespace) -> BenchmarkConfig:
 
 
 def _solve_one(
-    path: Path, config: ALNSConfig, customer_limit: int
+    path: Path,
+    config: ALNSConfig,
+    customer_limit: int,
+    risk_limit: int,
 ) -> dict[str, object]:
-    instance = parse_instance(path, customer_limit)
+    instance = parse_instance(path, customer_limit, risk_limit)
     result = run_alns(instance, config)
     payload = result_to_dict(result, instance, config)
 
@@ -165,6 +180,7 @@ def _aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
         key = (
             row["instance"],
             row["customers"],
+            row["risks"],
             row["iterations"],
             row["alpha"],
             row["beta"],
@@ -182,7 +198,7 @@ def _aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
 def _aggregate_group(
     key: tuple[object, ...], group: list[dict[str, object]]
 ) -> dict[str, object]:
-    result: dict[str, object] = dict(zip(AGGREGATE_FIELDS[:5], key, strict=True))
+    result: dict[str, object] = dict(zip(AGGREGATE_FIELDS[:6], key, strict=True))
     result["runs"] = len(group)
 
     for field in ("vehicles", "distance", "risk_delay", "objective"):
@@ -232,6 +248,7 @@ def _load_config(path: Path) -> BenchmarkConfig:
         seeds=tuple(int(value) for value in values["seeds"]),
         alns=ALNSConfig.from_dict(values["alns"]),
         customer_limit=int(values.get("customers", 25)),
+        risk_limit=int(values.get("risks", 5)),
     )
 
 
@@ -244,6 +261,9 @@ def _validate_benchmark_config(config: BenchmarkConfig) -> None:
 
     if config.customer_limit <= 0:
         raise ValueError("customer_limit must be positive")
+
+    if not 0 <= config.risk_limit <= 5:
+        raise ValueError("risk_limit must be between 0 and 5")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,14 @@
+uv run python -m uav_routing.cli solve \
+  --instance ../dataset/solomon_risk/c101.txt \
+  --customers 25 \
+  --risks 5 \
+  --iterations 10000 \
+  --seed 42 \
+  --alpha 0.5 \
+  --beta 0.5 \
+  --output results/c101-seed42.json
+
+
+  uv run python -m uav_routing.experiment \
+  --config configs/benchmark.json \
+  --output-dir results/benchmark

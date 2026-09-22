@@ -12,9 +12,15 @@ class InstanceFormatError(ValueError):
     """Raised when an input file does not follow the Solomon-RISK format."""
 
 
-def parse_instance(path: Path, customer_limit: int) -> Instance:
+def parse_instance(path: Path, customer_limit: int, risk_limit: int = 5) -> Instance:
     if customer_limit <= 0:
         raise ValueError("customer_limit must be positive")
+
+    if isinstance(risk_limit, bool) or not isinstance(risk_limit, int):
+        raise ValueError("risk_limit must be an integer")
+
+    if not 0 <= risk_limit <= 5:
+        raise ValueError("risk_limit must be between 0 and 5")
 
     name, lines, sections = _read_instance_structure(path)
 
@@ -38,6 +44,7 @@ def parse_instance(path: Path, customer_limit: int) -> Instance:
         lines,
         start=sections["RISK"] + 1,
         end=len(lines),
+        risk_limit=risk_limit,
     )
 
     return _build_instance(
@@ -163,6 +170,7 @@ def _parse_risk_zones(
     *,
     start: int,
     end: int,
+    risk_limit: int,
 ) -> tuple[RiskZone, ...]:
     risk_rows = _numeric_rows(
         path,
@@ -188,7 +196,14 @@ def _parse_risk_zones(
         risk_ids.add(zone_id)
         risk_zones.append(RiskZone(zone_id, *values[1:]))
 
-    return tuple(risk_zones)
+    if len(risk_zones) < risk_limit:
+        raise _format_error(
+            path,
+            None,
+            f"requested {risk_limit} risk zones but found {len(risk_zones)}",
+        )
+
+    return tuple(risk_zones[:risk_limit])
 
 
 def _build_instance(

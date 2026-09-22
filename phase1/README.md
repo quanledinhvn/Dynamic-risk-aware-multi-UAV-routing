@@ -79,6 +79,7 @@ Vì vậy, giảm số UAV được ưu tiên hơn giảm chi phí khoảng các
 uv run python -m uav_routing.cli solve \
   --instance ../dataset/solomon_risk/c101.txt \
   --customers 25 \
+  --risks 5 \
   --iterations 10000 \
   --seed 42 \
   --alpha 0.5 \

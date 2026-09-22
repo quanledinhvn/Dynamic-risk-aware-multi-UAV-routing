@@ -54,7 +54,9 @@ HEADER
 
 
 def test_parse_limits_customers_and_builds_derived_arrays():
-    instance = parse_instance(FIXTURES / "tiny_valid.txt", customer_limit=2)
+    instance = parse_instance(
+        FIXTURES / "tiny_valid.txt", customer_limit=2, risk_limit=5
+    )
 
     assert instance.name == "TINY"
     assert instance.max_vehicles == 2
@@ -64,6 +66,45 @@ def test_parse_limits_customers_and_builds_derived_arrays():
     assert instance.risk_priority.shape == (3,)
     assert instance.risk_priority == pytest.approx([0.0, 1.0, 0.0])
     assert np.array_equal(instance.distance_matrix, instance.distance_matrix.T)
+
+
+@pytest.mark.parametrize(
+    "risk_limit, expected_ids, expected_priorities",
+    [
+        (0, [], [0.0, 0.0, 0.0]),
+        (2, [1, 2], [0.0, 1.0, 0.0]),
+        (5, [1, 2, 3, 4, 5], [0.0, 1.0, 0.0]),
+    ],
+)
+def test_parse_selects_requested_number_of_risk_zones(
+    risk_limit, expected_ids, expected_priorities
+):
+    instance = parse_instance(
+        FIXTURES / "tiny_valid.txt",
+        customer_limit=2,
+        risk_limit=risk_limit,
+    )
+
+    assert [zone.id for zone in instance.risk_zones] == expected_ids
+    assert instance.risk_priority == pytest.approx(expected_priorities)
+
+
+@pytest.mark.parametrize("limit", [-1, 6])
+def test_risk_limit_must_be_between_zero_and_five(limit):
+    with pytest.raises(ValueError, match="risk_limit"):
+        parse_instance(
+            FIXTURES / "tiny_valid.txt",
+            customer_limit=2,
+            risk_limit=limit,
+        )
+
+
+def test_rejects_insufficient_risk_zones(tmp_path):
+    path = tmp_path / "one-risk.txt"
+    path.write_text(valid_text_with_zone_radius(5))
+
+    with pytest.raises(InstanceFormatError, match="requested 2 risk zones"):
+        parse_instance(path, customer_limit=2, risk_limit=2)
 
 
 @pytest.mark.parametrize(
