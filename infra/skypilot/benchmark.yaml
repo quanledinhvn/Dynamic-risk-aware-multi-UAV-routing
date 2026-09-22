@@ -1,0 +1,40 @@
+name: uav-phase1-benchmark
+
+workdir: .
+
+resources:
+  infra: aws
+  disk_size: 30
+
+envs:
+  BENCHMARK_CONFIG:
+  BENCHMARK_WORKERS:
+  BENCHMARK_OUTPUT_DIR:
+
+setup: |
+  set -euo pipefail
+  command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+  cd phase1
+  uv sync --frozen
+
+run: |
+  set -euo pipefail
+  export PATH="$HOME/.local/bin:$PATH"
+  export OMP_NUM_THREADS=1
+  export OPENBLAS_NUM_THREADS=1
+  export MKL_NUM_THREADS=1
+  export NUMEXPR_NUM_THREADS=1
+  mkdir -p "$BENCHMARK_OUTPUT_DIR"
+  cd phase1
+  uv run python -m uav_routing.experiment \
+    --config "../$BENCHMARK_CONFIG" \
+    --iterations 2 \
+    --seeds 0 \
+    --workers 1 \
+    --output-dir /tmp/uav-routing-smoke
+  uv run python -m uav_routing.experiment \
+    --config "../$BENCHMARK_CONFIG" \
+    --workers "$BENCHMARK_WORKERS" \
+    --output-dir "../$BENCHMARK_OUTPUT_DIR" \
+    2>&1 | tee "../$BENCHMARK_OUTPUT_DIR/benchmark.log"
