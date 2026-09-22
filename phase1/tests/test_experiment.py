@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 import statistics
 import time
@@ -9,6 +10,7 @@ from uav_routing.config import ALNSConfig
 from uav_routing.experiment import (
     BenchmarkConfig,
     _build_parser,
+    _solve_one,
     run_benchmark,
     write_results,
 )
@@ -31,6 +33,7 @@ def fake_solver(path, config, customer_limit, risk_limit):
         "objective": 0.5 + config.seed / 100,
         "runtime_seconds": 1.0,
         "feasible": True,
+        "routes": [[1, 2, 3], [4, 5, 6, 7]],
     }
 
 
@@ -199,6 +202,7 @@ def test_raw_and_aggregate_csv_have_stable_schema(tmp_path):
         "objective",
         "runtime_seconds",
         "feasible",
+        "routes",
     ]
     assert read_header(aggregate) == [
         "instance",
@@ -227,6 +231,53 @@ def test_raw_and_aggregate_csv_have_stable_schema(tmp_path):
         "runtime_mean",
         "runtime_std",
     ]
+
+
+def test_raw_csv_serializes_routes_as_json(tmp_path):
+    config = BenchmarkConfig(
+        (Path("c101.txt"),), (1,), replace(ALNSConfig(), iterations=4), 7
+    )
+
+    rows = run_benchmark(config, solver=fake_solver)
+    raw, _ = write_results(rows, tmp_path)
+
+    with raw.open(newline="") as handle:
+        row = next(csv.DictReader(handle))
+
+    assert json.loads(row["routes"]) == [[1, 2, 3], [4, 5, 6, 7]]
+
+
+def test_solve_one_keeps_only_customer_lists_in_raw_routes(monkeypatch):
+    payload = {
+        "instance": "C101",
+        "customers": 3,
+        "risks": 1,
+        "seed": 7,
+        "iterations": 4,
+        "alpha": 0.5,
+        "beta": 0.5,
+        "vehicles": 2,
+        "distance": 10.0,
+        "risk_delay": 0.1,
+        "objective": 0.2,
+        "runtime_seconds": 1.0,
+        "feasible": True,
+        "operators": [],
+        "routes": [
+            {"route_index": 1, "customers": [1, 3], "schedule": []},
+            {"route_index": 2, "customers": [2], "schedule": []},
+        ],
+    }
+
+    monkeypatch.setattr("uav_routing.experiment.parse_instance", lambda *args: object())
+    monkeypatch.setattr("uav_routing.experiment.run_alns", lambda *args: object())
+    monkeypatch.setattr(
+        "uav_routing.experiment.result_to_dict", lambda *args: payload
+    )
+
+    row = _solve_one(Path("c101.txt"), replace(ALNSConfig(), seed=7), 3, 1)
+
+    assert row["routes"] == [[1, 3], [2]]
 
 
 def test_aggregate_values_use_sample_standard_deviation(tmp_path):

@@ -31,6 +31,7 @@ RAW_FIELDS = (
     "objective",
     "runtime_seconds",
     "feasible",
+    "routes",
 )
 
 AGGREGATE_FIELDS = (
@@ -294,8 +295,11 @@ def _solve_one(
     instance = parse_instance(path, customer_limit, risk_limit)
     result = run_alns(instance, config)
     payload = result_to_dict(result, instance, config)
+    row = {key: payload[key] for key in (*RAW_FIELDS, "alpha", "beta")}
 
-    return {key: payload[key] for key in (*RAW_FIELDS, "alpha", "beta")}
+    row["routes"] = [route["customers"] for route in payload["routes"]]
+
+    return row
 
 
 def _aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -360,7 +364,14 @@ def _write_csv_atomic(
         writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
 
         writer.writeheader()
-        writer.writerows(rows)
+
+        for row in rows:
+            csv_row = dict(row)
+
+            if "routes" in csv_row:
+                csv_row["routes"] = json.dumps(csv_row["routes"], separators=(",", ":"))
+
+            writer.writerow(csv_row)
 
     temporary.replace(path)
 

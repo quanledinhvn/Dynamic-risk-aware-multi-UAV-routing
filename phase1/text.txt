@@ -44,6 +44,21 @@ uv run python -m uav_routing.experiment \
   --workers 2 \
   --output-dir results/benchmark
 
+uv run python -m uav_routing.experiment \
+  --config configs/benchmark_p1_c25_r0.json \
+  --workers 2 \
+  --output-dir results/benchmark_p1_c25_r0
+
+uv run python -m uav_routing.experiment \
+  --config configs/benchmark_p1_c25_r1.json \
+  --workers 2 \
+  --output-dir results/benchmark_p1_c25_r1
+
+uv run python -m uav_routing.experiment \
+  --config configs/benchmark_p1_c100_r5.json \
+  --workers 2 \
+  --output-dir results/benchmark_p1_c100_r5
+
 cat > configs/benchmark.json <<'JSON'
 {
   "instances": [
