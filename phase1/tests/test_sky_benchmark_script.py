@@ -120,6 +120,82 @@ def _repo(env: dict[str, str]) -> Path:
     return Path(env["TEST_REPO_ROOT"])
 
 
+def _run_archive_probe(
+    tmp_path: Path,
+    benchmark_status: int,
+    *,
+    make_destination_invalid: bool = False,
+) -> tuple[subprocess.CompletedProcess[str], Path]:
+    local_output = tmp_path / "local"
+    mounted = tmp_path / "mounted"
+    (local_output / ".tmp").mkdir(parents=True)
+
+    (local_output / ".tmp/0000.json").write_text("{}", encoding="utf-8")
+    if make_destination_invalid:
+        mounted.write_text("not a directory", encoding="utf-8")
+
+    script = r'''local_output="$1"
+s3_run_dir="$2"
+requested_status="$3"
+
+archive_artifacts() {
+  local benchmark_status="$?"
+  local copy_status=0
+  local marker_status=0
+
+  local marker="FAILED"
+  trap - EXIT
+
+  set +e
+  mkdir -p "$s3_run_dir"
+  copy_status="$?"
+
+  if [[ "$copy_status" -eq 0 ]]; then
+    cp -a "$local_output/." "$s3_run_dir/"
+    copy_status="$?"
+  fi
+
+  if [[ "$benchmark_status" -eq 0 && "$copy_status" -eq 0 ]]; then
+    marker="SUCCESS"
+  fi
+
+  rm -f "$s3_run_dir/SUCCESS" "$s3_run_dir/FAILED"
+  touch "$s3_run_dir/$marker"
+  marker_status="$?"
+
+  if [[ "$copy_status" -eq 0 ]]; then
+    copy_status="$marker_status"
+  fi
+
+  if [[ "$benchmark_status" -ne 0 ]]; then
+    exit "$benchmark_status"
+  fi
+
+  exit "$copy_status"
+}
+
+trap archive_artifacts EXIT
+exit "$requested_status"
+'''
+
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            script,
+            "archive-probe",
+            str(local_output),
+            str(mounted),
+            str(benchmark_status),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    return result, mounted
+
+
 def _working_directories(env: dict[str, str]) -> list[list[str]]:
     path = Path(env["FAKE_CWD_LOG"])
     return [json.loads(line) for line in path.read_text().splitlines()]
@@ -131,6 +207,52 @@ def test_fake_tools_uses_isolated_repository(fake_tools, tmp_path: Path) -> None
 
     assert isolated_root.is_relative_to(tmp_path)
     assert isolated_root != ROOT
+
+
+def test_task_declares_s3_mount_and_exit_upload(fake_tools) -> None:
+    env, _ = fake_tools
+    yaml = (_repo(env) / "infra/skypilot/benchmark.yaml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "BENCHMARK_S3_BUCKET:" in yaml
+    assert "BENCHMARK_RUN_ID:" in yaml
+    assert "name: ${BENCHMARK_S3_BUCKET}" in yaml
+    assert "store: s3" in yaml
+    assert "mode: MOUNT" in yaml
+    assert "trap archive_artifacts EXIT" in yaml
+    assert 'touch "$s3_run_dir/$marker"' in yaml
+
+
+def test_archive_marks_success_only_after_copy_succeeds(tmp_path: Path) -> None:
+    result, mounted = _run_archive_probe(tmp_path, benchmark_status=0)
+
+    assert result.returncode == 0
+    assert (mounted / "SUCCESS").is_file()
+    assert (mounted / ".tmp/0000.json").is_file()
+    assert not (mounted / "FAILED").exists()
+
+
+def test_archive_preserves_benchmark_failure_and_partial_files(
+    tmp_path: Path,
+) -> None:
+    result, mounted = _run_archive_probe(tmp_path, benchmark_status=17)
+
+    assert result.returncode == 17
+    assert (mounted / "FAILED").is_file()
+    assert (mounted / ".tmp/0000.json").is_file()
+    assert not (mounted / "SUCCESS").exists()
+
+
+def test_archive_copy_failure_never_marks_success(tmp_path: Path) -> None:
+    result, mounted = _run_archive_probe(
+        tmp_path,
+        benchmark_status=0,
+        make_destination_invalid=True,
+    )
+
+    assert result.returncode != 0
+    assert not (mounted / "SUCCESS").exists()
 
 
 def test_check_fails_when_sky_is_missing(tmp_path: Path) -> None:
