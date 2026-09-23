@@ -266,35 +266,51 @@ read_state() {
   s3_bucket=""
   s3_prefix=""
 
-  local invalid="false"
-  local key value
+  local run_id_seen="false" remote_output_seen="false"
+  local s3_bucket_seen="false" s3_prefix_seen="false"
+  local invalid="false" line key
+  local value
 
-  while IFS='=' read -r key value; do
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" != *=* ]]; then
+      invalid="true"
+      continue
+    fi
+
+    key="${line%%=*}"
+    value="${line#*=}"
+
     case "$key" in
       run_id)
-        if [[ -n "$run_id" ]]; then
+        if [[ "$run_id_seen" == "true" ]]; then
           invalid="true"
         fi
+
+        run_id_seen="true"
         run_id="$value"
         ;;
       remote_output)
-        if [[ -n "$remote_output" ]]; then
+        if [[ "$remote_output_seen" == "true" ]]; then
           invalid="true"
         fi
+
+        remote_output_seen="true"
         remote_output="$value"
         ;;
       s3_bucket)
-        if [[ -n "$s3_bucket" ]]; then
+        if [[ "$s3_bucket_seen" == "true" ]]; then
           invalid="true"
         fi
 
+        s3_bucket_seen="true"
         s3_bucket="$value"
         ;;
       s3_prefix)
-        if [[ -n "$s3_prefix" ]]; then
+        if [[ "$s3_prefix_seen" == "true" ]]; then
           invalid="true"
         fi
 
+        s3_prefix_seen="true"
         s3_prefix="$value"
         ;;
       *)
@@ -302,6 +318,10 @@ read_state() {
         ;;
     esac
   done <"$state_file"
+
+  if [[ "$run_id_seen" != "true" || "$remote_output_seen" != "true" ]]; then
+    invalid="true"
+  fi
 
   if [[ "$invalid" == "true" || ! "$run_id" =~ ^[0-9]{8}T[0-9]{6}Z$ ]]; then
     die "Tệp state không hợp lệ: $state_file"
@@ -313,7 +333,12 @@ read_state() {
     return 1
   fi
 
-  if [[ -n "$s3_bucket" || -n "$s3_prefix" ]]; then
+  if [[ "$s3_bucket_seen" != "$s3_prefix_seen" ]]; then
+    die "Metadata S3 trong state không đầy đủ."
+    return 1
+  fi
+
+  if [[ "$s3_bucket_seen" == "true" ]]; then
     if [[ ! "$s3_bucket" =~ ^sky-uav-benchmark-[0-9]{12}-[a-z]{2}(-[a-z0-9]+)+-[0-9]+$ ]]; then
       die "S3 bucket trong state không hợp lệ."
       return 1

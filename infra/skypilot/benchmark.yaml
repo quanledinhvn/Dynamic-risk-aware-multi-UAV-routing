@@ -36,6 +36,7 @@ run: |
   export NUMEXPR_NUM_THREADS=1
   local_output="$PWD/$BENCHMARK_OUTPUT_DIR"
   s3_run_dir="/mnt/uav-benchmark-results/runs/$BENCHMARK_RUN_ID"
+  smoke_output="$local_output/.smoke"
   mkdir -p "$local_output"
 
   archive_artifacts() {
@@ -82,9 +83,13 @@ run: |
     --iterations 2 \
     --seeds 0 \
     --workers 1 \
-    --output-dir /tmp/uav-routing-smoke
+    --output-dir "$smoke_output" \
+    2>&1 | tee "$local_output/benchmark.log"
+
+  rm -rf "$smoke_output"
+
   uv run python -m uav_routing.experiment \
     --config "../$BENCHMARK_CONFIG" \
     --workers "$BENCHMARK_WORKERS" \
     --output-dir "$local_output" \
-    2>&1 | tee "$local_output/benchmark.log"
+    2>&1 | tee -a "$local_output/benchmark.log"

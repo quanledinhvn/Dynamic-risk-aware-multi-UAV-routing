@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import textwrap
 
 # isort: split
 import subprocess
@@ -560,6 +561,10 @@ def test_download_rejects_missing_or_malformed_state(
         "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\ns3_bucket=sky-uav-benchmark-123456789012-ap-southeast-1\ns3_prefix=runs/../../bad\n",
         "run_id=20260922T120000Z\nrun_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\n",
         "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\nunknown=value\n",
+        "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\ns3_bucket=\ns3_bucket=sky-uav-benchmark-123456789012-ap-southeast-1\ns3_prefix=runs/20260922T120000Z\n",
+        "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\ns3_bucket=sky-uav-benchmark-123456789012-ap-southeast-1\ns3_prefix=\ns3_prefix=runs/20260922T120000Z\n",
+        "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\ns3_bucket=\ns3_prefix=\n",
+        "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\ns3_bucket=sky-uav-benchmark-123456789012-ap-southeast-1\ns3_prefix=runs/20260922T120000Z\nunknown=value",
     ],
 )
 def test_download_rejects_unsafe_s3_state(
@@ -573,6 +578,77 @@ def test_download_rejects_unsafe_s3_state(
 
     assert result.returncode != 0
     assert _commands(log_path) == []
+
+
+def test_smoke_failure_archives_diagnostics_and_partial_output(
+    tmp_path: Path,
+) -> None:
+    yaml = (ROOT / "infra/skypilot/benchmark.yaml").read_text(
+        encoding="utf-8"
+    )
+    run_block = textwrap.dedent(yaml.split("run: |\n", maxsplit=1)[1])
+
+    workdir = tmp_path / "workdir"
+    (workdir / "phase1").mkdir(parents=True)
+    mounted = tmp_path / "mounted"
+
+    run_block = run_block.replace(
+        's3_run_dir="/mnt/uav-benchmark-results/runs/$BENCHMARK_RUN_ID"',
+        f's3_run_dir="{mounted}/$BENCHMARK_RUN_ID"',
+    )
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    _write_executable(
+        bin_dir / "uv",
+        """#!/usr/bin/env bash
+set -euo pipefail
+output_dir=""
+while [[ "$#" -gt 0 ]]; do
+  if [[ "$1" == "--output-dir" ]]; then
+    output_dir="$2"
+    break
+  fi
+  shift
+done
+if [[ "$output_dir" == "/tmp/uav-routing-smoke" ]]; then
+  printf 'smoke diagnostic\n' >&2
+  exit 17
+fi
+
+mkdir -p "$output_dir"
+printf 'partial smoke output\n' >"$output_dir/raw.csv"
+printf 'smoke diagnostic\n' >&2
+exit 17
+""",
+    )
+
+    env = os.environ.copy()
+    env["HOME"] = str(tmp_path / "home")
+    env["PATH"] = f"{bin_dir}:{env['PATH']}"
+    env["BENCHMARK_CONFIG"] = "phase1/configs/benchmark.json"
+    env["BENCHMARK_WORKERS"] = "1"
+    env["BENCHMARK_OUTPUT_DIR"] = "phase1/results/sky/20260922T120000Z"
+    env["BENCHMARK_RUN_ID"] = "20260922T120000Z"
+
+    result = subprocess.run(
+        ["bash", "-c", run_block],
+        cwd=workdir,
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    archived = mounted / "20260922T120000Z"
+
+    assert result.returncode == 17
+    assert (archived / "FAILED").is_file()
+    assert (archived / "benchmark.log").read_text(encoding="utf-8") == (
+        "smoke diagnostic\n"
+    )
+    assert (archived / ".smoke/raw.csv").read_text(encoding="utf-8") == (
+        "partial smoke output\n"
+    )
 
 
 def test_down_targets_only_the_validated_cluster(fake_tools) -> None:
