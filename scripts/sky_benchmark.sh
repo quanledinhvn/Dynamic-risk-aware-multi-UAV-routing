@@ -263,6 +263,9 @@ read_state() {
 
   run_id=""
   remote_output=""
+  s3_bucket=""
+  s3_prefix=""
+
   local invalid="false"
   local key value
 
@@ -280,6 +283,20 @@ read_state() {
         fi
         remote_output="$value"
         ;;
+      s3_bucket)
+        if [[ -n "$s3_bucket" ]]; then
+          invalid="true"
+        fi
+
+        s3_bucket="$value"
+        ;;
+      s3_prefix)
+        if [[ -n "$s3_prefix" ]]; then
+          invalid="true"
+        fi
+
+        s3_prefix="$value"
+        ;;
       *)
         invalid="true"
         ;;
@@ -295,18 +312,39 @@ read_state() {
     die "Tệp state có remote output không hợp lệ."
     return 1
   fi
+
+  if [[ -n "$s3_bucket" || -n "$s3_prefix" ]]; then
+    if [[ ! "$s3_bucket" =~ ^sky-uav-benchmark-[0-9]{12}-[a-z]{2}(-[a-z0-9]+)+-[0-9]+$ ]]; then
+      die "S3 bucket trong state không hợp lệ."
+      return 1
+    fi
+
+    if [[ "$s3_prefix" != "runs/$run_id" ]]; then
+      die "S3 prefix trong state không hợp lệ."
+      return 1
+    fi
+  fi
 }
 
 download_artifacts() {
-  require_command rsync rsync || return $?
   read_state || return $?
 
   local local_output="$repo_root/$remote_output"
   mkdir -p "$(dirname "$local_output")" || return $?
 
-  rsync -az -- \
-    "$cluster:~/sky_workdir/$remote_output/" \
-    "$local_output/" || return $?
+  if [[ -n "$s3_bucket" ]]; then
+    require_command aws "AWS CLI" || return $?
+
+    aws s3 sync \
+      "s3://$s3_bucket/$s3_prefix/" \
+      "$local_output/" || return $?
+  else
+    require_command rsync rsync || return $?
+
+    rsync -az -- \
+      "$cluster:~/sky_workdir/$remote_output/" \
+      "$local_output/" || return $?
+  fi
 }
 
 follow_logs() {

@@ -353,6 +353,36 @@ def test_spot_is_opt_in(fake_tools, cluster_state: Path) -> None:
     assert "--use-spot" in launch
 
 
+def _write_s3_state(path: Path) -> None:
+    path.parent.mkdir(exist_ok=True)
+
+    path.write_text(
+        "run_id=20260922T120000Z\n"
+        "remote_output=phase1/results/sky/20260922T120000Z\n"
+        "s3_bucket=sky-uav-benchmark-123456789012-ap-southeast-1\n"
+        "s3_prefix=runs/20260922T120000Z\n",
+        encoding="utf-8",
+    )
+
+
+def test_download_uses_s3_after_cluster_is_gone(
+    fake_tools, cluster_state: Path
+) -> None:
+    env, log_path = fake_tools
+    _write_s3_state(cluster_state)
+
+    result = _run("download", env=env)
+
+    assert result.returncode == 0
+    assert _commands(log_path) == [[
+        "aws",
+        "s3",
+        "sync",
+        "s3://sky-uav-benchmark-123456789012-ap-southeast-1/runs/20260922T120000Z/",
+        str(_repo(env) / "phase1/results/sky/20260922T120000Z") + "/",
+    ]]
+
+
 def test_download_uses_validated_state_paths(
     fake_tools, cluster_state: Path
 ) -> None:
@@ -394,6 +424,28 @@ def test_download_rejects_missing_or_malformed_state(
 
     assert result.returncode != 0
     assert "state" in result.stderr
+    assert _commands(log_path) == []
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\ns3_bucket=Bad_Bucket\ns3_prefix=runs/20260922T120000Z\n",
+        "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\ns3_bucket=sky-uav-benchmark-123456789012-ap-southeast-1\ns3_prefix=runs/../../bad\n",
+        "run_id=20260922T120000Z\nrun_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\n",
+        "run_id=20260922T120000Z\nremote_output=phase1/results/sky/20260922T120000Z\nunknown=value\n",
+    ],
+)
+def test_download_rejects_unsafe_s3_state(
+    fake_tools, cluster_state: Path, state: str
+) -> None:
+    env, log_path = fake_tools
+    cluster_state.parent.mkdir(exist_ok=True)
+
+    cluster_state.write_text(state, encoding="utf-8")
+    result = _run("download", env=env)
+
+    assert result.returncode != 0
     assert _commands(log_path) == []
 
 
