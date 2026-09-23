@@ -68,7 +68,11 @@ if name == "aws" and sys.argv[1:4] == [
     raise SystemExit(0)
 
 selected = os.environ.get("FAKE_FAIL_SUBCOMMAND")
-actual = sys.argv[1] if name == "sky" and len(sys.argv) > 1 else name
+if name in {"aws", "sky"} and len(sys.argv) > 1:
+    actual = sys.argv[1]
+else:
+    actual = name
+
 state_action = os.environ.get("FAKE_STATE_ACTION")
 if actual == "logs" and "--follow" in sys.argv and state_action:
     state_path = Path(os.environ["FAKE_STATE_PATH"])
@@ -581,7 +585,7 @@ def test_down_targets_only_the_validated_cluster(fake_tools) -> None:
 
 def _subcommands(commands: list[list[str]]) -> list[str]:
     return [
-        command[1] if command[0] == "sky" else command[0]
+        command[1] if command[0] in {"aws", "sky"} else command[0]
         for command in commands
     ]
 
@@ -595,9 +599,10 @@ def test_run_orders_launch_logs_download_and_down(
     assert result.returncode == 0
     assert _subcommands(_commands(log_path)) == [
         "check",
+        "sts",
         "launch",
         "logs",
-        "rsync",
+        "s3",
         "down",
     ]
 
@@ -630,7 +635,7 @@ def test_run_rejects_invalid_state_before_rsync_and_cleans_up(
     assert commands[-1] == ["sky", "down", "--yes", "uav-benchmark"]
 
 
-@pytest.mark.parametrize("failing_command", ["launch", "logs", "rsync"])
+@pytest.mark.parametrize("failing_command", ["launch", "logs", "s3"])
 def test_run_cleans_up_after_failure(
     fake_tools, cluster_state: Path, failing_command: str
 ) -> None:

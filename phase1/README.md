@@ -131,6 +131,8 @@ uv run python -m uav_routing.experiment \
 
 Xem hướng dẫn cài đặt, dry run, kiểm soát chi phí và xử lý sự cố tại [runbook SkyPilot](../infra/skypilot/README.md).
 
+Luồng detached lưu artifact và marker trạng thái trên S3, vì vậy có thể chạy `download --cluster <name>` sau khi EC2 đã autodown. Xem chi tiết bucket, prefix, giới hạn Spot và cleanup trong [runbook SkyPilot](../infra/skypilot/README.md).
+
 Từ thư mục `phase1`, chạy preflight rồi thực hiện toàn bộ luồng benchmark:
 
 ```bash
