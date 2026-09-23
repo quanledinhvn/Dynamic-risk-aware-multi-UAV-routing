@@ -14,7 +14,7 @@
   "customers": 100,
   "risks": 5,
   "alns": {
-    "iterations": 1000,
+    "iterations": 10000,
     "seed": 0,
     "alpha": 0.5,
     "beta": 0.5,
