@@ -58,6 +58,15 @@ with Path(os.environ["FAKE_COMMAND_LOG"]).open("a", encoding="utf-8") as handle:
 with Path(os.environ["FAKE_CWD_LOG"]).open("a", encoding="utf-8") as handle:
     handle.write(json.dumps([name, os.getcwd()]) + "\\n")
 
+if name == "aws" and sys.argv[1:4] == [
+    "sts",
+    "get-caller-identity",
+    "--query",
+]:
+    print(os.environ.get("FAKE_AWS_ACCOUNT_ID", "123456789012"))
+
+    raise SystemExit(0)
+
 selected = os.environ.get("FAKE_FAIL_SUBCOMMAND")
 actual = sys.argv[1] if name == "sky" and len(sys.argv) > 1 else name
 state_action = os.environ.get("FAKE_STATE_ACTION")
@@ -71,7 +80,7 @@ if os.environ.get("FAKE_TERM_SUBCOMMAND") == actual:
     os.kill(os.getppid(), signal.SIGTERM)
 raise SystemExit(23 if selected == actual else 0)
 """
-    for name in ("sky", "rsync", "date"):
+    for name in ("aws", "sky", "rsync", "date"):
         _write_executable(bin_dir / name, fake)
 
     env = os.environ.copy()
@@ -163,6 +172,19 @@ def test_invalid_cluster_is_rejected_before_sky(fake_tools, cluster: str) -> Non
     assert _commands(log_path) == []
 
 
+@pytest.mark.parametrize(
+    "region",
+    ["-bad", "ap southeast 1", "ap-southeast", "ap-southeast-1;bad"],
+)
+def test_invalid_region_is_rejected_before_sky(fake_tools, region: str) -> None:
+    env, log_path = fake_tools
+    result = _run("check", "--region", region, env=env)
+
+    assert result.returncode != 0
+    assert "region" in result.stderr
+    assert _commands(log_path) == []
+
+
 def test_config_outside_repository_is_rejected_before_sky(
     fake_tools, tmp_path: Path
 ) -> None:
@@ -187,7 +209,24 @@ def cluster_state(fake_tools) -> Path:
     yield path
 
 
-def test_launch_passes_defaults_and_records_state_after_success(
+@pytest.mark.parametrize("account_id", ["", "abc", "123", "1234567890123"])
+def test_launch_rejects_invalid_aws_account_id_before_sky_launch(
+    fake_tools, account_id: str
+) -> None:
+    env, log_path = fake_tools
+    env["FAKE_AWS_ACCOUNT_ID"] = account_id
+
+    result = _run("launch", env=env)
+
+    assert result.returncode != 0
+    assert "AWS account ID" in result.stderr
+    assert not any(
+        command[0:2] == ["sky", "launch"]
+        for command in _commands(log_path)
+    )
+
+
+def test_launch_passes_s3_identity_and_records_it_in_state(
     fake_tools, cluster_state: Path
 ) -> None:
     env, log_path = fake_tools
@@ -197,12 +236,23 @@ def test_launch_passes_defaults_and_records_state_after_success(
     assert _commands(log_path) == [
         ["sky", "check", "aws"],
         [
+            "aws",
+            "sts",
+            "get-caller-identity",
+            "--query",
+            "Account",
+            "--output",
+            "text",
+        ],
+        [
             "sky",
             "launch",
             "--yes",
             "--detach-run",
             "--cluster",
             "uav-benchmark",
+            "--region",
+            "ap-southeast-1",
             "--instance-type",
             "c7a.2xlarge",
             "--idle-minutes-to-autostop",
@@ -216,12 +266,18 @@ def test_launch_passes_defaults_and_records_state_after_success(
             "BENCHMARK_WORKERS=8",
             "--env",
             "BENCHMARK_OUTPUT_DIR=phase1/results/sky/20260922T120000Z",
+            "--env",
+            "BENCHMARK_S3_BUCKET=sky-uav-benchmark-123456789012-ap-southeast-1",
+            "--env",
+            "BENCHMARK_RUN_ID=20260922T120000Z",
             str(_repo(env) / "infra/skypilot/benchmark.yaml"),
         ],
     ]
     assert cluster_state.read_text(encoding="utf-8") == (
         "run_id=20260922T120000Z\n"
         "remote_output=phase1/results/sky/20260922T120000Z\n"
+        "s3_bucket=sky-uav-benchmark-123456789012-ap-southeast-1\n"
+        "s3_prefix=runs/20260922T120000Z\n"
     )
 
 
@@ -232,7 +288,21 @@ def test_launch_runs_sky_from_repository_root(
     result = _run("launch", env=env)
 
     assert result.returncode == 0
-    assert _working_directories(env)[1] == ["sky", str(_repo(env))]
+    assert ["sky", str(_repo(env))] in _working_directories(env)
+
+
+def test_launch_accepts_region_override(fake_tools, cluster_state: Path) -> None:
+    env, log_path = fake_tools
+    result = _run("launch", "--region", "ap-southeast-2", env=env)
+
+    assert result.returncode == 0
+    launch = next(
+        command
+        for command in _commands(log_path)
+        if command[0:2] == ["sky", "launch"]
+    )
+
+    assert launch[launch.index("--region") + 1] == "ap-southeast-2"
 
 
 def test_launch_preserves_config_path_with_spaces(
@@ -251,19 +321,36 @@ def test_launch_preserves_config_path_with_spaces(
         config.unlink(missing_ok=True)
 
     assert result.returncode == 0
-    launch = _commands(log_path)[1]
+    launch = next(
+        command
+        for command in _commands(log_path)
+        if command[0:2] == ["sky", "launch"]
+    )
+
     assert "BENCHMARK_CONFIG=phase1/configs/benchmark spaced.json" in launch
 
 
 def test_spot_is_opt_in(fake_tools, cluster_state: Path) -> None:
     env, log_path = fake_tools
     assert _run("launch", env=env).returncode == 0
-    assert "--use-spot" not in _commands(log_path)[1]
+    launch = next(
+        command
+        for command in _commands(log_path)
+        if command[0:2] == ["sky", "launch"]
+    )
+
+    assert "--use-spot" not in launch
 
     log_path.unlink()
 
     assert _run("launch", "--spot", env=env).returncode == 0
-    assert "--use-spot" in _commands(log_path)[1]
+    launch = next(
+        command
+        for command in _commands(log_path)
+        if command[0:2] == ["sky", "launch"]
+    )
+
+    assert "--use-spot" in launch
 
 
 def test_download_uses_validated_state_paths(

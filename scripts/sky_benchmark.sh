@@ -7,6 +7,10 @@ repo_root="$(cd "$script_dir/.." && pwd -P)"
 cluster="uav-benchmark"
 config="phase1/configs/benchmark_p1_c25_r1.json"
 instance_type="c7a.2xlarge"
+region="ap-southeast-1"
+aws_account_id=""
+s3_bucket=""
+s3_prefix=""
 
 workers="8"
 spot="false"
@@ -34,6 +38,7 @@ Options:
   --cluster NAME
   --config PATH
   --instance-type TYPE
+  --region REGION
   --workers N
   --spot
   --keep-cluster-on-failure
@@ -92,6 +97,11 @@ parse_args() {
         instance_type="$2"
         shift 2
         ;;
+      --region)
+        require_option_value "$1" "$#"
+        region="$2"
+        shift 2
+        ;;
       --workers)
         require_option_value "$1" "$#"
         workers="$2"
@@ -119,6 +129,10 @@ parse_args() {
 validate_inputs() {
   if [[ ! "$cluster" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
     die "Tên cluster không hợp lệ: $cluster"
+  fi
+
+  if [[ ! "$region" =~ ^[a-z]{2}(-[a-z0-9]+)+-[0-9]+$ ]]; then
+    die "AWS region không hợp lệ: $region"
   fi
 
   if [[ ! "$workers" =~ ^[1-9][0-9]*$ ]]; then
@@ -154,8 +168,24 @@ require_command() {
   fi
 }
 
+derive_s3_location() {
+  aws_account_id="$(
+    aws sts get-caller-identity \
+      --query Account \
+      --output text
+  )" || return $?
+
+  if [[ ! "$aws_account_id" =~ ^[0-9]{12}$ ]]; then
+    die "AWS account ID không hợp lệ: $aws_account_id"
+    return 1
+  fi
+
+  s3_bucket="sky-uav-benchmark-$aws_account_id-$region"
+}
+
 check_preflight() {
   require_command sky SkyPilot || return $?
+  require_command aws "AWS CLI" || return $?
   require_command rsync rsync || return $?
 
   if [[ ! -f "$repo_root/infra/skypilot/benchmark.yaml" ]]; then
@@ -164,6 +194,7 @@ check_preflight() {
   fi
 
   sky check aws || return $?
+  derive_s3_location || return $?
 }
 
 launch_benchmark() {
@@ -175,17 +206,24 @@ launch_benchmark() {
 
   local run_id
   run_id="$(date -u +%Y%m%dT%H%M%SZ)" || return $?
+  s3_prefix="runs/$run_id"
 
   local remote_output="phase1/results/sky/$run_id"
   local task_file="$repo_root/infra/skypilot/benchmark.yaml"
   local launch_args=(
     launch --yes --detach-run --cluster "$cluster"
+    --region "$region"
     --instance-type "$instance_type"
     --idle-minutes-to-autostop "$idle_minutes"
     --down --wait-for jobs
     --env "BENCHMARK_CONFIG=$config"
     --env "BENCHMARK_WORKERS=$workers"
     --env "BENCHMARK_OUTPUT_DIR=$remote_output"
+  )
+
+  launch_args+=(
+    --env "BENCHMARK_S3_BUCKET=$s3_bucket"
+    --env "BENCHMARK_RUN_ID=$run_id"
   )
 
   if [[ "$spot" == "true" ]]; then
@@ -209,8 +247,10 @@ launch_benchmark() {
   local state_tmp="$state_file.tmp.$$"
   mkdir -p "$state_dir" || return $?
 
-  printf 'run_id=%s\nremote_output=%s\n' \
-    "$run_id" "$remote_output" >"$state_tmp" || return $?
+  printf 'run_id=%s\nremote_output=%s\ns3_bucket=%s\ns3_prefix=%s\n' \
+    "$run_id" "$remote_output" "$s3_bucket" "$s3_prefix" \
+    >"$state_tmp" || return $?
+
   mv "$state_tmp" "$state_file" || return $?
 }
 
