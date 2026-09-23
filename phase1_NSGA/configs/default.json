@@ -1,0 +1,10 @@
+{
+  "population_size": 28,
+  "generations": 100,
+  "divisions": 4,
+  "crossover_probability": 0.9,
+  "mutation_probability": 0.15,
+  "seed": 42,
+  "customer_limit": 25,
+  "risk_limit": 5
+}
