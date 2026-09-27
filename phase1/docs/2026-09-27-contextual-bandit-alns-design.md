@@ -2,9 +2,10 @@
 
 ## 1. Mục tiêu và câu hỏi nghiên cứu
 
-Mở rộng ALNS baseline bằng một cơ chế Contextual Bandit để chọn cặp
-destroy--repair theo trạng thái tìm kiếm hiện tại. Baseline roulette hiện có
-phải được giữ nguyên như một lựa chọn cấu hình để làm đối chứng.
+Xây dựng một phiên bản Contextual Bandit ALNS riêng để chọn cặp destroy--repair
+theo trạng thái tìm kiếm hiện tại. Baseline roulette trong `alns.py` và
+`adaptive.py` tiếp tục là phiên bản mặc định và giữ nguyên public API để làm đối
+chứng.
 
 Câu hỏi nghiên cứu chính là:
 
@@ -27,6 +28,10 @@ reward và huấn luyện chung qua nhiều instance không thuộc phạm vi tr
   acceptance.
 - Roulette và LinUCB dùng chung operator, evaluator, acceptance policy, cooling
   schedule, reward classification và stopping condition.
+- Baseline tiếp tục chạy qua `run_alns`; phiên bản mới chạy qua
+  `run_contextual_alns` trong package `contextual`.
+- Không đặt LinUCB, context history hoặc contextual solver trong các module
+  baseline.
 - Không thêm dependency machine-learning; LinUCB chỉ dùng NumPy.
 - Mọi lựa chọn ngẫu nhiên, kể cả phá hòa giữa các arm có cùng điểm, dùng
   `numpy.random.Generator` đã được truyền vào ALNS.
@@ -211,42 +216,72 @@ Với cấu hình mặc định, các mức là $1$, $0.5$, $0.1$ và $0$. Khi d
 ít nhất một mức reward phải dương; mọi mức phải không âm. Việc giữ reward cũ
 giúp ablation đầu tiên chỉ thay selection policy.
 
-## 8. Selector abstraction và tương thích baseline
+## 8. Tách biệt baseline và contextual ALNS
 
-Tạo module `selection.py` với một interface chung cho hai policy:
+Baseline giữ nguyên vị trí và entry point hiện tại:
 
-```python
-OperatorPair = tuple[str, str]
-
-class OperatorSelector(Protocol):
-    def select(
-        self,
-        context: np.ndarray,
-        rng: np.random.Generator,
-    ) -> OperatorPair: ...
-
-    def record(
-        self,
-        arm: OperatorPair,
-        context: np.ndarray,
-        raw_reward: float,
-    ) -> None: ...
-
-    def end_iteration(self, completed_iterations: int) -> None: ...
-
-    def snapshot(self) -> tuple[PairSelectionStats, ...]: ...
+```text
+src/uav_routing/
+├── adaptive.py
+└── alns.py
 ```
 
-`RoulettePairSelector` bọc hai `AdaptivePool` hiện có. Nó chọn destroy và repair
-độc lập như trước, ghi raw reward vào cả hai pool và cập nhật segment tại
-`end_iteration`. Tham số `completed_iterations` bắt đầu từ $1$; selector cập
-nhật segment khi giá trị này chia hết cho `segment_length`. Vì vậy cấu hình
-`selector="roulette"` phải bảo toàn kết quả baseline hiện có với cùng seed.
+- `adaptive.py` tiếp tục chứa `AdaptivePool` và `OperatorStats`.
+- `alns.py` tiếp tục chứa `ALNSSolver` và `run_alns`.
+- Không thêm context, LinUCB hoặc pair selector vào hai module này.
+- Lệnh không chỉ định algorithm phải chạy đúng baseline hiện tại.
 
-`LinUCBPairSelector` dùng Cartesian product của hai operator list, bỏ qua cập
-nhật segment và chuẩn hóa reward trước khi cập nhật mô hình.
+Toàn bộ phần mới nằm trong package riêng:
 
-Mỗi selector đồng thời tích lũy `PairSelectionStats` gồm:
+```text
+src/uav_routing/contextual/
+├── __init__.py
+├── config.py
+├── context.py
+├── linucb.py
+├── selector.py
+└── alns.py
+```
+
+Trách nhiệm từng module:
+
+- `config.py`: `ContextualBanditConfig` và validation cho hyperparameter.
+- `context.py`: `SearchHistory`, chuẩn hóa feature và tạo context vector.
+- `linucb.py`: thuật toán `DisjointLinUCB` không phụ thuộc ALNS.
+- `selector.py`: ánh xạ Cartesian product destroy--repair thành arm, chuẩn hóa
+  reward và thống kê arm.
+- `alns.py`: `ContextualALNSSolver`, contextual search loop và
+  `run_contextual_alns`.
+- `__init__.py`: export public API của phiên bản contextual.
+
+Contextual solver dùng lại `Instance`, `Solution`, operator, `Evaluator`,
+`build_initial_solution`, `accept_score`, `classify_reward` và
+`cool_temperature` hiện có. Nó không sao chép cách tính objective, feasibility,
+acceptance hoặc reward classification. Vòng orchestration của contextual solver
+được đặt riêng vì có thêm context extraction, history update và cập nhật bandit.
+
+Public API của package mới là:
+
+```python
+class ContextualALNSSolver:
+    def __init__(
+        self,
+        instance: Instance,
+        alns_config: ALNSConfig,
+        bandit_config: ContextualBanditConfig,
+    ): ...
+
+    def run(self) -> ContextualSearchResult: ...
+
+def run_contextual_alns(
+    instance: Instance,
+    alns_config: ALNSConfig,
+    bandit_config: ContextualBanditConfig | None = None,
+) -> ContextualSearchResult: ...
+```
+
+`selector.py` dùng `OperatorPair = tuple[str, str]`. Mỗi contextual run tích lũy
+`PairSelectionStats` gồm:
 
 - `destroy_name`;
 - `repair_name`;
@@ -254,13 +289,13 @@ Mỗi selector đồng thời tích lũy `PairSelectionStats` gồm:
 - `total_raw_reward`;
 - `average_raw_reward`.
 
-`SearchResult.operator_stats` được giữ nguyên để không phá output baseline;
-với LinUCB nó là tuple rỗng. `SearchResult` bổ sung `selector_name` và
-`pair_selection_stats`. Roulette trả cả operator stats cũ và pair stats mới.
+`SearchResult` của baseline không thay đổi. `ContextualSearchResult` chứa các
+trường nghiệm và evaluation tương ứng, đồng thời thay `operator_stats` bằng
+`pair_selection_stats` để output phản ánh đúng action space của LinUCB.
 
 ## 9. Luồng một iteration
 
-Mỗi iteration thực hiện theo thứ tự:
+Chỉ contextual ALNS thực hiện luồng sau:
 
 1. Tạo context từ state và history trước iteration.
 2. Lấy $q$ ngẫu nhiên như baseline.
@@ -270,12 +305,10 @@ Mỗi iteration thực hiện theo thứ tự:
 6. Cập nhật current và best nếu phù hợp.
 7. Ghi arm, context và reward vào selector.
 8. Cập nhật search history từ outcome.
-9. Gọi `end_iteration` với số iteration đã hoàn tất để roulette có thể cập
-   nhật segment.
-10. Giảm nhiệt độ.
+9. Giảm nhiệt độ.
 
-Thứ tự lấy $q$ trước khi selector chọn operator là bắt buộc để roulette tiêu
-thụ RNG theo đúng thứ tự của baseline hiện tại.
+Thứ tự lấy $q$ trước khi selector chọn operator giữ cùng vị trí logic với
+baseline. Baseline search loop không bị thay thế bởi luồng này.
 
 Kết quả nội bộ của bước 5 phải được biểu diễn bằng một record thay vì chỉ trả
 `float`, để reward, accepted, improved và new-best được dùng nhất quán bởi
@@ -283,10 +316,10 @@ selector và history.
 
 ## 10. Cấu hình
 
-`ALNSConfig` bổ sung:
+`ALNSConfig` và các file cấu hình baseline hiện có không bổ sung field
+Contextual Bandit. Package mới định nghĩa:
 
 ```text
-selector = "roulette"
 context_window = 100
 linucb_exploration = 0.5
 linucb_regularization = 1.0
@@ -294,29 +327,46 @@ linucb_regularization = 1.0
 
 Validation:
 
-- `selector` chỉ nhận `roulette` hoặc `linucb`;
 - `context_window` là số nguyên dương, không nhận `bool`;
 - `linucb_exploration` hữu hạn và không âm;
 - `linucb_regularization` hữu hạn và dương;
-- khi `selector="linucb"`, reward lớn nhất phải dương.
+- reward lớn nhất trong `ALNSConfig` phải dương khi chạy contextual ALNS.
 
-CLI `solve` bổ sung `--selector` với hai lựa chọn trên. Các tham số LinUCB còn
-lại được đọc từ config/API trong phiên bản đầu; không mở rộng toàn bộ thành CLI
-flag để tránh tăng bề mặt giao diện không cần thiết.
+CLI `solve` và benchmark bổ sung:
+
+```text
+--algorithm baseline|contextual
+```
+
+Giá trị mặc định là `baseline`. CLI dispatch trực tiếp tới `run_alns` hoặc
+`run_contextual_alns`; không truyền selector vào baseline solver.
+
+Các config benchmark hiện có không cần thêm khóa và tiếp tục chạy baseline. Một
+config mới `configs/contextual/benchmark.json` chứa cùng ALNS parameter cùng
+khối `contextual_bandit` cho ba hyperparameter trên. Benchmark config không có
+`algorithm` được hiểu là `baseline`; config contextual phải khai báo
+`"algorithm": "contextual"`.
 
 ## 11. Output và benchmark
 
 JSON của một lần solve bổ sung:
 
-- `selector`;
-- `pair_selection_stats`.
+- `algorithm`, nhận `baseline` hoặc `contextual`;
+- `pair_selection_stats` chỉ có dữ liệu với contextual ALNS.
 
-Trường `operators` cũ vẫn tồn tại. Với LinUCB nó là danh sách rỗng; với roulette
-nó giữ nguyên schema hiện tại.
+Trường `operators` cũ giữ nguyên dữ liệu với baseline. Với contextual ALNS,
+`operators` là danh sách rỗng và `pair_selection_stats` chứa thống kê 15 arms.
 
-`raw.csv` và `aggregate.csv` bổ sung `selector`. Selector là một phần của khóa
-group aggregate để kết quả roulette và LinUCB không bị gộp. Pair statistics chỉ
-được lưu trong JSON solve, không nhúng vào CSV benchmark.
+`raw.csv` và `aggregate.csv` bổ sung `algorithm`. Algorithm là một phần của khóa
+group aggregate để kết quả baseline và contextual không bị gộp. Pair statistics
+chỉ được lưu trong JSON solve, không nhúng vào CSV benchmark.
+
+Thư mục output do người chạy chỉ định. Tài liệu dùng quy ước:
+
+```text
+results/baseline/
+results/contextual/
+```
 
 ## 12. Kiểm thử và tiêu chí nghiệm thu
 
@@ -329,25 +379,29 @@ Kiểm thử được phát triển theo TDD và tuân theo quy tắc skeleton c
   accepted-worse và new-best.
 - LinUCB khởi tạo đúng regularization, chọn theo exploitation/uncertainty, chỉ
   cập nhật arm được chọn và phá hòa tái lập bằng RNG.
-- Roulette adapter bảo toàn lựa chọn, reward và segment update của baseline.
-- Config từ chối selector và hyperparameter không hợp lệ.
+- Contextual config từ chối hyperparameter không hợp lệ mà không thay đổi
+  validation của `ALNSConfig` baseline.
 
 ### Integration tests
 
-- `selector="roulette"` bảo toàn deterministic baseline hiện tại.
-- `selector="linucb"` chạy end-to-end, trả nghiệm hoàn chỉnh và khả thi.
+- `run_alns` bảo toàn deterministic baseline hiện tại.
+- `run_contextual_alns` chạy end-to-end, trả nghiệm hoàn chỉnh và khả thi.
 - Hai lần chạy LinUCB cùng instance, config và seed cho cùng route, evaluation
   và selection statistics.
 - Tổng `total_uses` của pair statistics bằng số iteration.
-- CLI và benchmark xuất đúng selector, không gộp hai policy khi aggregate.
+- Không truyền `--algorithm` chạy baseline; `--algorithm contextual` chạy
+  contextual solver.
+- CLI và benchmark xuất đúng algorithm, không gộp hai phiên bản khi aggregate.
 
 ### Definition of done
 
 - Toàn bộ test hiện có tiếp tục pass.
 - Không có dependency mới ngoài NumPy.
-- Roulette vẫn là selector mặc định.
-- LinUCB có thể bật qua config hoặc `--selector linucb`.
-- Cả hai selector dùng cùng operator, evaluator, reward classification,
+- `run_alns`, `ALNSSolver`, `SearchResult` và baseline config giữ nguyên API.
+- Baseline vẫn là algorithm mặc định.
+- Contextual ALNS chỉ được bật qua `--algorithm contextual`, contextual config
+  hoặc gọi trực tiếp `run_contextual_alns`.
+- Cả hai phiên bản dùng cùng operator, evaluator, reward classification,
   acceptance và stopping condition.
 - README mô tả context, action, reward, lệnh chạy và giới hạn của phiên bản
   tĩnh.
