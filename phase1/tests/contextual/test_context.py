@@ -1,5 +1,6 @@
 """Behavioral checks for search history and contextual features."""
 
+import math
 from dataclasses import replace
 
 import numpy as np
@@ -103,6 +104,22 @@ def test_context_single_iteration_and_constant_temperature():
 
     assert context[1] == 0.0
     assert context[2] == 1.0
+
+
+@pytest.mark.parametrize("at_initial, expected", [(False, 0.0), (True, 1.0)])
+def test_context_normalizes_adjacent_large_temperatures(at_initial, expected):
+    minimum = 1e300
+    initial = math.nextafter(minimum, math.inf)
+    arguments = _context_kwargs()
+
+    arguments.update(iteration=0, total_iterations=1)
+    arguments.update(minimum_temperature=minimum, initial_temperature=initial)
+    arguments["temperature"] = initial if at_initial else minimum
+
+    context = build_context(**arguments)
+
+    assert context[2] == expected
+    assert np.all(np.isfinite(context))
 
 
 @pytest.mark.parametrize("temperature, expected", [(0.1, 0.0), (1000.0, 1.0)])

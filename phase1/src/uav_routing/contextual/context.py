@@ -116,7 +116,19 @@ def build_context(
         normalized_temperature = 1.0
     else:
         log_range = math.log(initial_temperature) - math.log(minimum_temperature)
-        log_temperature = math.log(temperature) - math.log(minimum_temperature)
+
+        if log_range == 0.0:
+            relative_initial = (
+                initial_temperature - minimum_temperature
+            ) / minimum_temperature
+            relative_temperature = max(
+                0.0, (temperature - minimum_temperature) / minimum_temperature
+            )
+            log_range = math.log1p(relative_initial)
+            log_temperature = math.log1p(relative_temperature)
+        else:
+            log_temperature = math.log(temperature) - math.log(minimum_temperature)
+
         normalized_temperature = float(np.clip(log_temperature / log_range, 0.0, 1.0))
 
     stagnation = min(1.0, history.stagnation / history.window)
