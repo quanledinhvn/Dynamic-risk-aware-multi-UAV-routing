@@ -78,12 +78,22 @@ class DisjointLinUCB:
 
         for arm in self._arms:
             state = self._states[arm]
-            coefficients = np.linalg.solve(state.matrix, state.reward_vector)
-            inverse_context = np.linalg.solve(state.matrix, context)
 
-            mean = float(context @ coefficients)
-            uncertainty = math.sqrt(float(context @ inverse_context))
-            scores.append(mean + self._exploration * uncertainty)
+            with np.errstate(over="ignore", invalid="ignore"):
+                coefficients = np.linalg.solve(state.matrix, state.reward_vector)
+                inverse_context = np.linalg.solve(state.matrix, context)
+                mean = float(context @ coefficients)
+                variance = float(context @ inverse_context)
+
+            if not math.isfinite(mean) or not math.isfinite(variance) or variance < 0:
+                raise ValueError("context would produce a nonfinite score")
+
+            score = mean + self._exploration * math.sqrt(variance)
+
+            if not math.isfinite(score):
+                raise ValueError("context would produce a nonfinite score")
+
+            scores.append(score)
 
         best_score = max(scores)
         tied_indices = np.flatnonzero(np.isclose(scores, best_score))
@@ -105,8 +115,19 @@ class DisjointLinUCB:
             raise ValueError("reward must be finite")
 
         state = self._states[arm]
-        state.matrix[...] += np.outer(context, context)
-        state.reward_vector[...] += reward * context
+
+        with np.errstate(over="ignore", invalid="ignore"):
+            next_matrix = state.matrix + np.outer(context, context)
+            next_reward_vector = state.reward_vector + reward * context
+
+        if not np.all(np.isfinite(next_matrix)):
+            raise ValueError("context would produce a nonfinite arm matrix")
+
+        if not np.all(np.isfinite(next_reward_vector)):
+            raise ValueError("reward would produce a nonfinite arm vector")
+
+        state.matrix[...] = next_matrix
+        state.reward_vector[...] = next_reward_vector
 
     def state(self, arm: Hashable) -> LinUCBArmState:
         if arm not in self._states:

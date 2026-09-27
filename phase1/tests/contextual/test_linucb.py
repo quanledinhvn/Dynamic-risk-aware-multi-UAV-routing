@@ -171,3 +171,47 @@ def test_numerically_close_scores_are_treated_as_tied():
     bandit.update("second", context, 2.0 + 1e-9)
 
     assert bandit.select(context) == "first"
+
+
+def test_update_rejects_outer_product_overflow_without_mutating_state():
+    bandit = _bandit(dimension=1, regularization=1.0)
+    before = bandit.state("first")
+
+    with pytest.raises(ValueError, match="context"):
+        bandit.update("first", np.array([1e200]), 0.0)
+
+    after = bandit.state("first")
+    np.testing.assert_array_equal(after.matrix, before.matrix)
+    np.testing.assert_array_equal(after.reward_vector, before.reward_vector)
+
+
+def test_update_rejects_reward_product_overflow_without_mutating_state():
+    bandit = _bandit(dimension=1, regularization=1.0)
+    before = bandit.state("first")
+
+    with pytest.raises(ValueError, match="reward"):
+        bandit.update("first", np.array([2.0]), 1e308)
+
+    after = bandit.state("first")
+    np.testing.assert_array_equal(after.matrix, before.matrix)
+    np.testing.assert_array_equal(after.reward_vector, before.reward_vector)
+
+
+def test_update_rejects_accumulation_overflow_without_mutating_state():
+    bandit = _bandit(dimension=1, regularization=1.0)
+    bandit.update("first", np.array([1.0]), 1e308)
+    before = bandit.state("first")
+
+    with pytest.raises(ValueError, match="reward"):
+        bandit.update("first", np.array([1.0]), 1e308)
+
+    after = bandit.state("first")
+    np.testing.assert_array_equal(after.matrix, before.matrix)
+    np.testing.assert_array_equal(after.reward_vector, before.reward_vector)
+
+
+def test_select_rejects_context_whose_score_overflows():
+    bandit = _bandit(dimension=1, regularization=1.0)
+
+    with pytest.raises(ValueError, match="context"):
+        bandit.select(np.array([1e200]))
