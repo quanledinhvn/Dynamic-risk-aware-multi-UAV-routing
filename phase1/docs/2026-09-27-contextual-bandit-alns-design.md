@@ -254,6 +254,61 @@ Trách nhiệm từng module:
   `run_contextual_alns`.
 - `__init__.py`: export public API của phiên bản contextual.
 
+### 8.1. Cấu trúc thư mục đầy đủ sau khi triển khai
+
+```text
+phase1/
+├── configs/
+│   ├── default.json                         # baseline hiện có
+│   ├── benchmark.json                       # baseline hiện có
+│   └── contextual/
+│       └── benchmark.json                   # contextual benchmark mới
+├── docs/
+│   ├── 2026-09-19-alns-baseline-design.md
+│   ├── 2026-09-20-alns-baseline-implementation-plan.md
+│   ├── 2026-09-27-contextual-bandit-alns-design.md
+│   └── 2026-09-27-contextual-bandit-implementation-plan.md
+├── src/uav_routing/
+│   ├── __init__.py
+│   ├── adaptive.py                          # baseline giữ nguyên
+│   ├── alns.py                              # baseline giữ nguyên
+│   ├── cli.py                               # dispatch theo --algorithm
+│   ├── config.py                            # ALNSConfig baseline giữ nguyên
+│   ├── destroy.py
+│   ├── evaluator.py
+│   ├── experiment.py                        # dispatch benchmark
+│   ├── geometry.py
+│   ├── initial.py
+│   ├── models.py
+│   ├── parser.py
+│   ├── repair.py
+│   └── contextual/
+│       ├── __init__.py
+│       ├── alns.py
+│       ├── config.py
+│       ├── context.py
+│       ├── linucb.py
+│       └── selector.py
+├── tests/
+│   ├── contextual/
+│   │   ├── test_alns.py
+│   │   ├── test_config.py
+│   │   ├── test_context.py
+│   │   ├── test_linucb.py
+│   │   └── test_selector.py
+│   ├── test_alns.py                         # baseline tests hiện có
+│   ├── test_cli.py
+│   ├── test_experiment.py
+│   └── test_integration.py
+├── results/                                 # generated, không phải source
+│   ├── baseline/
+│   └── contextual/
+└── README.md
+```
+
+Không chuyển hoặc đổi tên các module baseline hiện có. Test contextual nằm
+trong thư mục riêng; các integration test chung tiếp tục nằm ở `tests/`.
+
 Contextual solver dùng lại `Instance`, `Solution`, operator, `Evaluator`,
 `build_initial_solution`, `accept_score`, `classify_reward` và
 `cool_temperature` hiện có. Nó không sao chép cách tính objective, feasibility,
@@ -341,32 +396,242 @@ CLI `solve` và benchmark bổ sung:
 Giá trị mặc định là `baseline`. CLI dispatch trực tiếp tới `run_alns` hoặc
 `run_contextual_alns`; không truyền selector vào baseline solver.
 
+Quy tắc chọn algorithm theo thứ tự ưu tiên:
+
+1. Giá trị `--algorithm` trên command line, nếu có.
+2. Khóa `algorithm` trong benchmark config, nếu có.
+3. `baseline` nếu cả hai đều không có.
+
 Các config benchmark hiện có không cần thêm khóa và tiếp tục chạy baseline. Một
 config mới `configs/contextual/benchmark.json` chứa cùng ALNS parameter cùng
 khối `contextual_bandit` cho ba hyperparameter trên. Benchmark config không có
 `algorithm` được hiểu là `baseline`; config contextual phải khai báo
 `"algorithm": "contextual"`.
 
+Ví dụ config contextual tối thiểu hợp lệ:
+
+```json
+{
+  "algorithm": "contextual",
+  "instances": [
+    "../dataset/solomon_risk/c101.txt"
+  ],
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "customers": 25,
+  "risks": 5,
+  "alns": {
+    "iterations": 10000,
+    "seed": 0,
+    "alpha": 0.5,
+    "beta": 0.5
+  },
+  "contextual_bandit": {
+    "context_window": 100,
+    "linucb_exploration": 0.5,
+    "linucb_regularization": 1.0
+  }
+}
+```
+
 ## 11. Output và benchmark
 
-JSON của một lần solve bổ sung:
+### 11.1. Chạy CLI cho một instance
 
-- `algorithm`, nhận `baseline` hoặc `contextual`;
-- `pair_selection_stats` chỉ có dữ liệu với contextual ALNS.
+Không truyền `--algorithm` vẫn chạy baseline:
 
-Trường `operators` cũ giữ nguyên dữ liệu với baseline. Với contextual ALNS,
-`operators` là danh sách rỗng và `pair_selection_stats` chứa thống kê 15 arms.
+```bash
+uv run python -m uav_routing.cli solve \
+  --instance ../dataset/solomon_risk/c101.txt \
+  --customers 25 \
+  --risks 5 \
+  --iterations 10000 \
+  --seed 42 \
+  --output results/baseline/c101-seed42.json
+```
 
-`raw.csv` và `aggregate.csv` bổ sung `algorithm`. Algorithm là một phần của khóa
-group aggregate để kết quả baseline và contextual không bị gộp. Pair statistics
-chỉ được lưu trong JSON solve, không nhúng vào CSV benchmark.
+Có thể ghi rõ baseline:
 
-Thư mục output do người chạy chỉ định. Tài liệu dùng quy ước:
+```bash
+uv run python -m uav_routing.cli solve \
+  --algorithm baseline \
+  --instance ../dataset/solomon_risk/c101.txt \
+  --customers 25 \
+  --risks 5 \
+  --iterations 10000 \
+  --seed 42 \
+  --output results/baseline/c101-seed42.json
+```
+
+Chạy contextual ALNS:
+
+```bash
+uv run python -m uav_routing.cli solve \
+  --algorithm contextual \
+  --instance ../dataset/solomon_risk/c101.txt \
+  --customers 25 \
+  --risks 5 \
+  --iterations 10000 \
+  --seed 42 \
+  --output results/contextual/c101-seed42.json
+```
+
+`stdout` vẫn in một JSON object; thông báo tiến trình chỉ đi vào `stderr` như
+baseline hiện tại.
+
+JSON dùng schema chung. Baseline có `contextual_bandit=null`, giữ thống kê
+roulette trong `operators` và để `pair_selection_stats` rỗng:
+
+```json
+{
+  "algorithm": "baseline",
+  "instance": "c101",
+  "customers": 25,
+  "risks": 5,
+  "seed": 42,
+  "iterations": 10000,
+  "alpha": 0.5,
+  "beta": 0.5,
+  "vehicles": 3,
+  "distance": 321.5,
+  "risk_delay": 0.18,
+  "objective": 0.61,
+  "runtime_seconds": 2.4,
+  "feasible": true,
+  "contextual_bandit": null,
+  "operators": [
+    {
+      "name": "destroy:random",
+      "weight": 4.2,
+      "total_uses": 1960,
+      "segment_uses": 0,
+      "segment_score": 0.0
+    }
+  ],
+  "pair_selection_stats": [],
+  "routes": []
+}
+```
+
+Contextual ALNS có cấu hình bandit, để `operators` rỗng và báo thống kê theo
+cặp arm:
+
+```json
+{
+  "algorithm": "contextual",
+  "instance": "c101",
+  "customers": 25,
+  "risks": 5,
+  "seed": 42,
+  "iterations": 10000,
+  "alpha": 0.5,
+  "beta": 0.5,
+  "vehicles": 3,
+  "distance": 315.2,
+  "risk_delay": 0.15,
+  "objective": 0.57,
+  "runtime_seconds": 2.8,
+  "feasible": true,
+  "contextual_bandit": {
+    "context_window": 100,
+    "linucb_exploration": 0.5,
+    "linucb_regularization": 1.0
+  },
+  "operators": [],
+  "pair_selection_stats": [
+    {
+      "destroy_name": "random",
+      "repair_name": "greedy",
+      "total_uses": 620,
+      "total_raw_reward": 840.0,
+      "average_raw_reward": 1.3548387097
+    }
+  ],
+  "routes": []
+}
+```
+
+Các số trong hai ví dụ chỉ minh họa schema, không phải expected benchmark.
+Trường `routes` thực tế giữ nguyên cấu trúc route và schedule đầy đủ của
+baseline.
+
+### 11.2. Chạy benchmark
+
+Baseline, tương thích config hiện có:
+
+```bash
+uv run python -m uav_routing.experiment \
+  --config configs/benchmark.json \
+  --algorithm baseline \
+  --workers 8 \
+  --output-dir results/baseline/benchmark
+```
+
+Contextual ALNS:
+
+```bash
+uv run python -m uav_routing.experiment \
+  --config configs/contextual/benchmark.json \
+  --algorithm contextual \
+  --workers 8 \
+  --output-dir results/contextual/benchmark
+```
+
+Với config contextual, có thể bỏ `--algorithm contextual` vì khóa trong config
+đã chọn đúng algorithm. Nếu command line và config khác nhau, command line
+thắng.
+
+Khi hoàn tất, benchmark in một dòng ra `stdout`:
 
 ```text
-results/baseline/
-results/contextual/
+completed 10 runs; algorithm=contextual; raw=results/contextual/benchmark/raw.csv; aggregate=results/contextual/benchmark/aggregate.csv
 ```
+
+Mỗi output directory chứa:
+
+```text
+results/<algorithm>/benchmark/
+├── raw.csv
+└── aggregate.csv
+```
+
+`raw.csv` có schema ổn định:
+
+```text
+instance,customers,risks,algorithm,seed,iterations,alpha,beta,
+context_window,linucb_exploration,linucb_regularization,
+vehicles,distance,risk_delay,objective,runtime_seconds,feasible,routes
+```
+
+`aggregate.csv` nhóm theo instance, kích thước bài toán, algorithm, ngân sách,
+objective weights và hyperparameter bandit:
+
+```text
+instance,customers,risks,algorithm,iterations,alpha,beta,
+context_window,linucb_exploration,linucb_regularization,runs,
+vehicles_mean,vehicles_std,vehicles_best,vehicles_worst,
+distance_mean,distance_std,distance_best,distance_worst,
+risk_delay_mean,risk_delay_std,risk_delay_best,risk_delay_worst,
+objective_mean,objective_std,objective_best,objective_worst,
+runtime_mean,runtime_std
+```
+
+Với baseline, ba cột hyperparameter bandit để trống. Với contextual, chúng chứa
+giá trị thực và là một phần của grouping key để các cấu hình LinUCB khác nhau
+không bị trộn.
+
+### 11.3. Hợp đồng output
+
+JSON của một lần solve luôn có:
+
+- `algorithm`, nhận `baseline` hoặc `contextual`;
+- `contextual_bandit`, là `null` với baseline;
+- `operators`, chỉ có dữ liệu với baseline;
+- `pair_selection_stats`, chỉ có dữ liệu với contextual;
+- các metric và `routes` hiện có.
+
+Pair statistics chỉ được lưu trong JSON solve, không nhúng vào CSV benchmark.
+CLI và benchmark không tự động trộn kết quả của hai algorithm vào cùng output
+directory; tài liệu và config mặc định luôn dùng hai đường dẫn riêng.
 
 ## 12. Kiểm thử và tiêu chí nghiệm thu
 
@@ -391,7 +656,14 @@ Kiểm thử được phát triển theo TDD và tuân theo quy tắc skeleton c
 - Tổng `total_uses` của pair statistics bằng số iteration.
 - Không truyền `--algorithm` chạy baseline; `--algorithm contextual` chạy
   contextual solver.
-- CLI và benchmark xuất đúng algorithm, không gộp hai phiên bản khi aggregate.
+- CLI từ chối algorithm không thuộc `baseline|contextual` và giữ stdout là JSON
+  hợp lệ cho cả hai phiên bản.
+- Baseline JSON có `contextual_bandit=null` và pair stats rỗng; contextual JSON
+  có bandit config, `operators` rỗng và đủ 15 pair stats.
+- Benchmark CLI override khóa algorithm trong config; config không có algorithm
+  mặc định về baseline.
+- Header CSV đúng schema đã đặc tả; aggregate không gộp hai algorithm hoặc hai
+  bộ hyperparameter LinUCB khác nhau.
 
 ### Definition of done
 
