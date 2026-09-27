@@ -215,3 +215,15 @@ def test_select_rejects_context_whose_score_overflows():
 
     with pytest.raises(ValueError, match="context"):
         bandit.select(np.array([1e200]))
+
+
+def test_update_promotes_large_integer_context_before_outer_product():
+    bandit = _bandit(dimension=1, regularization=1.0)
+    context = np.array([4_000_000_000], dtype=np.int64)
+
+    bandit.update("first", context, 2.0)
+
+    state = bandit.state("first")
+    np.testing.assert_allclose(state.matrix, [[1.6e19]])
+    np.testing.assert_allclose(state.reward_vector, [8e9])
+    assert np.all(np.isfinite(state.matrix))

@@ -61,7 +61,7 @@ class DisjointLinUCB:
             for arm in arms
         }
 
-    def _validate_context(self, context: np.ndarray) -> None:
+    def _validate_context(self, context: np.ndarray) -> np.ndarray:
         if not isinstance(context, np.ndarray) or context.shape != (self._dimension,):
             raise ValueError("context must be a one-dimensional NumPy array")
 
@@ -71,8 +71,16 @@ class DisjointLinUCB:
         if not np.all(np.isfinite(context)):
             raise ValueError("context must contain only finite numbers")
 
+        with np.errstate(over="ignore", invalid="ignore"):
+            numeric_context = np.asarray(context, dtype=float)
+
+        if not np.all(np.isfinite(numeric_context)):
+            raise ValueError("context must be representable as finite floats")
+
+        return numeric_context
+
     def select(self, context: np.ndarray) -> Hashable:
-        self._validate_context(context)
+        context = self._validate_context(context)
 
         scores = []
 
@@ -105,7 +113,7 @@ class DisjointLinUCB:
         if arm not in self._states:
             raise ValueError("unknown arm")
 
-        self._validate_context(context)
+        context = self._validate_context(context)
 
         if (
             isinstance(reward, bool)
