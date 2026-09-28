@@ -56,6 +56,7 @@ def test_contextual_public_api_reproduces_route_evaluation_and_stats(
     repeated = ContextualALNSSolver(instance, config, ContextualBanditConfig()).run()
 
     assert isinstance(contextual_result, ContextualSearchResult)
+    assert contextual_result.evaluation.feasible
 
     assert contextual_result.best_solution == repeated.best_solution
     assert contextual_result.evaluation == repeated.evaluation
