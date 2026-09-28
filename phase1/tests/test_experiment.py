@@ -105,8 +105,76 @@ def test_algorithm_cli_overrides_config(
     ],
 )
 def test_invalid_algorithm_or_bandit_config_is_rejected(benchmark_file, overrides):
+    values = {"algorithm": "contextual", **overrides}
+
     with pytest.raises(ValueError):
-        _load_config(benchmark_file(**overrides))
+        _load_config(benchmark_file(**values))
+
+
+@pytest.mark.parametrize("invalid_bandit", [[], {"unknown": 1}, {"context_window": 0}])
+@pytest.mark.parametrize("file_algorithm", [None, "baseline", "contextual"])
+def test_effective_baseline_ignores_invalid_bandit_block(
+    benchmark_file, tmp_path, monkeypatch, invalid_bandit, file_algorithm
+):
+    values = {"contextual_bandit": invalid_bandit}
+
+    if file_algorithm is not None:
+        values["algorithm"] = file_algorithm
+
+    argv = ["--config", str(benchmark_file(**values))]
+
+    if file_algorithm == "contextual":
+        argv.extend(["--algorithm", "baseline"])
+
+    def unexpected_solver(*args):
+        pytest.fail("baseline invoked contextual solver")
+
+    monkeypatch.setattr("uav_routing.experiment.run_contextual_alns", unexpected_solver)
+    config = _benchmark_config_from_args(_build_parser().parse_args(argv))
+
+    assert config.algorithm == "baseline"
+    assert config.bandit is None
+
+    rows = run_benchmark(replace(config, checkpoint_dir=None))
+    paths = write_results(rows, tmp_path / "output")
+
+    for path in paths:
+        with path.open(newline="") as handle:
+            csv_rows = list(csv.DictReader(handle))
+
+        for row in csv_rows:
+            assert row["algorithm"] == "baseline"
+            assert (
+                row["context_window"],
+                row["linucb_exploration"],
+                row["linucb_regularization"],
+            ) == ("", "", "")
+
+
+@pytest.mark.parametrize("workers", [1, 2])
+def test_direct_baseline_ignores_invalid_bandit_config(monkeypatch, workers):
+    def unexpected_solver(*args):
+        pytest.fail("baseline invoked contextual solver")
+
+    monkeypatch.setattr("uav_routing.experiment.run_contextual_alns", unexpected_solver)
+    config = BenchmarkConfig(
+        (C101,),
+        (1,),
+        ALNSConfig(iterations=2),
+        5,
+        0,
+        workers=workers,
+        bandit=ContextualBanditConfig(context_window=0),
+    )
+
+    row = run_benchmark(config)[0]
+
+    assert row["algorithm"] == "baseline"
+    assert (
+        row["context_window"],
+        row["linucb_exploration"],
+        row["linucb_regularization"],
+    ) == (None, None, None)
 
 
 @pytest.mark.parametrize("algorithm", ["baseline", "contextual"])

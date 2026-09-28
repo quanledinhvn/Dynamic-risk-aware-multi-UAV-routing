@@ -97,6 +97,9 @@ class BenchmarkConfig:
 def run_benchmark(
     config: BenchmarkConfig, solver: Callable | None = None
 ) -> list[dict[str, object]]:
+    if config.algorithm == "baseline":
+        config = replace(config, bandit=None)
+
     _validate_benchmark_config(config)
 
     solve = (
@@ -296,18 +299,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _benchmark_config_from_args(args: argparse.Namespace) -> BenchmarkConfig:
-    config = _load_config(args.config)
+    config = _load_config(args.config, algorithm_override=args.algorithm)
     alns = config.alns
 
     if args.iterations is not None:
         alns = replace(alns, iterations=args.iterations)
 
     seeds = tuple(args.seeds) if args.seeds is not None else config.seeds
-    algorithm = args.algorithm if args.algorithm is not None else config.algorithm
-    bandit = None
-
-    if algorithm == "contextual":
-        bandit = config.bandit or ContextualBanditConfig()
 
     return replace(
         config,
@@ -315,8 +313,6 @@ def _benchmark_config_from_args(args: argparse.Namespace) -> BenchmarkConfig:
         alns=alns,
         checkpoint_dir=args.output_dir,
         workers=args.workers,
-        algorithm=algorithm,
-        bandit=bandit,
     )
 
 
@@ -430,15 +426,19 @@ def _write_csv_atomic(
     temporary.replace(path)
 
 
-def _load_config(path: Path) -> BenchmarkConfig:
+def _load_config(
+    path: Path, *, algorithm_override: str | None = None
+) -> BenchmarkConfig:
     values = json.loads(path.read_text(encoding="utf-8"))
-    algorithm = values.get("algorithm", "baseline")
+    algorithm = (
+        values.get("algorithm", "baseline")
+        if algorithm_override is None
+        else algorithm_override
+    )
     bandit = None
 
-    if "contextual_bandit" in values:
-        bandit = ContextualBanditConfig.from_dict(values["contextual_bandit"])
-    elif algorithm == "contextual":
-        bandit = ContextualBanditConfig()
+    if algorithm == "contextual":
+        bandit = ContextualBanditConfig.from_dict(values.get("contextual_bandit", {}))
 
     config = BenchmarkConfig(
         instance_paths=tuple(Path(value) for value in values["instances"]),
@@ -458,7 +458,7 @@ def _validate_benchmark_config(config: BenchmarkConfig) -> None:
     if config.algorithm not in ("baseline", "contextual"):
         raise ValueError("algorithm must be baseline or contextual")
 
-    if config.bandit is not None:
+    if config.algorithm == "contextual" and config.bandit is not None:
         if not isinstance(config.bandit, ContextualBanditConfig):
             raise ValueError("bandit must be a ContextualBanditConfig")
 
