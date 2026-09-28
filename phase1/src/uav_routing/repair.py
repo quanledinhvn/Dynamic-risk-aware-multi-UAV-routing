@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass
 
 from .evaluator import Evaluator
-from .models import Instance, Solution
+from .models import Instance, RouteEvaluation, Solution
 
 
 @dataclass(frozen=True)
@@ -42,6 +42,16 @@ class PartialEvaluation:
     objective: float
 
 
+def _route_objective(
+    result: RouteEvaluation,
+    context: RepairContext,
+) -> float:
+    distance = context.alpha * result.distance / context.d_ref
+    risk_delay = context.beta * context.evaluator.route_risk_delay(result)
+
+    return distance + risk_delay
+
+
 def feasible_insertions(
     partial: Solution, customer_id: int, context: RepairContext
 ) -> tuple[Insertion, ...]:
@@ -51,9 +61,8 @@ def feasible_insertions(
     if customer_id not in known or customer_id in assigned:
         return ()
 
-    base = context.evaluate_partial(partial)
-    choices = _existing_route_insertions(partial, customer_id, context, base)
-    new_route = _new_route_insertion(partial, customer_id, context, base)
+    choices = _existing_route_insertions(partial, customer_id, context)
+    new_route = _new_route_insertion(partial, customer_id, context)
 
     if new_route is not None:
         choices.append(new_route)
@@ -65,19 +74,23 @@ def _existing_route_insertions(
     partial: Solution,
     customer_id: int,
     context: RepairContext,
-    base: PartialEvaluation,
 ) -> list[Insertion]:
     choices: list[Insertion] = []
 
     for route_index, route in enumerate(partial.routes):
+        current_result = context.evaluator.route(route)
+
         for position in range(len(route) + 1):
             candidate = insert_customer(partial, customer_id, route_index, position)
-            route_result = context.evaluator.route(candidate.routes[route_index])
+            candidate_result = context.evaluator.route(candidate.routes[route_index])
 
-            if not route_result.feasible:
+            if not candidate_result.feasible:
                 continue
 
-            delta_f = context.evaluate_partial(candidate).objective - base.objective
+            delta_f = _route_objective(
+                candidate_result,
+                context,
+            ) - _route_objective(current_result, context)
             choices.append(
                 Insertion(
                     customer_id,
@@ -96,17 +109,18 @@ def _new_route_insertion(
     partial: Solution,
     customer_id: int,
     context: RepairContext,
-    base: PartialEvaluation,
 ) -> Insertion | None:
     if len(partial.routes) >= context.instance.max_vehicles:
         return None
 
-    if not context.evaluator.route((customer_id,)).feasible:
+    route_result = context.evaluator.route((customer_id,))
+
+    if not route_result.feasible:
         return None
 
     route_index = len(partial.routes)
     candidate = Solution(partial.routes + ((customer_id,),))
-    delta_f = context.evaluate_partial(candidate).objective - base.objective
+    delta_f = _route_objective(route_result, context)
 
     return Insertion(customer_id, route_index, 0, 1, delta_f, candidate)
 
