@@ -10,6 +10,7 @@ import sys
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, replace
+from functools import partial
 from pathlib import Path
 from tempfile import gettempdir
 from uuid import uuid4
@@ -17,14 +18,24 @@ from uuid import uuid4
 from .alns import run_alns
 from .cli import result_to_dict
 from .config import ALNSConfig
+from .contextual.alns import run_contextual_alns
+from .contextual.config import ContextualBanditConfig
 from .parser import parse_instance
+
+BANDIT_FIELDS = ("context_window", "linucb_exploration", "linucb_regularization")
 
 RAW_FIELDS = (
     "instance",
     "customers",
     "risks",
+    "algorithm",
     "seed",
     "iterations",
+    "alpha",
+    "beta",
+    "context_window",
+    "linucb_exploration",
+    "linucb_regularization",
     "vehicles",
     "distance",
     "risk_delay",
@@ -38,9 +49,13 @@ AGGREGATE_FIELDS = (
     "instance",
     "customers",
     "risks",
+    "algorithm",
     "iterations",
     "alpha",
     "beta",
+    "context_window",
+    "linucb_exploration",
+    "linucb_regularization",
     "runs",
     "vehicles_mean",
     "vehicles_std",
@@ -68,10 +83,15 @@ class BenchmarkConfig:
     instance_paths: tuple[Path, ...]
     seeds: tuple[int, ...]
     alns: ALNSConfig
+
     customer_limit: int = 25
     risk_limit: int = 5
+
     checkpoint_dir: Path | None = None
     workers: int = 1
+
+    algorithm: str = "baseline"
+    bandit: ContextualBanditConfig | None = None
 
 
 def run_benchmark(
@@ -79,7 +99,11 @@ def run_benchmark(
 ) -> list[dict[str, object]]:
     _validate_benchmark_config(config)
 
-    solve = solver or _solve_one
+    solve = (
+        solver
+        if solver is not None
+        else partial(_solve_one, algorithm=config.algorithm, bandit=config.bandit)
+    )
 
     if config.workers == 1:
         return _run_sequential(config, solve)
@@ -115,9 +139,7 @@ def _run_sequential(
     return rows
 
 
-def _run_parallel(
-    config: BenchmarkConfig, solve: Callable
-) -> list[dict[str, object]]:
+def _run_parallel(config: BenchmarkConfig, solve: Callable) -> list[dict[str, object]]:
     try:
         pickle.dumps(solve)
     except (AttributeError, pickle.PickleError, TypeError) as exc:
@@ -197,9 +219,7 @@ def _validate_feasible_row(
     row: dict[str, object], instance_path: Path, seed: int
 ) -> None:
     if not bool(row["feasible"]):
-        raise RuntimeError(
-            f"infeasible benchmark run: {instance_path} seed={seed}"
-        )
+        raise RuntimeError(f"infeasible benchmark run: {instance_path} seed={seed}")
 
 
 def _create_run_directory(output_dir: Path | None) -> Path:
@@ -252,7 +272,10 @@ def main(argv=None) -> int:
         parser.error(str(exc))
 
     print("Benchmark Completed", file=sys.stderr)
-    print(f"completed {len(rows)} runs; raw={raw}; aggregate={aggregate}")
+    print(
+        f"completed {len(rows)} runs; algorithm={config.algorithm}; "
+        f"raw={raw}; aggregate={aggregate}"
+    )
 
     return 0
 
@@ -261,8 +284,11 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="uav-routing-benchmark")
 
     parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--algorithm", choices=("baseline", "contextual"))
+
     parser.add_argument("--iterations", type=int)
     parser.add_argument("--seeds", type=int, nargs="+")
+
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--output-dir", type=Path, default=Path("results"))
 
@@ -277,12 +303,20 @@ def _benchmark_config_from_args(args: argparse.Namespace) -> BenchmarkConfig:
         alns = replace(alns, iterations=args.iterations)
 
     seeds = tuple(args.seeds) if args.seeds is not None else config.seeds
+    algorithm = args.algorithm if args.algorithm is not None else config.algorithm
+    bandit = None
+
+    if algorithm == "contextual":
+        bandit = config.bandit or ContextualBanditConfig()
+
     return replace(
         config,
         seeds=seeds,
         alns=alns,
         checkpoint_dir=args.output_dir,
         workers=args.workers,
+        algorithm=algorithm,
+        bandit=bandit,
     )
 
 
@@ -291,11 +325,27 @@ def _solve_one(
     config: ALNSConfig,
     customer_limit: int,
     risk_limit: int,
+    *,
+    algorithm: str = "baseline",
+    bandit: ContextualBanditConfig | None = None,
 ) -> dict[str, object]:
     instance = parse_instance(path, customer_limit, risk_limit)
-    result = run_alns(instance, config)
-    payload = result_to_dict(result, instance, config)
-    row = {key: payload[key] for key in (*RAW_FIELDS, "alpha", "beta")}
+
+    if algorithm == "contextual":
+        bandit = bandit or ContextualBanditConfig()
+        result = run_contextual_alns(instance, config, bandit)
+        payload = result_to_dict(result, instance, config, bandit)
+    else:
+        result = run_alns(instance, config)
+        payload = result_to_dict(result, instance, config)
+
+    row = {key: payload[key] for key in RAW_FIELDS if key not in BANDIT_FIELDS}
+    row.update(
+        {
+            key: getattr(bandit, key) if algorithm == "contextual" else None
+            for key in BANDIT_FIELDS
+        }
+    )
 
     row["routes"] = [route["customers"] for route in payload["routes"]]
 
@@ -310,9 +360,13 @@ def _aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             row["instance"],
             row["customers"],
             row["risks"],
+            row.get("algorithm", "baseline"),
             row["iterations"],
             row["alpha"],
             row["beta"],
+            row.get("context_window"),
+            row.get("linucb_exploration"),
+            row.get("linucb_regularization"),
         )
         grouped.setdefault(key, []).append(row)
 
@@ -327,7 +381,7 @@ def _aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
 def _aggregate_group(
     key: tuple[object, ...], group: list[dict[str, object]]
 ) -> dict[str, object]:
-    result: dict[str, object] = dict(zip(AGGREGATE_FIELDS[:6], key, strict=True))
+    result: dict[str, object] = dict(zip(AGGREGATE_FIELDS[:10], key, strict=True))
     result["runs"] = len(group)
 
     for field in ("vehicles", "distance", "risk_delay", "objective"):
@@ -366,7 +420,7 @@ def _write_csv_atomic(
         writer.writeheader()
 
         for row in rows:
-            csv_row = dict(row)
+            csv_row = {"algorithm": "baseline", **row}
 
             if "routes" in csv_row:
                 csv_row["routes"] = json.dumps(csv_row["routes"], separators=(",", ":"))
@@ -378,17 +432,38 @@ def _write_csv_atomic(
 
 def _load_config(path: Path) -> BenchmarkConfig:
     values = json.loads(path.read_text(encoding="utf-8"))
+    algorithm = values.get("algorithm", "baseline")
+    bandit = None
 
-    return BenchmarkConfig(
+    if "contextual_bandit" in values:
+        bandit = ContextualBanditConfig.from_dict(values["contextual_bandit"])
+    elif algorithm == "contextual":
+        bandit = ContextualBanditConfig()
+
+    config = BenchmarkConfig(
         instance_paths=tuple(Path(value) for value in values["instances"]),
         seeds=tuple(int(value) for value in values["seeds"]),
         alns=ALNSConfig.from_dict(values["alns"]),
         customer_limit=int(values.get("customers", 25)),
         risk_limit=int(values.get("risks", 5)),
+        algorithm=algorithm,
+        bandit=bandit,
     )
+    _validate_benchmark_config(config)
+
+    return config
 
 
 def _validate_benchmark_config(config: BenchmarkConfig) -> None:
+    if config.algorithm not in ("baseline", "contextual"):
+        raise ValueError("algorithm must be baseline or contextual")
+
+    if config.bandit is not None:
+        if not isinstance(config.bandit, ContextualBanditConfig):
+            raise ValueError("bandit must be a ContextualBanditConfig")
+
+        config.bandit.validate()
+
     if not config.instance_paths:
         raise ValueError("benchmark requires at least one instance")
 
