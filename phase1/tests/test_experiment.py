@@ -212,6 +212,46 @@ def test_custom_four_argument_solver_is_preserved_for_contextual_config(workers)
     assert rows[0]["routes"] == [[1, 2, 3], [4, 5, 6, 7]]
 
 
+@pytest.mark.parametrize("workers", [1, 2])
+def test_custom_contextual_solver_provenance_reaches_rows_and_csv(tmp_path, workers):
+    config = BenchmarkConfig(
+        (Path("c101.txt"),),
+        (2, 1),
+        ALNSConfig(iterations=2),
+        checkpoint_dir=tmp_path,
+        workers=workers,
+        algorithm="contextual",
+        bandit=ContextualBanditConfig(17, 0.25, 2.0),
+    )
+
+    rows = run_benchmark(config, solver=fake_solver)
+
+    assert [row["seed"] for row in rows] == [2, 1]
+    assert {row["algorithm"] for row in rows} == {"contextual"}
+    assert {
+        (
+            row["context_window"],
+            row["linucb_exploration"],
+            row["linucb_regularization"],
+        )
+        for row in rows
+    } == {(17, 0.25, 2.0)}
+
+    for name in ("raw.csv", "aggregate.csv"):
+        with (tmp_path / name).open(newline="") as handle:
+            csv_rows = list(csv.DictReader(handle))
+
+        assert {row["algorithm"] for row in csv_rows} == {"contextual"}
+        assert {
+            (
+                row["context_window"],
+                row["linucb_exploration"],
+                row["linucb_regularization"],
+            )
+            for row in csv_rows
+        } == {("17", "0.25", "2.0")}
+
+
 def test_contextual_default_solver_is_picklable_and_preserves_order(tmp_path):
     config = BenchmarkConfig(
         (C101,),

@@ -99,6 +99,8 @@ def run_benchmark(
 ) -> list[dict[str, object]]:
     if config.algorithm == "baseline":
         config = replace(config, bandit=None)
+    elif config.algorithm == "contextual" and config.bandit is None:
+        config = replace(config, bandit=ContextualBanditConfig())
 
     _validate_benchmark_config(config)
 
@@ -125,16 +127,17 @@ def _run_sequential(
 
             alns.validate()
 
-            row = solve(
+            row = _solve_job(
+                solve,
                 instance_path,
                 alns,
                 config.customer_limit,
                 config.risk_limit,
+                config.algorithm,
+                config.bandit,
             )
 
-            _validate_feasible_row(row, instance_path, seed)
-
-            rows.append(dict(row))
+            rows.append(row)
 
             if config.checkpoint_dir is not None:
                 write_results(rows, config.checkpoint_dir)
@@ -175,6 +178,8 @@ def _run_parallel(config: BenchmarkConfig, solve: Callable) -> list[dict[str, ob
                     alns,
                     config.customer_limit,
                     config.risk_limit,
+                    config.algorithm,
+                    config.bandit,
                 )
                 futures[future] = result_path
 
@@ -211,11 +216,19 @@ def _solve_job(
     alns: ALNSConfig,
     customer_limit: int,
     risk_limit: int,
+    algorithm: str,
+    bandit: ContextualBanditConfig | None,
 ) -> dict[str, object]:
     row = solve(instance_path, alns, customer_limit, risk_limit)
     _validate_feasible_row(row, instance_path, alns.seed)
 
-    return dict(row)
+    result = dict(row)
+    result["algorithm"] = algorithm
+
+    for field in BANDIT_FIELDS:
+        result[field] = getattr(bandit, field) if bandit is not None else None
+
+    return result
 
 
 def _validate_feasible_row(

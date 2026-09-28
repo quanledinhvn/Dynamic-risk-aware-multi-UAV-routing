@@ -130,16 +130,19 @@ class ContextualALNSSolver:
         )
 
         destroy_operators, repair_operators = _operators(config, None, None)
-        destroy_by_name = {operator.name: operator for operator in destroy_operators}
-        repair_by_name = {operator.name: operator for operator in repair_operators}
+        destroy_names = tuple(operator.name for operator in destroy_operators)
+        repair_names = tuple(operator.name for operator in repair_operators)
 
         selector = OperatorPairSelector(
-            tuple(destroy_by_name),
-            tuple(repair_by_name),
+            destroy_names,
+            repair_names,
             bandit_config,
             maximum_reward,
             rng,
         )
+        destroy_by_name = {operator.name: operator for operator in destroy_operators}
+        repair_by_name = {operator.name: operator for operator in repair_operators}
+
         history = SearchHistory(bandit_config.context_window)
         initial_evaluation = evaluator.solution(initial)
         state = _SearchState(

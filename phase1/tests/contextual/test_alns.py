@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -136,6 +137,47 @@ def test_contextual_run_validates_both_configs_and_positive_reward(
 ):
     with pytest.raises(ValueError, match=message):
         run_contextual_alns(_instance(), alns_config, bandit_config)
+
+
+@pytest.mark.parametrize(
+    ("destroy_names", "repair_names", "message"),
+    [
+        (("same", "same"), ("r",), "unique names"),
+        (("d",), ("same", "same"), "unique names"),
+        ((), ("r",), "nonblank names"),
+        (("d",), (), "nonblank names"),
+        (("",), ("r",), "nonblank names"),
+        (("d",), ("  ",), "nonblank names"),
+    ],
+)
+def test_invalid_operator_names_are_rejected_before_iteration(
+    monkeypatch, destroy_names, repair_names, message
+):
+    from uav_routing.contextual import alns as contextual_alns
+
+    applied = []
+
+    def destroy_apply(solution, instance, evaluator, rng, q):
+        applied.append("destroy")
+        return DestroyResult(solution, ())
+
+    def repair_apply(partial, removed, context):
+        applied.append("repair")
+        return RepairResult(False, None)
+
+    destroy = tuple(
+        SimpleNamespace(name=name, apply=destroy_apply) for name in destroy_names
+    )
+    repair = tuple(
+        SimpleNamespace(name=name, apply=repair_apply) for name in repair_names
+    )
+
+    monkeypatch.setattr(contextual_alns, "_operators", lambda *_: (destroy, repair))
+
+    with pytest.raises(ValueError, match=message):
+        run_contextual_alns(_instance(), replace(ALNSConfig(), iterations=1))
+
+    assert applied == []
 
 
 def test_complete_search_is_feasible_and_reproducible():

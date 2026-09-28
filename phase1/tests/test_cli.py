@@ -3,6 +3,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+from uav_routing.alns import run_alns
+from uav_routing.cli import result_to_dict
+from uav_routing.config import ALNSConfig
+from uav_routing.contextual.alns import run_contextual_alns
+from uav_routing.contextual.config import ContextualBanditConfig
+from uav_routing.parser import parse_instance
+
 ROOT = Path(__file__).parents[1]
 C101 = ROOT.parent / "dataset/solomon_risk/c101.txt"
 
@@ -156,6 +165,35 @@ def test_contextual_solve_uses_pair_stats_and_shared_route_schema(tmp_path):
     assert "ALNS Started" in completed.stderr
     assert "ALNS Completed" in completed.stderr
     assert not output.with_suffix(".json.tmp").exists()
+
+
+def test_contextual_result_requires_explicit_bandit_config_for_serialization():
+    instance = parse_instance(C101, 5, 0)
+    config = ALNSConfig(iterations=1)
+    bandit = ContextualBanditConfig(17, 0.25, 2.0)
+    result = run_contextual_alns(instance, config, bandit)
+
+    with pytest.raises(ValueError, match="bandit_config"):
+        result_to_dict(result, instance, config)
+
+    payload = result_to_dict(result, instance, config, bandit)
+
+    assert payload["contextual_bandit"] == {
+        "context_window": 17,
+        "linucb_exploration": 0.25,
+        "linucb_regularization": 2.0,
+    }
+
+
+def test_baseline_result_keeps_three_argument_serialization():
+    instance = parse_instance(C101, 5, 0)
+    config = ALNSConfig(iterations=1)
+    result = run_alns(instance, config)
+
+    payload = result_to_dict(result, instance, config)
+
+    assert payload["algorithm"] == "baseline"
+    assert payload["contextual_bandit"] is None
 
 
 def test_cli_rejects_unknown_algorithm():

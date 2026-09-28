@@ -32,7 +32,9 @@ def result_to_dict(
     ]
 
     if isinstance(result, ContextualSearchResult):
-        bandit_config = bandit_config or ContextualBanditConfig()
+        if bandit_config is None:
+            raise ValueError("bandit_config is required for contextual results")
+
         algorithm = "contextual"
         contextual_bandit = asdict(bandit_config)
 
