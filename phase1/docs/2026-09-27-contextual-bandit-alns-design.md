@@ -207,9 +207,9 @@ reward chuẩn hóa:
 $$
 r_t=
 \frac{r^{raw}_t}
-     {\max(\text{reward_best},
-           \text{reward_improve},
-           \text{reward_accepted})}.
+     {\max(\text{reward\_best},
+           \text{reward\_improve},
+           \text{reward\_accepted})}.
 $$
 
 Với cấu hình mặc định, các mức là $1$, $0.5$, $0.1$ và $0$. Khi dùng LinUCB,

@@ -136,3 +136,15 @@ Cluster name: uav-benchmark
 ├── To submit a job:            sky exec uav-benchmark yaml_file
 ├── To stop the cluster:        sky stop uav-benchmark
 └── To teardown the cluster:    sky down uav-benchmark
+
+
+python -m uav_routing.cli solve \
+  --instance ../dataset/solomon_risk/c101.txt \
+  --customers 25 \
+  --risks 5 \
+  --iterations 100 \
+  --seed 1 \
+  --alpha 0.5 \
+  --beta 0.5 \
+  --algorithm contextual \
+  --output contextual_result.json
