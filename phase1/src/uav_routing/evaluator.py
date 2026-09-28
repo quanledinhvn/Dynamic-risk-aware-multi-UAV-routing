@@ -156,23 +156,26 @@ class Evaluator:
 
         return violations
 
-    def _risk_delay(self, route_results: tuple[RouteEvaluation, ...]) -> float:
+    def route_risk_delay(self, result: RouteEvaluation) -> float:
         weighted_delay = 0.0
 
-        for result in route_results:
-            for stop in result.schedule:
-                customer = self._customers[stop.customer_id]
-                index = self._matrix_index[stop.customer_id]
-                relative_delay = (stop.service_start - customer.ready_time) / max(
-                    1.0, customer.due_date - customer.ready_time
-                )
-                weighted_delay += (
-                    float(self.instance.risk_priority[index]) * relative_delay
-                )
+        for stop in result.schedule:
+            customer = self._customers[stop.customer_id]
+            index = self._matrix_index[stop.customer_id]
+
+            relative_delay = (stop.service_start - customer.ready_time) / max(
+                1.0, customer.due_date - customer.ready_time
+            )
+            weighted_delay += (
+                float(self.instance.risk_priority[index]) * relative_delay
+            )
 
         total_priority = float(sum(self.instance.risk_priority[1:]))
 
         return weighted_delay / total_priority if total_priority > 0 else 0.0
+
+    def _risk_delay(self, route_results: tuple[RouteEvaluation, ...]) -> float:
+        return sum(self.route_risk_delay(result) for result in route_results)
 
 
 def lexicographically_better(left: tuple[int, float], right: tuple[int, float]) -> bool:
