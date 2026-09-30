@@ -46,6 +46,44 @@ class Solution:
 
 
 @dataclass(frozen=True)
+class SearchConstraints:
+    """Locked route prefixes and the earliest departure of unlaunched routes."""
+
+    locked_prefixes: tuple[Route, ...] = ()
+    free_departure: float = 0.0
+
+    def __post_init__(self) -> None:
+        locked = [customer for prefix in self.locked_prefixes for customer in prefix]
+
+        if any(not prefix for prefix in self.locked_prefixes):
+            raise ValueError("locked prefixes must not be empty")
+
+        if len(locked) != len(set(locked)):
+            raise ValueError("locked customers must be unique across prefixes")
+
+        if self.free_departure < 0:
+            raise ValueError("free_departure must be non-negative")
+
+    @property
+    def locked_route_count(self) -> int:
+        return len(self.locked_prefixes)
+
+    def locked_customers(self) -> frozenset[CustomerId]:
+        return frozenset(
+            customer for prefix in self.locked_prefixes for customer in prefix
+        )
+
+    def is_locked(self, customer_id: CustomerId) -> bool:
+        return customer_id in self.locked_customers()
+
+    def first_free_position(self, route_index: int) -> int:
+        if route_index < self.locked_route_count:
+            return len(self.locked_prefixes[route_index])
+
+        return 0
+
+
+@dataclass(frozen=True)
 class StopSchedule:
     customer_id: int
     arrival: float
