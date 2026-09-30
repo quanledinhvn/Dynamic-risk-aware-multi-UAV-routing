@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass
 
 from .evaluator import Evaluator
-from .models import Instance, Solution
+from .models import Instance, SearchConstraints, Solution
 
 
 @dataclass(frozen=True)
@@ -24,9 +24,10 @@ class RepairContext:
     d_ref: float
     alpha: float
     beta: float
+    constraints: SearchConstraints = SearchConstraints()
 
     def evaluate_partial(self, partial: Solution) -> "PartialEvaluation":
-        evaluated = self.evaluator.solution(partial)
+        evaluated = self.evaluator.solution(partial, self.constraints)
 
         return PartialEvaluation(
             evaluated.distance,
@@ -68,11 +69,17 @@ def _existing_route_insertions(
     base: PartialEvaluation,
 ) -> list[Insertion]:
     choices: list[Insertion] = []
+    constraints = context.constraints
 
     for route_index, route in enumerate(partial.routes):
-        for position in range(len(route) + 1):
+        departure = _route_departure(constraints, route_index)
+        first_position = constraints.first_free_position(route_index)
+
+        for position in range(first_position, len(route) + 1):
             candidate = insert_customer(partial, customer_id, route_index, position)
-            route_result = context.evaluator.route(candidate.routes[route_index])
+            route_result = context.evaluator.route(
+                candidate.routes[route_index], departure=departure
+            )
 
             if not route_result.feasible:
                 continue
@@ -101,7 +108,9 @@ def _new_route_insertion(
     if len(partial.routes) >= context.instance.max_vehicles:
         return None
 
-    if not context.evaluator.route((customer_id,)).feasible:
+    departure = context.constraints.free_departure
+
+    if not context.evaluator.route((customer_id,), departure=departure).feasible:
         return None
 
     route_index = len(partial.routes)
@@ -153,7 +162,7 @@ class GreedyRepair:
         removed: tuple[int, ...],
         context: RepairContext,
     ) -> RepairResult:
-        if not _valid_removed(partial, removed, context.instance):
+        if not _valid_removed(partial, removed, context):
             return RepairResult(False, None)
 
         current = partial
@@ -214,7 +223,7 @@ class Regret2Repair(GreedyRepair):
         removed: tuple[int, ...],
         context: RepairContext,
     ) -> RepairResult:
-        if not _valid_removed(partial, removed, context.instance):
+        if not _valid_removed(partial, removed, context):
             return RepairResult(False, None)
 
         current = partial
@@ -259,7 +268,7 @@ class RiskPriorityRepair(GreedyRepair):
         removed: tuple[int, ...],
         context: RepairContext,
     ) -> RepairResult:
-        if not _valid_removed(partial, removed, context.instance):
+        if not _valid_removed(partial, removed, context):
             return RepairResult(False, None)
 
         current = partial
@@ -286,9 +295,9 @@ def _insertion_key(insertion: Insertion) -> tuple[float, ...]:
 
 
 def _valid_removed(
-    partial: Solution, removed: tuple[int, ...], instance: Instance
+    partial: Solution, removed: tuple[int, ...], context: RepairContext
 ) -> bool:
-    known = {customer.id for customer in instance.customers}
+    known = {customer.id for customer in context.instance.customers}
     assigned = [customer for route in partial.routes for customer in route]
 
     return (
@@ -297,11 +306,19 @@ def _valid_removed(
         and set(removed).issubset(known)
         and set(assigned).issubset(known)
         and set(removed).isdisjoint(assigned)
+        and set(removed).isdisjoint(context.constraints.locked_customers())
     )
 
 
+def _route_departure(constraints: SearchConstraints, route_index: int) -> float:
+    if route_index < constraints.locked_route_count:
+        return 0.0
+
+    return constraints.free_departure
+
+
 def _complete_result(solution: Solution, context: RepairContext) -> RepairResult:
-    evaluation = context.evaluator.solution(solution)
+    evaluation = context.evaluator.solution(solution, context.constraints)
 
     if not evaluation.feasible:
         return RepairResult(False, None)
