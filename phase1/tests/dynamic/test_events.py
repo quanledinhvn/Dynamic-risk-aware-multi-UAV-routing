@@ -100,3 +100,18 @@ def test_input_instance_is_not_mutated():
 
     assert np.array_equal(INSTANCE.risk_priority, before)
     assert INSTANCE.risk_zones == ()
+
+
+def test_drop_customers_removes_ids_and_keeps_frozen_priorities():
+    from uav_routing.dynamic.events import drop_customers
+
+    instance = apply_events(INSTANCE, (RiskUpdate(1.0, RiskZone(9, 3, 4, 10)),), {})
+    frozen = {3: 0.42}
+
+    dropped = drop_customers(instance, (2, 42), frozen)
+
+    assert [customer.id for customer in dropped.customers] == [1, 3]
+    assert dropped.distance_matrix.shape == (3, 3)
+    assert dropped.risk_priority[1] == pytest.approx(instance.risk_priority[1])
+    assert dropped.risk_priority[2] == pytest.approx(0.42)
+    assert dropped.risk_zones == instance.risk_zones

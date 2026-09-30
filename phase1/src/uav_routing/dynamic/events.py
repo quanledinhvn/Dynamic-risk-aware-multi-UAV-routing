@@ -35,6 +35,19 @@ def apply_events(
     return _rebuild(instance, tuple(customers), tuple(zones), frozen_priority)
 
 
+def drop_customers(
+    instance: Instance,
+    customer_ids: tuple[int, ...],
+    frozen_priority: dict[int, float],
+) -> Instance:
+    excluded = set(customer_ids)
+    customers = tuple(
+        customer for customer in instance.customers if customer.id not in excluded
+    )
+
+    return _rebuild(instance, customers, instance.risk_zones, frozen_priority)
+
+
 def _apply_arrival(
     customers: list[Customer], depot: Customer, customer: Customer
 ) -> None:
