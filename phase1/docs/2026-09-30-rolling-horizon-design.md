@@ -84,13 +84,21 @@ Priority của khách hàng **đã khóa** được đóng băng tại giá tr�
 
 ### 4.1. Quy tắc khóa
 
-Cho nghiệm $S$ với lịch tuyến do `Evaluator` tính. Tại thời điểm $t$, khách hàng $i$ trên tuyến $k$ bị **khóa** khi UAV đã rời điểm đứng trước $i$:
+Cho nghiệm $S$ với lịch tuyến do `Evaluator` tính. Tại thời điểm $t$, khách hàng $i$ trên tuyến $k$ bị **khóa** khi UAV đã thực sự rời điểm đứng trước $i$:
 
 $$
-\operatorname{departure}_{\mathrm{prev}(i)} \leq t.
+\operatorname{departure}_{\mathrm{prev}(i)} < t.
 $$
 
-Tiền tố khóa $P_k(t)$ của tuyến $k$ là dãy dài nhất các khách hàng liên tiếp từ đầu tuyến thỏa điều kiện trên. Theo quy tắc này, khách hàng mà UAV đang bay tới cũng bị khóa, vì Pha 2 không cho phép đổi hướng giữa chừng.
+Với khách hàng đầu tiên của tuyến, UAV rời depot muộn nhất có thể để đến đúng lúc cửa sổ mở:
+
+$$
+\operatorname{departure}_{\mathrm{depot}}=\max\left(t_{\mathrm{free}},\ e_{i}-d_{0i}\right),
+$$
+
+trong đó $t_{\mathrm{free}}$ là thời điểm khởi hành sớm nhất được gán cho tuyến. Nhờ vậy một tuyến mở cho khách hàng có cửa sổ xa vẫn tự do cho đến sát giờ bay, thay vì bị cam kết ngay ở epoch kế tiếp. Bất đẳng thức chặt bảo đảm $t=0$ không khóa gì và một UAV đúng lúc khởi hành vẫn có thể được lập lại kế hoạch.
+
+Tiền tố khóa $P_k(t)$ của tuyến $k$ là dãy dài nhất các khách hàng liên tiếp từ đầu tuyến thỏa điều kiện trên. Theo quy tắc này, khách hàng mà UAV đang bay tới cũng bị khóa, vì Pha 2 không cho phép đổi hướng giữa chừng. Tiền tố không bao giờ ngắn lại giữa hai epoch.
 
 Tuyến có $P_k(t)$ trùng toàn bộ tuyến là tuyến đã hoàn tất hoặc đang hoàn tất; UAV của nó không nhận thêm nhiệm vụ.
 
@@ -192,9 +200,9 @@ Mặc định là `periodic` để số epoch không phụ thuộc nội dung s�
 `Project` nhận nghiệm $S$ của epoch trước, instance mới $I$ và các tiền tố khóa:
 
 1. Sắp lại tuyến để tuyến khóa đứng trước theo bất biến 4.2.
-2. Với mỗi tuyến, giữ tiền tố; đánh giá phần tự do trên $I$; nếu tuyến vi phạm do deadline bị siết, tháo lần lượt các khách hàng tự do có $l_i$ mới nhỏ nhất cho đến khi tuyến khả thi, đưa họ vào `pool`.
-3. Thêm mọi khách hàng mới vào `pool`.
-4. Xóa tuyến tự do rỗng.
+2. Với mỗi tuyến, giữ tiền tố; loại khách hàng không còn trong $I$; đánh giá tuyến trên $I$; khi tuyến vi phạm, tháo khách hàng tự do **đầu tiên** có $s_i > l_i$ (nếu chỉ vi phạm hạn về depot hoặc tải trọng thì tháo khách hàng tự do cuối cùng), lặp cho đến khi tuyến khả thi hoặc không còn khách hàng tự do; khách hàng bị tháo vào `pool`.
+3. Mọi khách hàng của $I$ chưa xuất hiện trong nghiệm (khách hàng mới, khách hàng bị tháo, khách hàng `rejected` được thử lại) vào `pool`, sắp theo `id`.
+4. Xóa tuyến tự do rỗng; tuyến khóa luôn được giữ.
 
 Kết quả là nghiệm một phần khả thi theo ràng buộc tuyến, và tập `pool` cần chèn.
 
