@@ -17,8 +17,8 @@ from .destroy import (
     WorstRemoval,
 )
 from .evaluator import Evaluator, lexicographically_better
-from .initial import build_initial_solution
-from .models import Instance, Solution, SolutionEvaluation
+from .initial import InitialSolutionError, build_initial_solution
+from .models import Instance, SearchConstraints, Solution, SolutionEvaluation
 from .repair import GreedyRepair, Regret2Repair, RepairContext, RiskPriorityRepair
 
 
@@ -59,6 +59,7 @@ class _SearchResources:
     repair_by_name: dict
     destroy_pool: AdaptivePool
     repair_pool: AdaptivePool
+    constraints: SearchConstraints | None = None
 
 
 class SearchInvariantError(RuntimeError):
@@ -73,11 +74,18 @@ class ALNSSolver:
         *,
         destroy_operators=None,
         repair_operators=None,
+        initial_solution: Solution | None = None,
+        constraints: SearchConstraints | None = None,
+        d_ref: float | None = None,
     ):
         self.instance = instance
         self.config = config
         self.destroy_operators = destroy_operators
         self.repair_operators = repair_operators
+
+        self.initial_solution = initial_solution
+        self.constraints = constraints
+        self.d_ref = d_ref
 
     def run(self) -> SearchResult:
         return _run_alns(
@@ -85,6 +93,9 @@ class ALNSSolver:
             self.config,
             destroy_operators_override=self.destroy_operators,
             repair_operators_override=self.repair_operators,
+            initial_solution=self.initial_solution,
+            constraints=self.constraints,
+            d_ref=self.d_ref,
         )
 
 
@@ -150,13 +161,16 @@ def _run_alns(
     *,
     destroy_operators_override=None,
     repair_operators_override=None,
+    initial_solution: Solution | None = None,
+    constraints: SearchConstraints | None = None,
+    d_ref: float | None = None,
 ) -> SearchResult:
     started = time.perf_counter()
     config.validate()
 
     rng = np.random.default_rng(config.seed)
 
-    initial, d_ref = build_initial_solution(instance, config.alpha, config.beta)
+    initial, d_ref = _starting_point(instance, config, initial_solution, d_ref)
 
     resources = _build_search_resources(
         instance,
@@ -164,9 +178,17 @@ def _run_alns(
         d_ref,
         destroy_operators_override,
         repair_operators_override,
+        constraints,
     )
 
-    initial_evaluation = resources.evaluator.solution(initial)
+    initial_evaluation = resources.evaluator.solution(initial, constraints)
+
+    if not initial_evaluation.feasible:
+        raise InitialSolutionError(
+            "initial solution is infeasible: "
+            + ", ".join(initial_evaluation.violations)
+        )
+
     state = _SearchState(
         current=initial,
         current_evaluation=initial_evaluation,
@@ -182,6 +204,7 @@ def _run_alns(
         state.best,
         d_ref,
         config,
+        constraints,
     )
 
     return SearchResult(
@@ -200,16 +223,44 @@ def _run_alns(
     )
 
 
+def _starting_point(
+    instance: Instance,
+    config: ALNSConfig,
+    initial_solution: Solution | None,
+    d_ref: float | None,
+) -> tuple[Solution, float]:
+    if d_ref is not None and d_ref <= 0:
+        raise ValueError("d_ref must be positive")
+
+    if initial_solution is None:
+        initial, built_d_ref = build_initial_solution(
+            instance, config.alpha, config.beta
+        )
+
+        return initial, built_d_ref if d_ref is None else float(d_ref)
+
+    if d_ref is None:
+        raise ValueError("d_ref is required with initial_solution")
+
+    return initial_solution, float(d_ref)
+
+
 def _build_search_resources(
     instance: Instance,
     config: ALNSConfig,
     d_ref: float,
     destroy_override,
     repair_override,
+    constraints: SearchConstraints | None = None,
 ) -> _SearchResources:
     evaluator = Evaluator(instance, d_ref, config.alpha, config.beta)
     repair_context = RepairContext(
-        instance, evaluator, d_ref, config.alpha, config.beta
+        instance,
+        evaluator,
+        d_ref,
+        config.alpha,
+        config.beta,
+        constraints or SearchConstraints(),
     )
     destroy_operators, repair_operators = _operators(
         config,
@@ -234,6 +285,7 @@ def _build_search_resources(
         repair_by_name=repair_by_name,
         destroy_pool=destroy_pool,
         repair_pool=repair_pool,
+        constraints=constraints,
     )
 
 
@@ -291,7 +343,7 @@ def _search_step(
     repair_name = resources.repair_pool.select(rng)
 
     destroyed = resources.destroy_by_name[destroy_name].apply(
-        state.current, instance, resources.evaluator, rng, q
+        state.current, instance, resources.evaluator, rng, q, resources.constraints
     )
     repaired = resources.repair_by_name[repair_name].apply(
         destroyed.partial, destroyed.removed, resources.repair_context
@@ -302,18 +354,21 @@ def _search_step(
         resources.evaluator,
         config,
         rng,
+        resources.constraints,
     )
 
     resources.destroy_pool.record(destroy_name, reward)
     resources.repair_pool.record(repair_name, reward)
 
 
-def _candidate_reward(repaired, state, evaluator, config, rng) -> float:
+def _candidate_reward(
+    repaired, state, evaluator, config, rng, constraints=None
+) -> float:
     if not repaired.success or repaired.solution is None:
         return 0.0
 
     candidate = repaired.solution
-    candidate_evaluation = evaluator.solution(candidate)
+    candidate_evaluation = evaluator.solution(candidate, constraints)
 
     if not candidate_evaluation.feasible:
         return 0.0
@@ -350,8 +405,11 @@ def _audit_best_solution(
     best: Solution,
     d_ref: float,
     config: ALNSConfig,
+    constraints: SearchConstraints | None = None,
 ) -> SolutionEvaluation:
-    evaluation = Evaluator(instance, d_ref, config.alpha, config.beta).solution(best)
+    evaluation = Evaluator(instance, d_ref, config.alpha, config.beta).solution(
+        best, constraints
+    )
 
     if not evaluation.feasible:
         raise SearchInvariantError(
@@ -383,8 +441,21 @@ def _prefixed_stats(prefix: str, pool: AdaptivePool) -> tuple[OperatorStats, ...
     )
 
 
-def run_alns(instance: Instance, config: ALNSConfig) -> SearchResult:
-    return ALNSSolver(instance, config).run()
+def run_alns(
+    instance: Instance,
+    config: ALNSConfig,
+    *,
+    initial_solution: Solution | None = None,
+    constraints: SearchConstraints | None = None,
+    d_ref: float | None = None,
+) -> SearchResult:
+    return ALNSSolver(
+        instance,
+        config,
+        initial_solution=initial_solution,
+        constraints=constraints,
+        d_ref=d_ref,
+    ).run()
 
 
 def accept_candidate(
