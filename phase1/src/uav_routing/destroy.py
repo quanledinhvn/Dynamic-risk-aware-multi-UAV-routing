@@ -7,7 +7,7 @@ from typing import Collection, Protocol
 import numpy as np
 
 from .evaluator import Evaluator
-from .models import Customer, Instance, Solution
+from .models import Customer, Instance, SearchConstraints, Solution
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,7 @@ class DestroyOperator(Protocol):
         evaluator: Evaluator,
         rng: np.random.Generator,
         q: int,
+        constraints: SearchConstraints | None = None,
     ) -> DestroyResult: ...
 
 
@@ -129,8 +130,10 @@ def _customer_differences(
 class RandomRemoval:
     name = "random"
 
-    def apply(self, solution, instance, evaluator, rng, q) -> DestroyResult:
-        served = _served(solution)
+    def apply(
+        self, solution, instance, evaluator, rng, q, constraints=None
+    ) -> DestroyResult:
+        served = _free(solution, constraints)
         count = min(max(int(q), 0), len(served))
 
         if count == 0:
@@ -140,7 +143,7 @@ class RandomRemoval:
             int(value) for value in rng.choice(served, count, replace=False)
         )
 
-        return remove_customers(solution, selected)
+        return remove_customers(solution, selected, constraints)
 
 
 class WorstRemoval(RandomRemoval):
@@ -152,29 +155,48 @@ class WorstRemoval(RandomRemoval):
 
         self.determinism = determinism
 
-    def apply(self, solution, instance, evaluator, rng, q) -> DestroyResult:
-        count = min(max(int(q), 0), len(_served(solution)))
+    def apply(
+        self, solution, instance, evaluator, rng, q, constraints=None
+    ) -> DestroyResult:
+        free = set(_free(solution, constraints))
+        count = min(max(int(q), 0), len(free))
         current = solution
         selected: list[int] = []
 
         for _ in range(count):
-            contributions: list[tuple[float, int]] = []
-
-            for route in current.routes:
-                before = _route_cost(evaluator, route)
-
-                for customer_id in route:
-                    reduced = tuple(cid for cid in route if cid != customer_id)
-                    contribution = before - _route_cost(evaluator, reduced)
-                    contributions.append((contribution, customer_id))
-
-            ranked = sorted(contributions, key=lambda item: (-item[0], item[1]))
+            ranked = _ranked_contributions(current, evaluator, free, constraints)
             index = _powered_index(rng, len(ranked), self.determinism)
             chosen = ranked[index][1]
+
             selected.append(chosen)
-            current = remove_customers(current, (chosen,)).partial
+            free.discard(chosen)
+            current = remove_customers(current, (chosen,), constraints).partial
 
         return DestroyResult(current, tuple(selected))
+
+
+def _ranked_contributions(
+    solution: Solution,
+    evaluator: Evaluator,
+    free: set[int],
+    constraints: SearchConstraints | None,
+) -> list[tuple[float, int]]:
+    contributions: list[tuple[float, int]] = []
+
+    for route_index, route in enumerate(solution.routes):
+        before = _route_cost(evaluator, route, route_index, constraints)
+
+        for customer_id in route:
+            if customer_id not in free:
+                continue
+
+            reduced = tuple(cid for cid in route if cid != customer_id)
+            contribution = before - _route_cost(
+                evaluator, reduced, route_index, constraints
+            )
+            contributions.append((contribution, customer_id))
+
+    return sorted(contributions, key=lambda item: (-item[0], item[1]))
 
 
 class RelatedRemoval(RandomRemoval):
@@ -191,8 +213,10 @@ class RelatedRemoval(RandomRemoval):
         self.weights = weights or RelatednessWeights(1.0, 1.0, 1.0, 1.0)
         self.determinism = determinism
 
-    def apply(self, solution, instance, evaluator, rng, q) -> DestroyResult:
-        served = _served(solution)
+    def apply(
+        self, solution, instance, evaluator, rng, q, constraints=None
+    ) -> DestroyResult:
+        served = _free(solution, constraints)
         count = min(max(int(q), 0), len(served))
 
         if count == 0:
@@ -213,20 +237,29 @@ class RelatedRemoval(RandomRemoval):
             index = _powered_index(rng, len(ranked), self.determinism)
             selected.append(ranked[index])
 
-        return remove_customers(solution, tuple(selected))
+        return remove_customers(solution, tuple(selected), constraints)
 
 
 class RouteRemoval(RandomRemoval):
     name = "route"
 
-    def apply(self, solution, instance, evaluator, rng, q) -> DestroyResult:
-        if not solution.routes:
+    def apply(
+        self, solution, instance, evaluator, rng, q, constraints=None
+    ) -> DestroyResult:
+        candidates = [
+            route_index
+            for route_index, route in enumerate(solution.routes)
+            if len(route) > _first_free_position(constraints, route_index)
+        ]
+
+        if not candidates:
             return DestroyResult(solution, ())
 
-        route_index = int(rng.choice(len(solution.routes)))
-        selected = solution.routes[route_index]
+        route_index = int(rng.choice(candidates))
+        start = _first_free_position(constraints, route_index)
+        selected = solution.routes[route_index][start:]
 
-        return remove_customers(solution, selected)
+        return remove_customers(solution, selected, constraints)
 
 
 class RiskPriorityRemoval(RandomRemoval):
@@ -238,8 +271,10 @@ class RiskPriorityRemoval(RandomRemoval):
 
         self.determinism = determinism
 
-    def apply(self, solution, instance, evaluator, rng, q) -> DestroyResult:
-        served = _served(solution)
+    def apply(
+        self, solution, instance, evaluator, rng, q, constraints=None
+    ) -> DestroyResult:
+        served = _free(solution, constraints)
         count = min(max(int(q), 0), len(served))
         priorities = {
             customer.id: float(instance.risk_priority[index])
@@ -255,24 +290,59 @@ class RiskPriorityRemoval(RandomRemoval):
             selected.append(chosen)
             remaining.remove(chosen)
 
-        return remove_customers(solution, tuple(selected))
+        return remove_customers(solution, tuple(selected), constraints)
 
 
-def remove_customers(solution: Solution, selected: Collection[int]) -> DestroyResult:
+def remove_customers(
+    solution: Solution,
+    selected: Collection[int],
+    constraints: SearchConstraints | None = None,
+) -> DestroyResult:
     selected_tuple = tuple(selected)
     selected_set = set(selected_tuple)
+    locked_count = 0
+
+    if constraints is not None:
+        if not selected_set.isdisjoint(constraints.locked_customers()):
+            raise ValueError("cannot remove locked customers")
+
+        locked_count = constraints.locked_route_count
+
     routes = tuple(
         tuple(customer for customer in route if customer not in selected_set)
         for route in solution.routes
     )
-
-    return DestroyResult(
-        Solution(tuple(route for route in routes if route)), selected_tuple
+    kept = tuple(
+        route
+        for route_index, route in enumerate(routes)
+        if route or route_index < locked_count
     )
+
+    return DestroyResult(Solution(kept), selected_tuple)
 
 
 def _served(solution: Solution) -> tuple[int, ...]:
     return tuple(customer for route in solution.routes for customer in route)
+
+
+def _free(solution: Solution, constraints: SearchConstraints | None) -> tuple[int, ...]:
+    if constraints is None:
+        return _served(solution)
+
+    locked = constraints.locked_customers()
+
+    return tuple(
+        customer
+        for route in solution.routes
+        for customer in route
+        if customer not in locked
+    )
+
+
+def _first_free_position(
+    constraints: SearchConstraints | None, route_index: int
+) -> int:
+    return 0 if constraints is None else constraints.first_free_position(route_index)
 
 
 def _normalized(value: float, maximum: float) -> float:
@@ -286,8 +356,24 @@ def _powered_index(rng: np.random.Generator, length: int, determinism: float) ->
     return min(int(float(rng.random()) ** determinism * length), length - 1)
 
 
-def _route_cost(evaluator: Evaluator, route: tuple[int, ...]) -> float:
+def _route_cost(
+    evaluator: Evaluator,
+    route: tuple[int, ...],
+    route_index: int = 0,
+    constraints: SearchConstraints | None = None,
+) -> float:
     if not route:
         return 0.0
 
-    return evaluator.solution(Solution((route,))).objective
+    if constraints is None:
+        return evaluator.solution(Solution((route,))).objective
+
+    departure = (
+        0.0
+        if route_index < constraints.locked_route_count
+        else constraints.free_departure
+    )
+
+    return evaluator.solution(
+        Solution((route,)), SearchConstraints(free_departure=departure)
+    ).objective
