@@ -1,0 +1,15 @@
+{
+  "name": "tiny",
+  "instance": "../../fixtures/tiny_valid.txt",
+  "static_customers": 2,
+  "risks": 1,
+  "seed": 0,
+  "horizon": 100.0,
+  "events": [
+    {"time": 5.0, "type": "deadline_update", "customer_id": 2, "due_date": 40.0},
+    {"time": 10.0, "type": "customer_arrival",
+     "customer": {"id": 3, "x": 9, "y": 12, "demand": 4, "ready_time": 10.0,
+                  "due_date": 70.0, "service_time": 1}},
+    {"time": 30.0, "type": "risk_update", "zone": {"id": 6, "x": 9, "y": 12, "radius": 5}}
+  ]
+}
