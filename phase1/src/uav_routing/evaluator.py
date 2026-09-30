@@ -6,6 +6,7 @@ from .models import (
     Instance,
     Route,
     RouteEvaluation,
+    SearchConstraints,
     Solution,
     SolutionEvaluation,
     StopSchedule,
@@ -33,7 +34,7 @@ class Evaluator:
             for index, customer in enumerate(instance.customers, start=1)
         }
 
-    def route(self, route: Route) -> RouteEvaluation:
+    def route(self, route: Route, *, departure: float = 0.0) -> RouteEvaluation:
         if not route:
             return RouteEvaluation(False, 0.0, 0.0, 0.0, (), ("empty_route",))
 
@@ -45,7 +46,7 @@ class Evaluator:
             return RouteEvaluation(False, 0.0, 0.0, 0.0, (), ("unknown_customer",))
 
         schedule, violations, load, distance, departure, previous_index = (
-            self._build_route_schedule(route)
+            self._build_route_schedule(route, departure)
         )
 
         return_leg = float(self.instance.distance_matrix[previous_index, 0])
@@ -64,20 +65,19 @@ class Evaluator:
         )
 
     def _build_route_schedule(
-        self, route: Route
+        self, route: Route, departure: float
     ) -> tuple[list[StopSchedule], list[str], float, float, float, int]:
         schedule: list[StopSchedule] = []
         violations: list[str] = []
 
         load = 0.0
         distance = 0.0
-        departure = 0.0
         previous_index = 0
 
         for customer_id in route:
             customer = self._customers[customer_id]
             customer_index = self._matrix_index[customer_id]
-            
+
             leg = float(self.instance.distance_matrix[previous_index, customer_index])
 
             distance += leg
@@ -106,9 +106,17 @@ class Evaluator:
         if depot_return > self.instance.depot.due_date:
             _append_once(violations, "depot_due_date")
 
-    def solution(self, solution: Solution) -> SolutionEvaluation:
-        route_results = tuple(self.route(route) for route in solution.routes)
+    def solution(
+        self, solution: Solution, constraints: SearchConstraints | None = None
+    ) -> SolutionEvaluation:
+        route_results = tuple(
+            self.route(route, departure=_route_departure(index, constraints))
+            for index, route in enumerate(solution.routes)
+        )
         violations = self._solution_violations(solution, route_results)
+
+        if not _prefixes_respected(solution, constraints):
+            _append_once(violations, "locked_prefix")
         distance = sum(result.distance for result in route_results)
         risk_delay = self._risk_delay(route_results)
         objective = self.alpha * distance / self.d_ref + self.beta * risk_delay
@@ -192,6 +200,28 @@ def evaluate_solution(
     beta: float,
 ) -> SolutionEvaluation:
     return Evaluator(instance, d_ref, alpha, beta).solution(solution)
+
+
+def _route_departure(route_index: int, constraints: SearchConstraints | None) -> float:
+    if constraints is None or route_index < constraints.locked_route_count:
+        return 0.0
+
+    return constraints.free_departure
+
+
+def _prefixes_respected(
+    solution: Solution, constraints: SearchConstraints | None
+) -> bool:
+    if constraints is None:
+        return True
+
+    if len(solution.routes) < constraints.locked_route_count:
+        return False
+
+    return all(
+        route[: len(prefix)] == prefix
+        for route, prefix in zip(solution.routes, constraints.locked_prefixes)
+    )
 
 
 def _append_once(items: list[str], value: str) -> None:
