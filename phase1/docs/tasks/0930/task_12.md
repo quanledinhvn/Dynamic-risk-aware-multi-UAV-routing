@@ -22,7 +22,7 @@
 **Interfaces:**
 - Produces: `DynamicBenchmarkConfig(scenario_paths, seeds, policies, alns, rolling, workers)`, `run_dynamic_benchmark(config) -> list[dict]`, `write_dynamic_results(rows, output_dir)`; `python -m uav_routing.dynamic.experiment --config ... --workers N --output-dir ...`.
 
-- [ ] **Step 1: Write behavioural tests**
+- [x] **Step 1: Write behavioural tests**
 
 ```python
 def test_raw_rows_have_one_row_per_scenario_seed_policy(): ...
@@ -33,11 +33,11 @@ def test_infeasible_realized_solution_aborts_benchmark(): ...
 def test_csv_schema_matches_fields(tmp_path): ...
 ```
 
-- [ ] **Step 2: Scaffold, verify RED**
+- [x] **Step 2: Scaffold, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_experiment.py -v`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - `RAW_FIELDS`: `scenario, instance, static_customers, dynamic_customers, degree_of_dynamism, policy, trigger, epoch_length, seed, epochs, total_iterations, vehicles, distance, risk_delay, objective, unserved, unserved_priority, clairvoyant_objective, gap, runtime_seconds, runtime_per_epoch_mean, feasible, routes`.
 - `AGGREGATE_FIELDS`: nhóm theo `scenario, policy, trigger, epoch_length`, thống kê mean/std/best/worst cho `vehicles, distance, risk_delay, objective, unserved, gap, runtime_seconds`.
@@ -45,7 +45,7 @@ Run: `cd phase1 && uv run pytest tests/dynamic/test_experiment.py -v`
 - `clairvoyant` chạy một lần cho mỗi cặp kịch bản/seed và được ghép vào mọi chính sách của cặp đó.
 - Cấu hình JSON: `scenarios` (glob hoặc danh sách), `seeds`, `policies`, `alns`, `rolling`.
 
-- [ ] **Step 4: Generate scenarios, run smoke, update README**
+- [x] **Step 4: Generate scenarios, run smoke, update README**
 
 ```bash
 cd phase1
@@ -58,7 +58,7 @@ uv run python -m uav_routing.dynamic.experiment --config configs/dynamic/smoke.j
 
 README bổ sung mục “Giai đoạn 2 — Rolling horizon”: mô hình động, quy tắc khóa, định dạng kịch bản, bốn chính sách, lệnh `simulate` và benchmark, metric và cách tái lập.
 
-- [ ] **Step 5: Verify and commit**
+- [x] **Step 5: Verify and commit**
 
 Run: `cd phase1 && uv run pytest tests -q`
 

@@ -22,7 +22,7 @@
 - Consumes: `SearchConstraints`.
 - Produces: `Evaluator.route(route, *, departure=0.0)`, `Evaluator.solution(solution, constraints=None)`, vi phạm mới `"locked_prefix"`.
 
-- [ ] **Step 1: Freeze the static behaviour with a snapshot test before touching the evaluator**
+- [x] **Step 1: Freeze the static behaviour with a snapshot test before touching the evaluator**
 
 ```python
 def test_static_alns_snapshot_is_unchanged():
@@ -36,7 +36,7 @@ def test_static_alns_snapshot_is_unchanged():
 
 Sinh `SNAPSHOT_*` bằng một lần chạy trên `f/quan` trước khi sửa code và dán giá trị vào test. Test này là hàng rào cho toàn bộ M1.
 
-- [ ] **Step 2: Write behavioural tests for constraints in the evaluator**
+- [x] **Step 2: Write behavioural tests for constraints in the evaluator**
 
 ```python
 def test_free_route_departs_at_free_departure():
@@ -74,7 +74,7 @@ def test_none_constraints_matches_default_evaluation():
     assert evaluator.solution(solution) == evaluator.solution(solution, None)
 ```
 
-- [ ] **Step 3: Add keyword parameters as scaffolds, verify RED**
+- [x] **Step 3: Add keyword parameters as scaffolds, verify RED**
 
 Thêm `departure: float = 0.0` vào `route()` và `constraints: SearchConstraints | None = None` vào `solution()` nhưng chưa dùng chúng.
 
@@ -82,13 +82,13 @@ Run: `cd phase1 && uv run pytest tests/dynamic/test_evaluator_constraints.py -v`
 
 Expected: test departure và locked_prefix thất bại tại assertion; test tương đương `None` pass.
 
-- [ ] **Step 4: Implement**
+- [x] **Step 4: Implement**
 
 - `_build_route_schedule(route, departure)` khởi tạo `departure` từ tham số thay vì `0.0`.
 - Trong `solution()`, với `constraints` khác `None`: tuyến `k < locked_route_count` dùng `departure=0.0`, các tuyến còn lại dùng `constraints.free_departure`; kiểm tra `len(routes) >= locked_route_count` và `routes[k][:len(P_k)] == P_k` với mọi `k`, nếu sai thêm `"locked_prefix"` qua `_append_once`.
 - Không đổi công thức $D$, $R$, $F$, score.
 
-- [ ] **Step 5: Verify snapshot and full suite, then commit**
+- [x] **Step 5: Verify snapshot and full suite, then commit**
 
 Run: `cd phase1 && uv run pytest tests/test_static_snapshot.py tests/dynamic -v && uv run pytest tests -q`
 

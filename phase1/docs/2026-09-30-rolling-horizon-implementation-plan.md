@@ -265,15 +265,15 @@ class EpochSolver(Protocol):
 
 ## 4. Final Definition of Done
 
-- [ ] `cd phase1 && uv run pytest tests -q` passes from a clean checkout, including all Phase 1 tests unchanged.
-- [ ] Static snapshot test proves `run_alns` defaults reproduce Phase 1 routes and metrics.
-- [ ] `generate_solomon_dynamic.py` produces the nine-instance scenario set for $n_{\mathrm{dyn}} \in \{5, 12, 25\}$ deterministically.
+- [x] `cd phase1 && uv run pytest tests -q` passes from a clean checkout, including all Phase 1 tests unchanged.
+- [x] Static snapshot test proves `run_alns` defaults reproduce Phase 1 routes and metrics.
+- [x] `generate_solomon_dynamic.py` produces the nine-instance scenario set for $n_{\mathrm{dyn}} \in \{5, 12, 25\}$ deterministically.
 - [ ] `simulate` runs each policy on each generated scenario with a fixed seed and returns a feasible realized solution.
-- [ ] Every locked prefix of epoch $j$ is a prefix of the same route in epoch $j+1$ for every recorded run.
-- [ ] Empty scenario with zero epoch iterations reproduces the epoch-0 static solution exactly.
-- [ ] Same scenario + config + seed reproduces `SimulationResult`.
-- [ ] Benchmark CSV contains realized metrics, unserved metrics, gap to clairvoyant and per-epoch runtime.
-- [ ] README documents the dynamic model, scenario format, policies, commands and reproduction steps.
+- [x] Every locked prefix of epoch $j$ is a prefix of the same route in epoch $j+1$ for every recorded run.
+- [x] Empty scenario with zero epoch iterations reproduces the epoch-0 static solution exactly.
+- [x] Same scenario + config + seed reproduces `SimulationResult`.
+- [x] Benchmark CSV contains realized metrics, unserved metrics, gap to clairvoyant and per-epoch runtime.
+- [x] README documents the dynamic model, scenario format, policies, commands and reproduction steps.
 
 ## 5. Suggested review gates
 

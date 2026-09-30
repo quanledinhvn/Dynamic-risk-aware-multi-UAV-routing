@@ -26,7 +26,7 @@
 - Consumes: `Customer`, `RiskZone`, `Route`, `Solution` từ `uav_routing.models`.
 - Produces: `SearchConstraints`; `CustomerArrival`, `RiskUpdate`, `DeadlineUpdate`, `Event`, `Scenario`, `LockState`, `EpochRecord`, `SimulationResult`; `RollingHorizonConfig.validate()`, `RollingHorizonConfig.from_dict()`.
 
-- [ ] **Step 1: Write behavioral tests for constraints helpers and config validation**
+- [x] **Step 1: Write behavioral tests for constraints helpers and config validation**
 
 ```python
 def test_constraints_default_is_unconstrained():
@@ -69,7 +69,7 @@ def test_iterations_per_epoch_zero_is_allowed():
 
 `iterations_per_epoch = 0` phải hợp lệ vì `greedy_insert` và bất biến kịch bản rỗng (Task 10) dựa vào nó.
 
-- [ ] **Step 2: Create importable scaffolds, then verify behavioral RED**
+- [x] **Step 2: Create importable scaffolds, then verify behavioral RED**
 
 Khai báo `SearchConstraints` trong `uav_routing/models.py` với hai field, các phương thức trả placeholder (`0`, `frozenset()`, `False`). Khai báo mọi dataclass sự kiện và kết quả trong `dynamic/models.py` đúng theo “Stable interface contracts”. Khai báo `RollingHorizonConfig` với các field mặc định trong mục 9 của design spec, `validate()` trả `None`, `from_dict()` gọi `cls(**values)`.
 
@@ -77,19 +77,19 @@ Run: `cd phase1 && uv run pytest tests/dynamic -v`
 
 Expected: collection thành công; test giá trị mặc định pass; test hành vi khác thất bại tại assertion hoặc `DID NOT RAISE`.
 
-- [ ] **Step 3: Implement validation and helpers**
+- [x] **Step 3: Implement validation and helpers**
 
 - `SearchConstraints.__post_init__` từ chối khách hàng khóa trùng giữa các tiền tố và `free_departure < 0`.
 - `locked_customers()` trả `frozenset` gộp mọi tiền tố; `first_free_position(k)` trả `len(locked_prefixes[k])` khi `k < locked_route_count`, ngược lại `0`.
 - `RollingHorizonConfig.validate()` theo bảng rule giống `ALNSConfig`: `policy ∈ {greedy_insert, cold_restart, warm_alns}`, `trigger ∈ {periodic, event, hybrid}`, `epoch_length > 0`, hai số vòng lặp không âm, `seed` là số nguyên.
 
-- [ ] **Step 4: Run focused tests and the full suite**
+- [x] **Step 4: Run focused tests and the full suite**
 
 Run: `cd phase1 && uv run pytest tests/dynamic -v && uv run pytest tests -q`
 
 Expected: mọi test pass; 211 test Pha 1 không đổi.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/models.py phase1/src/uav_routing/dynamic phase1/tests/dynamic

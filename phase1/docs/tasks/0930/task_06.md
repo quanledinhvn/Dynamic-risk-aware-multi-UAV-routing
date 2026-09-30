@@ -21,7 +21,7 @@
 - Consumes: `parse_instance`, `Scenario`, các `Event`.
 - Produces: `load_scenario`, `save_scenario`, `generate_scenario`, `base_instance`, `ScenarioFormatError`.
 
-- [ ] **Step 1: Write behavioural tests**
+- [x] **Step 1: Write behavioural tests**
 
 ```python
 def test_load_tiny_scenario_parses_all_event_types(): ...
@@ -51,11 +51,11 @@ def test_base_instance_matches_phase1_parser():
     assert base_instance(scenario) == parse_instance(C101, 25, 5)  # so sánh field-by-field
 ```
 
-- [ ] **Step 2: Scaffold `scenario.py` with signatures, verify RED**
+- [x] **Step 2: Scaffold `scenario.py` with signatures, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_scenario.py -v`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - JSON schema đúng mục 11; `instance_path` giải theo thư mục chứa file kịch bản.
 - `load_scenario` kiểm tra mọi điều kiện trong mục 11 và báo `ScenarioFormatError` kèm chỉ số sự kiện.
@@ -63,11 +63,11 @@ Run: `cd phase1 && uv run pytest tests/dynamic/test_scenario.py -v`
 - Mọi ngẫu nhiên qua `np.random.default_rng(seed)`; làm tròn tọa độ và thời gian tới 1 chữ số thập phân để JSON ổn định.
 - `dataset/scripts/generate_solomon_dynamic.py` là CLI mỏng gọi `generate_scenario` cho danh sách instance × $n_{\mathrm{dyn}}$ × seed và ghi vào `dataset/solomon_dynamic/`, tên file `<instance>-n<n0>-d<n_dyn>-s<seed>.json`.
 
-- [ ] **Step 4: Verify and generate the development set**
+- [x] **Step 4: Verify and generate the development set**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_scenario.py -v && uv run python ../dataset/scripts/generate_solomon_dynamic.py --instances c101 r101 rc101 --dynamic 5 --seeds 0 --output ../dataset/solomon_dynamic`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/dynamic/scenario.py dataset/scripts/generate_solomon_dynamic.py phase1/tests/dynamic

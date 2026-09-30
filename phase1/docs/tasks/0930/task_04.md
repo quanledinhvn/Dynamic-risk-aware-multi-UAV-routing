@@ -19,7 +19,7 @@
 - Consumes: `SearchConstraints`, `Evaluator.route(..., departure=)`, `Evaluator.solution(..., constraints)`.
 - Produces: `RepairContext.constraints` (mặc định `SearchConstraints()`); `feasible_insertions`, `best_insertion` và ba repair tôn trọng ràng buộc.
 
-- [ ] **Step 1: Write behavioural tests**
+- [x] **Step 1: Write behavioural tests**
 
 ```python
 def test_insertions_skip_positions_inside_locked_prefix():
@@ -53,11 +53,11 @@ def test_repair_without_constraints_is_unchanged():
     ...  # RepairContext mặc định cho cùng nghiệm như trước
 ```
 
-- [ ] **Step 2: Add `constraints` to `RepairContext` with default, verify RED**
+- [x] **Step 2: Add `constraints` to `RepairContext` with default, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_repair_constraints.py -v`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - `RepairContext.evaluate_partial` truyền `self.constraints` vào `evaluator.solution`.
 - `_existing_route_insertions`: bắt đầu `position` từ `constraints.first_free_position(route_index)`; đánh giá `route_result` với `departure = 0.0` nếu `route_index < locked_route_count`, ngược lại `constraints.free_departure`.
@@ -67,11 +67,11 @@ Run: `cd phase1 && uv run pytest tests/dynamic/test_repair_constraints.py -v`
 
 Không đổi thứ tự sắp xếp `_insertion_key` để hành vi tĩnh giữ nguyên.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd phase1 && uv run pytest tests/dynamic tests/test_repair.py tests/test_insertion.py tests/test_static_snapshot.py -v && uv run pytest tests -q`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/repair.py phase1/tests/dynamic/test_repair_constraints.py

@@ -19,7 +19,7 @@
 - Consumes: `Instance`, `Event`, `euclidean_distance_matrix`, `compute_risk_priorities`.
 - Produces: `apply_events(instance, events, frozen_priority) -> Instance`, `EventApplicationError`.
 
-- [ ] **Step 1: Write behavioural tests**
+- [x] **Step 1: Write behavioural tests**
 
 ```python
 def test_arrival_appends_customer_and_grows_matrix():
@@ -52,22 +52,22 @@ def test_no_events_returns_equal_instance(): ...
 def test_input_instance_is_not_mutated(): ...
 ```
 
-- [ ] **Step 2: Scaffold, verify RED**
+- [x] **Step 2: Scaffold, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_events.py -v`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - Duyệt sự kiện theo thứ tự; xây `customers`, `risk_zones` mới; gọi `euclidean_distance_matrix((depot, *customers))` và `compute_risk_priorities(customers, zones)`.
 - Ghi đè priority của khách hàng có trong `frozen_priority` bằng giá trị đóng băng, theo chỉ số `enumerate(customers, start=1)`.
 - Trả `dataclasses.replace(instance, ...)`; không thay `name`, `depot`, `max_vehicles`, `capacity`.
 - `EventApplicationError` là `ValueError` con, thông báo kèm loại sự kiện và `id`.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd phase1 && uv run pytest tests/dynamic -v && uv run pytest tests -q`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/dynamic/events.py phase1/tests/dynamic/test_events.py

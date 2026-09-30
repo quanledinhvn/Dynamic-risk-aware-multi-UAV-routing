@@ -19,7 +19,7 @@
 - Consumes: `Evaluator`, `RepairContext`, `RiskPriorityRepair`, `best_insertion`, `SearchConstraints`.
 - Produces: `project(solution, instance, evaluator, constraints) -> tuple[Solution, tuple[int, ...]]`, `triage(partial, pool, context) -> tuple[Solution, tuple[int, ...]]`, `lost_customers(instance, rejected, time) -> tuple[int, ...]`.
 
-- [ ] **Step 1: Write behavioural tests**
+- [x] **Step 1: Write behavioural tests**
 
 ```python
 def test_project_collects_new_customers_into_pool():
@@ -55,21 +55,21 @@ def test_lost_customers_are_those_past_latest_launch():
     ...
 ```
 
-- [ ] **Step 2: Scaffold, verify RED**
+- [x] **Step 2: Scaffold, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_projection.py -v`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - `project`: loại khách hàng không còn trong `instance`; với tuyến `k`, lặp: đánh giá tuyến với departure phù hợp; nếu vi phạm `customer_due_date` hoặc `depot_due_date`, tháo khách hàng tự do có `due_date` nhỏ nhất (tie-break `id`) rồi lặp lại; đưa vào `pool`. Xóa tuyến tự do rỗng. `pool` gồm khách hàng bị tháo và khách hàng mới, sắp theo `id`.
 - `triage`: dùng `RiskPriorityRepair.ordered` để sắp `pool`, chèn từng khách hàng bằng `best_insertion`; không có vị trí thì ghi vào `rejected` và tiếp tục. Không dùng `RepairResult` thất bại vì hành vi cần là chèn được bao nhiêu thì chèn.
 - `lost_customers`: `rejected` có $t > l_i - d_{0i}$.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd phase1 && uv run pytest tests/dynamic -v && uv run pytest tests -q`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/dynamic/projection.py phase1/tests/dynamic/test_projection.py

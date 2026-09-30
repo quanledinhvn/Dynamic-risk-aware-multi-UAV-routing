@@ -18,7 +18,7 @@
 **Interfaces:**
 - Produces: `python -m uav_routing.dynamic.cli simulate --scenario <json> --policy warm_alns --epoch-length 60 --iterations-epoch0 2000 --iterations-per-epoch 500 --seed 42 [--alpha --beta --trigger --output]`; `simulation_to_dict(result, config, alns) -> dict`.
 
-- [ ] **Step 1: Write CLI smoke tests using the tiny scenario fixture**
+- [x] **Step 1: Write CLI smoke tests using the tiny scenario fixture**
 
 ```python
 def test_simulate_prints_json_with_expected_keys(capsys): ...
@@ -28,11 +28,11 @@ def test_missing_scenario_file_reports_path(): ...
 def test_output_epochs_include_revealed_events_and_locked_count(): ...
 ```
 
-- [ ] **Step 2: Scaffold `main`, `simulation_to_dict`, verify RED**
+- [x] **Step 2: Scaffold `main`, `simulation_to_dict`, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_cli.py -v`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 JSON gồm:
 
@@ -43,11 +43,11 @@ JSON gồm:
 
 Xử lý lỗi qua `parser.error` như CLI Pha 1, thêm `ScenarioFormatError` và `EventApplicationError`. Ghi file nguyên tử bằng `_write_json_atomic`.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd phase1 && uv run pytest tests/dynamic -v && uv run python -m uav_routing.dynamic.cli simulate --scenario tests/dynamic/fixtures/tiny_scenario.json --policy warm_alns --iterations-epoch0 20 --iterations-per-epoch 5 --seed 1`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/dynamic/cli.py phase1/tests/dynamic/test_cli.py

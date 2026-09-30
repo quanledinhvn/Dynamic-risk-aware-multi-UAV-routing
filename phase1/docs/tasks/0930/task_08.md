@@ -19,7 +19,7 @@
 - Consumes: `Evaluator.solution(solution, constraints)`, `StopSchedule`.
 - Produces: `locked_prefixes(solution, instance, evaluator, time, previous) -> SearchConstraints`, `reorder_locked_first(solution, constraints) -> tuple[Solution, SearchConstraints]`.
 
-- [ ] **Step 1: Write behavioural tests on a hand-computed schedule**
+- [x] **Step 1: Write behavioural tests on a hand-computed schedule**
 
 Instance: depot $(0,0)$, khách hàng 1 tại $(3,4)$ service 2, khách hàng 2 tại $(6,8)$ service 2, khách hàng 3 tại $(0,10)$, ready time đều $0$. Tuyến $(1,2,3)$ có `departure` tại depot $0$, đến 1 lúc $5$, rời lúc $7$, đến 2 lúc $12$, rời lúc $14$.
 
@@ -53,21 +53,21 @@ def test_reorder_moves_locked_routes_first_preserving_relative_order():
     assert constraints.locked_prefixes == ((1,), (5,))
 ```
 
-- [ ] **Step 2: Scaffold, verify RED**
+- [x] **Step 2: Scaffold, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_locking.py -v`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - Đánh giá `solution` bằng `previous` (ràng buộc của epoch trước, để tuyến tự do có `departure` đúng); với mỗi tuyến, quét `schedule`: khách hàng $i$ bị khóa khi departure của điểm trước nó (depot: departure của tuyến) $\leq t$.
 - Tiền tố mới không ngắn hơn tiền tố trong `previous`.
 - `reorder_locked_first` đặt các tuyến có tiền tố khác rỗng lên đầu theo thứ tự xuất hiện, tuyến tự do theo sau; trả `SearchConstraints(locked_prefixes, free_departure=t)`.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd phase1 && uv run pytest tests/dynamic -v && uv run pytest tests -q`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/dynamic/locking.py phase1/tests/dynamic/test_locking.py

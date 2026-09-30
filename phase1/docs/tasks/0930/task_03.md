@@ -19,7 +19,7 @@
 - Consumes: `SearchConstraints`.
 - Produces: mọi `DestroyOperator.apply(..., constraints=None)`; `remove_customers(solution, selected, constraints=None)`.
 
-- [ ] **Step 1: Write behavioural tests over all five operators**
+- [x] **Step 1: Write behavioural tests over all five operators**
 
 ```python
 OPERATORS = (RandomRemoval(), WorstRemoval(), RelatedRemoval(), RouteRemoval(), RiskPriorityRemoval())
@@ -54,13 +54,13 @@ def test_destroy_without_constraints_is_unchanged(operator):
     ...  # apply(..., None) trùng apply(...) cũ với cùng seed
 ```
 
-- [ ] **Step 2: Add the keyword parameter to every operator as a scaffold, verify RED**
+- [x] **Step 2: Add the keyword parameter to every operator as a scaffold, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_destroy_constraints.py -v`
 
 Expected: test khóa thất bại tại assertion; test tương đương `None` pass.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - Thêm `_free(solution, constraints)` trả các khách hàng không bị khóa theo thứ tự tuyến; mọi operator dùng nó thay `_served` khi `constraints` khác `None`.
 - `WorstRemoval` chỉ tính đóng góp cho khách hàng tự do; `RelatedRemoval` chọn hạt giống và ứng viên trong tập tự do; `RiskPriorityRemoval` xếp hạng tập tự do.
@@ -69,11 +69,11 @@ Expected: test khóa thất bại tại assertion; test tương đương `None` 
 
 Nhánh `constraints is None` phải giữ nguyên thứ tự lời gọi `rng` để snapshot tĩnh không đổi.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `cd phase1 && uv run pytest tests/dynamic tests/test_destroy.py tests/test_static_snapshot.py -v && uv run pytest tests -q`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/destroy.py phase1/tests/dynamic/test_destroy_constraints.py

@@ -18,7 +18,7 @@
 **Interfaces:**
 - Produces: `run_alns(instance, config, *, initial_solution=None, constraints=None, d_ref=None)`; `ALNSSolver` nhận cùng ba keyword.
 
-- [ ] **Step 1: Write behavioural tests**
+- [x] **Step 1: Write behavioural tests**
 
 ```python
 def test_default_call_matches_snapshot():
@@ -51,11 +51,11 @@ def test_zero_iterations_is_allowed_for_warm_start():
     ...  # ALNSConfig hiện yêu cầu iterations > 0; nới thành >= 0 khi có initial_solution
 ```
 
-- [ ] **Step 2: Add keyword parameters as scaffolds, verify RED**
+- [x] **Step 2: Add keyword parameters as scaffolds, verify RED**
 
 Run: `cd phase1 && uv run pytest tests/dynamic/test_alns_warm_start.py -v`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 - `_run_alns`: nếu `initial_solution` là `None`, giữ nguyên `build_initial_solution`; nếu có, yêu cầu `d_ref > 0`, đánh giá bằng `Evaluator(..., constraints)`; nếu không khả thi, `raise InitialSolutionError`.
 - `_build_search_resources` tạo `RepairContext(..., constraints=constraints or SearchConstraints())`.
@@ -64,11 +64,11 @@ Run: `cd phase1 && uv run pytest tests/dynamic/test_alns_warm_start.py -v`
 - `ALNSConfig.validate()`: `iterations >= 0`; `run_alns` không có `initial_solution` vẫn yêu cầu `iterations > 0` để hành vi CLI cũ không đổi.
 - `SearchResult` giữ nguyên field; `iterations` phản ánh số vòng lặp thực chạy.
 
-- [ ] **Step 4: Verify snapshot, reproducibility and full suite**
+- [x] **Step 4: Verify snapshot, reproducibility and full suite**
 
 Run: `cd phase1 && uv run pytest tests/dynamic tests/test_alns.py tests/test_integration.py tests/test_static_snapshot.py -v && uv run pytest tests -q`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add phase1/src/uav_routing/alns.py phase1/src/uav_routing/config.py phase1/tests/dynamic/test_alns_warm_start.py
