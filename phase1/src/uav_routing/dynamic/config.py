@@ -12,6 +12,7 @@ class RollingHorizonConfig:
     policy: str = "warm_alns"
     trigger: str = "periodic"
     epoch_length: float = 60.0
+    epoch_fraction: float | None = None
     iterations_epoch0: int = 2_000
     iterations_per_epoch: int = 500
     carry_weights: bool = False
@@ -54,6 +55,14 @@ def _rules(config: RollingHorizonConfig) -> tuple[tuple[bool, str], ...]:
         (
             _is_finite_number(config.epoch_length) and config.epoch_length > 0,
             "epoch_length must be a positive finite number",
+        ),
+        (
+            config.epoch_fraction is None
+            or (
+                _is_finite_number(config.epoch_fraction)
+                and 0 < config.epoch_fraction <= 1
+            ),
+            "epoch_fraction must be None or a number in (0, 1]",
         ),
         (
             _is_int(config.iterations_epoch0) and config.iterations_epoch0 >= 0,

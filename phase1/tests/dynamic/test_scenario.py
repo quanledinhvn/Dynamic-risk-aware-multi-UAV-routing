@@ -157,3 +157,42 @@ def test_generate_rejects_bad_release_fraction():
         generate_scenario(
             C101, static_customers=5, dynamic_customers=1, release_fraction=1.5
         )
+
+
+def test_generator_script_writes_named_files(tmp_path):
+    import os
+    import subprocess
+    import sys
+
+    script = Path(__file__).resolve().parents[3] / "dataset" / "scripts"
+    script = script / "generate_solomon_dynamic.py"
+    env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2] / "src")}
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--instances",
+            "c101",
+            "--source",
+            str(C101.parent),
+            "--output",
+            str(tmp_path),
+            "--dynamic",
+            "2",
+            "--seeds",
+            "0",
+            "1",
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "c101-n25-d2-s0.json",
+        "c101-n25-d2-s1.json",
+    ]
+    assert load_scenario(tmp_path / "c101-n25-d2-s0.json").static_customers == 25

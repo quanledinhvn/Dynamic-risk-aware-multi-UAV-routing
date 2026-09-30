@@ -234,6 +234,7 @@ class RollingHorizonConfig:
     policy: str = "warm_alns"          # greedy_insert | cold_restart | warm_alns
     trigger: str = "periodic"          # periodic | event | hybrid
     epoch_length: float = 60.0         # Δ, cùng đơn vị với time window
+    epoch_fraction: float | None = None  # nếu đặt, Δ = epoch_fraction × horizon
     iterations_epoch0: int = 2_000
     iterations_per_epoch: int = 500
     carry_weights: bool = False

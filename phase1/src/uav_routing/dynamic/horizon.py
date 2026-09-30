@@ -29,7 +29,7 @@ def next_decision_time(
 ) -> float:
     upcoming = [event.time for event in pending if event.time > time]
     next_event = min(upcoming) if upcoming else horizon
-    periodic = min(time + config.epoch_length, horizon)
+    periodic = min(time + effective_epoch_length(config, horizon), horizon)
 
     if config.trigger == "periodic":
         return float(periodic)
@@ -38,6 +38,30 @@ def next_decision_time(
         return float(min(next_event, horizon))
 
     return float(min(periodic, next_event))
+
+
+def effective_epoch_length(config: RollingHorizonConfig, horizon: float) -> float:
+    """Epoch length in time units: a fraction of the horizon when configured."""
+    if config.epoch_fraction is not None:
+        return float(config.epoch_fraction * horizon)
+
+    return float(config.epoch_length)
+
+
+def decision_times(
+    scenario: Scenario, config: RollingHorizonConfig
+) -> tuple[float, ...]:
+    """Epoch times after epoch 0, without running any solver."""
+    times: list[float] = []
+    pending = tuple(scenario.events)
+    time = 0.0
+
+    while time < scenario.horizon:
+        time = next_decision_time(time, config, pending, scenario.horizon)
+        pending = tuple(event for event in pending if event.time > time)
+        times.append(time)
+
+    return tuple(times)
 
 
 def epoch_seed(base_seed: int, epoch_index: int) -> int:

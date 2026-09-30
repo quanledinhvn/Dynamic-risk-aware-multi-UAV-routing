@@ -154,3 +154,73 @@ uv run pytest tests -q
 ```
 
 Bao phủ bộ phân tích cú pháp, hình học, ràng buộc, hàm mục tiêu, ALNS, khả năng tái lập, CLI và benchmark.
+
+## Giai đoạn 2 — Rolling horizon
+
+Phần động nằm trong subpackage `uav_routing.dynamic`. Thiết kế đầy đủ ở [docs/2026-09-30-rolling-horizon-design.md](docs/2026-09-30-rolling-horizon-design.md); kế hoạch triển khai ở [docs/2026-09-30-rolling-horizon-implementation-plan.md](docs/2026-09-30-rolling-horizon-implementation-plan.md).
+
+### Mô hình động
+
+- Một **kịch bản** gồm instance Solomon-RISK nền, $n_0$ khách hàng tĩnh và danh sách sự kiện có thời điểm tiết lộ: khách hàng mới (`customer_arrival`), vùng risk mới hoặc thay đổi (`risk_update`), deadline bị siết (`deadline_update`).
+- Mô phỏng chạy theo **epoch**. Tại mỗi epoch $t$, mọi khách hàng mà UAV đã thực sự rời điểm đứng trước bị **khóa** và không thể thay đổi; UAV rời depot muộn nhất có thể cho khách hàng đầu tiên. Priority của khách hàng đã khóa được đóng băng.
+- Nghiệm được **chiếu** sang instance mới: khách hàng vi phạm deadline mới bị tháo, khách hàng mới được chèn theo risk priority. Khách hàng không chèn được đâu bị `rejected`, thử lại mỗi epoch và trở thành `lost` khi không còn kịp bay tới.
+- ALNS Pha 1 chạy trên nghiệm toàn horizon với `SearchConstraints` (tiền tố khóa và thời điểm khởi hành của tuyến tự do). Với tham số mặc định, Pha 1 cho kết quả không đổi; `tests/test_static_snapshot.py` khóa điều này.
+- $D_{\mathrm{ref}}$ được tính một lần tại epoch 0 và dùng cho toàn kịch bản.
+
+### Chính sách
+
+| Chính sách | Mô tả |
+|---|---|
+| `greedy_insert` | Chỉ chèn sự kiện mới, không chạy ALNS |
+| `cold_restart` | Xây lại phần tự do từ đầu rồi chạy ALNS |
+| `warm_alns` | ALNS từ nghiệm epoch trước (mặc định) |
+| clairvoyant | Một lần ALNS tĩnh trên instance cuối với cùng ngân sách; dùng làm tham chiếu cho `gap` |
+
+### Sinh kịch bản
+
+Khách hàng động là các dòng Solomon ngay sau $n_0$ dòng tĩnh, với thời điểm tiết lộ $\tau_i \sim \mathcal{U}(0, \rho\, l_i)$ và $e_i \leftarrow \max(e_i, \tau_i)$.
+
+```bash
+uv run python ../dataset/scripts/generate_solomon_dynamic.py \
+  --instances c101 c102 c103 r101 r102 r103 rc101 rc102 rc103 \
+  --static 25 --dynamic 5 12 25 --seeds 0 1 2 3 4 5 6 7 8 9 \
+  --output ../dataset/solomon_dynamic
+```
+
+Tên file có dạng `<instance>-n<n0>-d<n_dyn>-s<seed>.json`. Định dạng JSON được mô tả ở mục 11 của design spec.
+
+### Mô phỏng một kịch bản
+
+```bash
+uv run python -m uav_routing.dynamic.cli simulate \
+  --scenario ../dataset/solomon_dynamic/c101-n25-d5-s0.json \
+  --policy warm_alns \
+  --trigger periodic \
+  --epoch-length 60 \
+  --iterations-epoch0 2000 \
+  --iterations-per-epoch 500 \
+  --seed 42 \
+  --output results/dynamic/c101-n25-d5-s0-warm.json
+```
+
+JSON gồm cấu hình, số UAV, quãng đường, risk delay, objective, khách hàng không phục vụ, lịch sử từng epoch (thời điểm, sự kiện tiết lộ, số khách hàng khóa, `rejected`, objective, số vòng lặp, runtime) và các tuyến kèm lịch phục vụ.
+
+### Benchmark động
+
+```bash
+uv run python -m uav_routing.dynamic.experiment \
+  --config configs/dynamic/smoke.json \
+  --workers 2 \
+  --output-dir results/dynamic-smoke
+```
+
+- Độ dài epoch nên đặt theo tỷ lệ horizon bằng `epoch_fraction` (mặc định trong cấu hình là `0.05`), vì horizon của `R1`/`RC1` (230) ngắn hơn nhiều so với `C1` (1236); `epoch_length` cố định được dùng khi không đặt `epoch_fraction`.
+- `raw.csv`: một dòng cho mỗi kịch bản × seed × chính sách, kèm `clairvoyant_objective` và `gap`. `gap` chỉ có ý nghĩa khi `unserved = 0`, vì objective không tính khách hàng bị bỏ; luôn đọc `gap` cùng `unserved` và `unserved_priority`.
+- `aggregate.csv`: thống kê theo kịch bản, chính sách, trigger và độ dài epoch.
+- Clairvoyant chạy một lần cho mỗi cặp kịch bản/seed với ngân sách `iterations_epoch0 + số epoch × iterations_per_epoch`.
+- Các cấu hình chính: `configs/dynamic/benchmark_n25_d{5,12,25}.json`.
+- Có thể ghi đè `--seeds`, `--policies`, `--epoch-length`, `--iterations-epoch0`, `--iterations-per-epoch` từ dòng lệnh.
+
+### Khả năng tái lập
+
+Cùng kịch bản, cấu hình ALNS, cấu hình rolling horizon và seed cho cùng nghiệm thực hiện, lịch sử epoch và metric. Seed của từng epoch được dẫn xuất xác định từ seed cấu hình và chỉ số epoch.

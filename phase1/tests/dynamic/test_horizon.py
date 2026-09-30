@@ -212,3 +212,35 @@ def test_custom_solver_is_used_for_every_epoch_after_zero():
     assert [iterations for iterations, _ in calls] == [20, 20, 20, 20]
     assert len({seed for _, seed in calls}) == 4
     assert result.total_iterations == 50
+
+
+def test_decision_times_match_recorded_epochs():
+    from uav_routing.dynamic.horizon import decision_times
+
+    for trigger in ("periodic", "event", "hybrid"):
+        config = replace(CONFIG, trigger=trigger)
+        result = run_rolling_horizon(TINY, ALNS, config)
+
+        assert decision_times(TINY, config) == tuple(
+            record.time for record in result.epochs[1:]
+        )
+
+    assert decision_times(EMPTY, replace(CONFIG, epoch_length=40.0)) == (
+        40.0,
+        80.0,
+        100.0,
+    )
+
+
+def test_epoch_fraction_scales_epoch_length_with_horizon():
+    from uav_routing.dynamic.horizon import decision_times, effective_epoch_length
+
+    config = replace(CONFIG, epoch_fraction=0.25, epoch_length=999.0)
+
+    assert effective_epoch_length(config, 100.0) == 25.0
+    assert effective_epoch_length(CONFIG, 100.0) == 30.0
+    assert decision_times(EMPTY, config) == (25.0, 50.0, 75.0, 100.0)
+
+    result = run_rolling_horizon(EMPTY, ALNS, replace(config, iterations_per_epoch=0))
+
+    assert [record.time for record in result.epochs] == [0.0, 25.0, 50.0, 75.0, 100.0]

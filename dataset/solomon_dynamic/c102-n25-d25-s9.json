@@ -1,0 +1,367 @@
+{
+  "name": "c102-n25-d25-s9",
+  "instance": "../solomon_risk/c102.txt",
+  "static_customers": 25,
+  "risks": 5,
+  "seed": 9,
+  "horizon": 1236.0,
+  "events": [
+    {
+      "time": 1.8,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 38,
+        "x": 0.0,
+        "y": 40.0,
+        "demand": 30.0,
+        "ready_time": 479.0,
+        "due_date": 522.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 17.8,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 34,
+        "x": 8.0,
+        "y": 45.0,
+        "demand": 20.0,
+        "ready_time": 17.8,
+        "due_date": 1113.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 28.2,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 42,
+        "x": 33.0,
+        "y": 32.0,
+        "demand": 20.0,
+        "ready_time": 68.0,
+        "due_date": 149.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 33.9,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 43,
+        "x": 33.0,
+        "y": 35.0,
+        "demand": 10.0,
+        "ready_time": 33.9,
+        "due_date": 80.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 43.2,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 37,
+        "x": 2.0,
+        "y": 40.0,
+        "demand": 20.0,
+        "ready_time": 43.2,
+        "due_date": 1106.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 51.6,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 32,
+        "x": 10.0,
+        "y": 40.0,
+        "demand": 30.0,
+        "ready_time": 51.6,
+        "due_date": 100.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 54.4,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 27,
+        "x": 23.0,
+        "y": 52.0,
+        "demand": 10.0,
+        "ready_time": 261.0,
+        "due_date": 316.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 74.0,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 44,
+        "x": 32.0,
+        "y": 30.0,
+        "demand": 10.0,
+        "ready_time": 359.0,
+        "due_date": 412.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 74.9,
+      "type": "deadline_update",
+      "customer_id": 15,
+      "due_date": 407.6
+    },
+    {
+      "time": 85.4,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 46,
+        "x": 30.0,
+        "y": 32.0,
+        "demand": 30.0,
+        "ready_time": 448.0,
+        "due_date": 509.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 87.0,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 33,
+        "x": 8.0,
+        "y": 40.0,
+        "demand": 40.0,
+        "ready_time": 87.0,
+        "due_date": 158.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 90.2,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 35,
+        "x": 5.0,
+        "y": 35.0,
+        "demand": 10.0,
+        "ready_time": 283.0,
+        "due_date": 344.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 110.6,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 41,
+        "x": 35.0,
+        "y": 32.0,
+        "demand": 10.0,
+        "ready_time": 166.0,
+        "due_date": 235.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 170.5,
+      "type": "deadline_update",
+      "customer_id": 10,
+      "due_date": 400.3
+    },
+    {
+      "time": 188.9,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 29,
+        "x": 20.0,
+        "y": 50.0,
+        "demand": 10.0,
+        "ready_time": 358.0,
+        "due_date": 405.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 189.4,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 40,
+        "x": 35.0,
+        "y": 30.0,
+        "demand": 10.0,
+        "ready_time": 264.0,
+        "due_date": 321.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 208.3,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 36,
+        "x": 5.0,
+        "y": 45.0,
+        "demand": 10.0,
+        "ready_time": 665.0,
+        "due_date": 716.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 214.6,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 28,
+        "x": 23.0,
+        "y": 55.0,
+        "demand": 20.0,
+        "ready_time": 546.0,
+        "due_date": 593.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 216.5,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 30,
+        "x": 20.0,
+        "y": 55.0,
+        "demand": 10.0,
+        "ready_time": 449.0,
+        "due_date": 504.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 266.7,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 45,
+        "x": 30.0,
+        "y": 30.0,
+        "demand": 10.0,
+        "ready_time": 541.0,
+        "due_date": 600.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 311.0,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 39,
+        "x": 0.0,
+        "y": 45.0,
+        "demand": 20.0,
+        "ready_time": 567.0,
+        "due_date": 624.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 412.0,
+      "type": "risk_update",
+      "zone": {
+        "id": 6,
+        "x": 40.0,
+        "y": 69.0,
+        "radius": 7.0
+      }
+    },
+    {
+      "time": 529.2,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 47,
+        "x": 30.0,
+        "y": 35.0,
+        "demand": 10.0,
+        "ready_time": 1054.0,
+        "due_date": 1127.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 590.0,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 26,
+        "x": 25.0,
+        "y": 55.0,
+        "demand": 10.0,
+        "ready_time": 590.0,
+        "due_date": 1130.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 594.9,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 50,
+        "x": 26.0,
+        "y": 32.0,
+        "demand": 10.0,
+        "ready_time": 594.9,
+        "due_date": 1123.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 610.7,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 31,
+        "x": 10.0,
+        "y": 35.0,
+        "demand": 20.0,
+        "ready_time": 610.7,
+        "due_date": 1112.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 630.8,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 49,
+        "x": 28.0,
+        "y": 35.0,
+        "demand": 10.0,
+        "ready_time": 1001.0,
+        "due_date": 1066.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 664.9,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 48,
+        "x": 28.0,
+        "y": 30.0,
+        "demand": 10.0,
+        "ready_time": 664.9,
+        "due_date": 1122.0,
+        "service_time": 90.0
+      }
+    },
+    {
+      "time": 824.0,
+      "type": "risk_update",
+      "zone": {
+        "id": 7,
+        "x": 25.0,
+        "y": 81.0,
+        "radius": 2.0
+      }
+    }
+  ]
+}

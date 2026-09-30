@@ -43,3 +43,14 @@ def test_from_dict_constructs_and_validates():
 
     with pytest.raises(ValueError, match="keys"):
         RollingHorizonConfig.from_dict({"unknown": 1})
+
+
+@pytest.mark.parametrize("fraction", [0.0, 1.5, -0.1, float("nan")])
+def test_invalid_epoch_fraction_is_rejected(fraction):
+    with pytest.raises(ValueError, match="epoch_fraction"):
+        replace(RollingHorizonConfig(), epoch_fraction=fraction).validate()
+
+
+def test_epoch_fraction_is_optional_and_accepted():
+    replace(RollingHorizonConfig(), epoch_fraction=0.05).validate()
+    assert RollingHorizonConfig().epoch_fraction is None
