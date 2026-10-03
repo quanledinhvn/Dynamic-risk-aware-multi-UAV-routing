@@ -1,0 +1,107 @@
+{
+  "name": "rc102-n95-d5-s4",
+  "instance": "../solomon_risk/rc102.txt",
+  "static_customers": 95,
+  "risks": 5,
+  "seed": 4,
+  "horizon": 240.0,
+  "events": [
+    {
+      "time": 5.2,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 99,
+        "x": 26.0,
+        "y": 35.0,
+        "demand": 15.0,
+        "ready_time": 77.0,
+        "due_date": 107.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 40.9,
+      "type": "deadline_update",
+      "customer_id": 6,
+      "due_date": 119.5
+    },
+    {
+      "time": 46.0,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 97,
+        "x": 4.0,
+        "y": 18.0,
+        "demand": 35.0,
+        "ready_time": 120.0,
+        "due_date": 150.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 57.3,
+      "type": "deadline_update",
+      "customer_id": 85,
+      "due_date": 125.7
+    },
+    {
+      "time": 76.5,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 100,
+        "x": 31.0,
+        "y": 67.0,
+        "demand": 3.0,
+        "ready_time": 180.0,
+        "due_date": 210.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 80.0,
+      "type": "risk_update",
+      "zone": {
+        "id": 4,
+        "x": 76.0,
+        "y": 51.0,
+        "radius": 3.0
+      }
+    },
+    {
+      "time": 121.1,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 96,
+        "x": 55.0,
+        "y": 54.0,
+        "demand": 26.0,
+        "ready_time": 121.1,
+        "due_date": 214.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 125.9,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 98,
+        "x": 26.0,
+        "y": 52.0,
+        "demand": 9.0,
+        "ready_time": 125.9,
+        "due_date": 215.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 160.0,
+      "type": "risk_update",
+      "zone": {
+        "id": 6,
+        "x": 21.0,
+        "y": 48.0,
+        "radius": 5.0
+      }
+    }
+  ]
+}

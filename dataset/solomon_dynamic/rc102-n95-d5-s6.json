@@ -1,0 +1,107 @@
+{
+  "name": "rc102-n95-d5-s6",
+  "instance": "../solomon_risk/rc102.txt",
+  "static_customers": 95,
+  "risks": 5,
+  "seed": 6,
+  "horizon": 240.0,
+  "events": [
+    {
+      "time": 0.5,
+      "type": "deadline_update",
+      "customer_id": 5,
+      "due_date": 168.5
+    },
+    {
+      "time": 24.0,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 99,
+        "x": 26.0,
+        "y": 35.0,
+        "demand": 15.0,
+        "ready_time": 77.0,
+        "due_date": 107.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 30.9,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 97,
+        "x": 4.0,
+        "y": 18.0,
+        "demand": 35.0,
+        "ready_time": 120.0,
+        "due_date": 150.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 46.4,
+      "type": "deadline_update",
+      "customer_id": 59,
+      "due_date": 152.2
+    },
+    {
+      "time": 47.6,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 98,
+        "x": 26.0,
+        "y": 52.0,
+        "demand": 9.0,
+        "ready_time": 47.6,
+        "due_date": 215.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 69.1,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 96,
+        "x": 55.0,
+        "y": 54.0,
+        "demand": 26.0,
+        "ready_time": 69.1,
+        "due_date": 214.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 80.0,
+      "type": "risk_update",
+      "zone": {
+        "id": 6,
+        "x": 40.0,
+        "y": 58.0,
+        "radius": 8.0
+      }
+    },
+    {
+      "time": 124.4,
+      "type": "customer_arrival",
+      "customer": {
+        "id": 100,
+        "x": 31.0,
+        "y": 67.0,
+        "demand": 3.0,
+        "ready_time": 180.0,
+        "due_date": 210.0,
+        "service_time": 10.0
+      }
+    },
+    {
+      "time": 160.0,
+      "type": "risk_update",
+      "zone": {
+        "id": 7,
+        "x": 31.0,
+        "y": 40.0,
+        "radius": 3.0
+      }
+    }
+  ]
+}
