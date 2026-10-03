@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass
 
 from .evaluator import Evaluator
-from .models import Instance, SearchConstraints, Solution
+from .models import Instance, RouteEvaluation, SearchConstraints, Solution
 
 
 @dataclass(frozen=True)
@@ -82,10 +82,11 @@ def _existing_route_insertions(
     for route_index, route in enumerate(partial.routes):
         departure = _route_departure(constraints, route_index)
         first_position = constraints.first_free_position(route_index)
+        current_result = context.evaluator.route(route, departure=departure)
 
         for position in range(first_position, len(route) + 1):
             candidate = insert_customer(partial, customer_id, route_index, position)
-            route_result = context.evaluator.route(
+            candidate_result = context.evaluator.route(
                 candidate.routes[route_index], departure=departure
             )
 
@@ -119,8 +120,9 @@ def _new_route_insertion(
         return None
 
     departure = context.constraints.free_departure
+    route_result = context.evaluator.route((customer_id,), departure=departure)
 
-    if not context.evaluator.route((customer_id,), departure=departure).feasible:
+    if not route_result.feasible:
         return None
 
     route_index = len(partial.routes)
