@@ -4,19 +4,26 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from dataclasses import asdict
 from pathlib import Path
 
 from .alns import SearchInvariantError, SearchResult, run_alns
 from .config import ALNSConfig
+from .contextual.alns import ContextualSearchResult, run_contextual_alns
+from .contextual.config import ContextualBanditConfig
 from .initial import InitialSolutionError
 from .models import Instance, Route, RouteEvaluation
 from .parser import InstanceFormatError, parse_instance
 
 
 def result_to_dict(
-    result: SearchResult, instance: Instance, config: ALNSConfig
+    result: SearchResult | ContextualSearchResult,
+    instance: Instance,
+    config: ALNSConfig,
+    bandit_config: ContextualBanditConfig | None = None,
 ) -> dict[str, object]:
     evaluation = result.evaluation
+
     routes = [
         _route_to_dict(route_index, route, route_evaluation)
         for route_index, (route, route_evaluation) in enumerate(
@@ -24,7 +31,33 @@ def result_to_dict(
         )
     ]
 
+    if isinstance(result, ContextualSearchResult):
+        if bandit_config is None:
+            raise ValueError("bandit_config is required for contextual results")
+
+        algorithm = "contextual"
+        contextual_bandit = asdict(bandit_config)
+
+        operators = []
+        pair_selection_stats = [asdict(stats) for stats in result.pair_selection_stats]
+    else:
+        algorithm = "baseline"
+        contextual_bandit = None
+        pair_selection_stats = []
+
+        operators = [
+            {
+                "name": stats.name,
+                "weight": float(stats.weight),
+                "total_uses": stats.total_uses,
+                "segment_uses": stats.segment_uses,
+                "segment_score": float(stats.segment_score),
+            }
+            for stats in result.operator_stats
+        ]
+
     return {
+        "algorithm": algorithm,
         "instance": instance.name,
         "customers": len(instance.customers),
         "risks": len(instance.risk_zones),
@@ -38,16 +71,9 @@ def result_to_dict(
         "objective": float(evaluation.objective),
         "runtime_seconds": float(result.runtime_seconds),
         "feasible": bool(evaluation.feasible),
-        "operators": [
-            {
-                "name": stats.name,
-                "weight": float(stats.weight),
-                "total_uses": stats.total_uses,
-                "segment_uses": stats.segment_uses,
-                "segment_score": float(stats.segment_score),
-            }
-            for stats in result.operator_stats
-        ],
+        "contextual_bandit": contextual_bandit,
+        "operators": operators,
+        "pair_selection_stats": pair_selection_stats,
         "routes": routes,
     }
 
@@ -88,6 +114,9 @@ def _build_parser() -> argparse.ArgumentParser:
     solve.add_argument("--seed", type=int, default=42)
     solve.add_argument("--alpha", type=float, default=0.5)
     solve.add_argument("--beta", type=float, default=0.5)
+    solve.add_argument(
+        "--algorithm", choices=("baseline", "contextual"), default="baseline"
+    )
     solve.add_argument("--output", type=Path)
 
     return parser
@@ -103,8 +132,14 @@ def _solve(args: argparse.Namespace) -> dict[str, object]:
     config.validate()
 
     instance = parse_instance(args.instance, args.customers, args.risks)
-    result = run_alns(instance, config)
-    payload = result_to_dict(result, instance, config)
+
+    if args.algorithm == "contextual":
+        bandit_config = ContextualBanditConfig()
+        result = run_contextual_alns(instance, config, bandit_config)
+        payload = result_to_dict(result, instance, config, bandit_config)
+    else:
+        result = run_alns(instance, config)
+        payload = result_to_dict(result, instance, config)
 
     if args.output is not None:
         _write_json_atomic(args.output, payload)

@@ -1,14 +1,15 @@
 # Giai đoạn 1 — Định tuyến đa UAV tĩnh có xét đến rủi ro
 
-Phương pháp cơ sở ALNS có khả năng tái lập cho bài toán định tuyến đa UAV tĩnh. Dữ liệu VRPTW Solomon được bổ sung các vùng rủi ro hình tròn; chương trình không cần bộ giải tối ưu hóa bên ngoài.
+Phương pháp cơ sở ALNS có khả năng tái lập cho bài toán định tuyến đa UAV tĩnh. Phiên bản contextual dùng Disjoint LinUCB để chọn cặp toán tử và chỉ chạy khi được chọn rõ ràng. Dữ liệu VRPTW Solomon được bổ sung các vùng rủi ro hình tròn; chương trình không cần bộ giải tối ưu hóa bên ngoài.
 
 ## Phạm vi
 
 - Các UAV đồng nhất xuất phát từ và quay về cùng một kho.
 - Ràng buộc cứng: tải trọng, cửa sổ thời gian, hạn về kho, số UAV tối đa và phục vụ mỗi khách hàng đúng một lần.
 - Khoảng cách Euclid bằng thời gian di chuyển vì vận tốc cố định là `1`.
-- Mặc định: 25 khách hàng đầu tiên của `C101`, `C102`, `C103`, `R101`, `R102`, `R103`, `RC101`, `RC102`, `RC103`.
+- Bộ dữ liệu Solomon-RISK gồm `C101`, `C102`, `C103`, `R101`, `R102`, `R103`, `RC101`, `RC102`, `RC103`; lệnh `solve` mặc định chọn 25 khách hàng đầu tiên của tệp được chỉ định.
 - Chưa xét: pin, gió, vùng cấm bay, bất định và thay đổi trực tuyến.
+- Baseline roulette là thuật toán mặc định; contextual là một nhánh thử nghiệm riêng trên cùng bài toán tĩnh và cùng hàm mục tiêu.
 
 ## Cài đặt
 
@@ -73,10 +74,25 @@ $$
 
 Vì vậy, giảm số UAV được ưu tiên hơn giảm chi phí khoảng cách–rủi ro.
 
+## Contextual Bandit ALNS
+
+Một action là một cặp destroy–repair. Năm destroy và ba repair mặc định tạo 15 arm; kích thước phá nghiệm vẫn được lấy đều từ khoảng `q_min`–`q_max`, không phải một phần của action.
+
+Trước mỗi iteration, selector nhận vector chín đặc trưng: `bias` (luôn bằng 1), tiến độ iteration, nhiệt độ đã chuẩn hóa theo log, số iteration kể từ best gần nhất chia cho `context_window`, tỷ lệ chấp nhận gần đây, tỷ lệ cải thiện current gần đây, chênh lệch số UAV giữa current và best, chênh lệch objective khi hai nghiệm dùng cùng số UAV, và độ trễ rủi ro của current. Các tỷ lệ dùng tối đa `context_window` iteration trước đó; các đặc trưng được giới hạn trong $[0,1]$.
+
+Reward giữ bốn mức rời rạc của baseline: `reward_best` khi có best mới, `reward_improve` khi cải thiện current, `reward_accepted` khi chấp nhận nghiệm xấu hơn, và $0$ khi không có cải thiện được thưởng. LinUCB nhận reward chuẩn hóa bằng raw reward chia cho mức reward lớn nhất; với cấu hình mặc định, các mức lần lượt là $1$, $0.5$, $0.1$ và $0$. Baseline tiếp tục cập nhật roulette bằng raw reward.
+
+Disjoint LinUCB giữ mô hình riêng cho từng cặp, dùng `linucb_exploration` để cân bằng điểm dự đoán và độ bất định, và `linucb_regularization` để khởi tạo mô hình. Mô hình được khởi tạo mới cho mỗi lượt chạy: chưa học qua nhiều instance, chưa xử lý risk map thay đổi trực tuyến, reward trễ hoặc phiên bản LinUCB có quên dữ liệu cũ.
+
+API công khai của package `uav_routing.contextual` gồm `ContextualBanditConfig`, `ContextualALNSSolver`, `ContextualSearchResult` và `run_contextual_alns`. Baseline giữ API `run_alns` hiện có.
+
 ## Giải một bộ dữ liệu
+
+Không truyền `--algorithm` sẽ chạy baseline. Có thể chỉ định rõ thuật toán và lưu hai kết quả ở hai đường dẫn riêng:
 
 ```bash
 uv run python -m uav_routing.cli solve \
+  --algorithm baseline \
   --instance ../dataset/solomon_risk/c101.txt \
   --customers 25 \
   --risks 5 \
@@ -84,7 +100,20 @@ uv run python -m uav_routing.cli solve \
   --seed 42 \
   --alpha 0.5 \
   --beta 0.5 \
-  --output results/c101-seed42.json
+  --output results/baseline/c101-seed42.json
+```
+
+```bash
+uv run python -m uav_routing.cli solve \
+  --algorithm contextual \
+  --instance ../dataset/solomon_risk/c101.txt \
+  --customers 25 \
+  --risks 5 \
+  --iterations 10000 \
+  --seed 42 \
+  --alpha 0.5 \
+  --beta 0.5 \
+  --output results/contextual/c101-seed42.json
 ```
 
 Kết quả JSON gồm:
@@ -92,34 +121,61 @@ Kết quả JSON gồm:
 - Bộ dữ liệu, seed, số vòng lặp và thời gian chạy.
 - Số UAV, khoảng cách, độ trễ rủi ro, giá trị mục tiêu và tính khả thi.
 - Lộ trình và thời điểm đến, phục vụ, rời đi tại mỗi điểm.
-- Trọng số và số lần sử dụng các toán tử.
+- `algorithm` là `baseline` hoặc `contextual`.
+- `contextual_bandit` là `null` với baseline hoặc chứa ba hyperparameter LinUCB.
+- `operators` chứa trọng số và số lần dùng roulette với baseline, và là mảng rỗng với contextual.
+- `pair_selection_stats` là mảng rỗng với baseline; contextual báo đủ 15 cặp cùng số lần dùng, tổng raw reward và raw reward trung bình. Tổng số lần dùng bằng số iteration.
 
 Tùy chọn `--output` ghi tệp theo cơ chế nguyên tử.
 
 ## Chạy benchmark
 
-Cấu hình mặc định: 9 bộ dữ liệu, 25 khách hàng, 10 seed (`0`–`9`) và 10.000 vòng lặp.
+Hai cấu hình `configs/benchmark.json` và `configs/contextual/benchmark.json` dùng cùng workload và cùng tham số ALNS: `C101`, 100 khách hàng, 5 vùng rủi ro, 10 seed (`0`–`9`) và 100 iteration. Cấu hình contextual bổ sung `"algorithm": "contextual"` cùng `contextual_bandit` với `context_window=100`, `linucb_exploration=0.5` và `linucb_regularization=1.0`.
 
 ```bash
 uv run python -m uav_routing.experiment \
   --config configs/benchmark.json \
+  --algorithm baseline \
   --workers 8 \
-  --output-dir results/benchmark
+  --output-dir results/baseline/benchmark
 ```
 
-Kiểm tra nhanh mà không sửa cấu hình:
+```bash
+uv run python -m uav_routing.experiment \
+  --config configs/contextual/benchmark.json \
+  --algorithm contextual \
+  --workers 8 \
+  --output-dir results/contextual/benchmark
+```
+
+Với benchmark, `--algorithm` trên command line ưu tiên hơn khóa `algorithm` trong JSON; nếu cả hai không có thì dùng `baseline`. Vì vậy có thể bỏ `--algorithm contextual` ở lệnh thứ hai. Tham số `--iterations` và `--seeds` trên command line ghi đè workload trong config mà không sửa file.
+
+Kiểm tra nhanh với hai thư mục riêng:
 
 ```bash
 uv run python -m uav_routing.experiment \
   --config configs/benchmark.json \
-  --iterations 2 \
+  --iterations 1 \
   --seeds 0 \
-  --workers 2 \
-  --output-dir results/smoke
+  --workers 1 \
+  --output-dir results/baseline/smoke
+
+uv run python -m uav_routing.experiment \
+  --config configs/contextual/benchmark.json \
+  --iterations 1 \
+  --seeds 0 \
+  --workers 1 \
+  --output-dir results/contextual/smoke
 ```
 
-- `raw.csv`: một dòng cho mỗi cặp bộ dữ liệu/seed.
-- `aggregate.csv`: thống kê theo bộ dữ liệu, số khách hàng, số vòng lặp, `alpha`, `beta`.
+- `raw.csv`: một dòng cho mỗi cặp bộ dữ liệu/seed. Cột theo thứ tự: `instance,customers,risks,algorithm,seed,iterations,alpha,beta,context_window,linucb_exploration,linucb_regularization,vehicles,distance,risk_delay,objective,runtime_seconds,feasible,routes`.
+- `aggregate.csv`: nhóm theo `instance,customers,risks,algorithm,iterations,alpha,beta,context_window,linucb_exploration,linucb_regularization`. Header đầy đủ:
+
+```text
+instance,customers,risks,algorithm,iterations,alpha,beta,context_window,linucb_exploration,linucb_regularization,runs,vehicles_mean,vehicles_std,vehicles_best,vehicles_worst,distance_mean,distance_std,distance_best,distance_worst,risk_delay_mean,risk_delay_std,risk_delay_best,risk_delay_worst,objective_mean,objective_std,objective_best,objective_worst,runtime_mean,runtime_std
+```
+
+- Ba cột hyperparameter LinUCB để trống trong CSV baseline và chứa giá trị thực trong CSV contextual. Thống kê cặp toán tử chỉ nằm trong JSON của lệnh `solve`, không nằm trong CSV.
 - Chỉ số tổng hợp: số lượt chạy, trung bình, độ lệch chuẩn mẫu, tốt nhất và kém nhất; độ lệch chuẩn bằng `0` nếu chỉ có một lượt.
 - `--workers N` chạy tối đa `N` cặp bộ dữ liệu/seed đồng thời bằng nhiều process; mặc định là `1`.
 - Khi chạy song song, process chính ghi kết quả mỗi job vào JSON nguyên tử trong `.tmp/<run-id>` và chỉ tạo CSV sau khi mọi job thành công.
@@ -144,7 +200,7 @@ scripts/sky_benchmark.sh run
 ## Khả năng tái lập
 
 - Mỗi lượt chạy dùng một `numpy.random.Generator` khởi tạo từ seed.
-- Cùng đầu vào, giới hạn khách hàng, cấu hình và seed sẽ cho cùng lộ trình, giá trị mục tiêu và thống kê toán tử.
+- Cùng đầu vào, giới hạn khách hàng, cấu hình và seed sẽ cho cùng lộ trình, giá trị mục tiêu và thống kê toán tử hoặc cặp toán tử.
 - Thời gian chạy có thể khác nhau.
 
 ## Kiểm thử
@@ -153,7 +209,7 @@ scripts/sky_benchmark.sh run
 uv run pytest tests -q
 ```
 
-Bao phủ bộ phân tích cú pháp, hình học, ràng buộc, hàm mục tiêu, ALNS, khả năng tái lập, CLI và benchmark.
+Bao phủ bộ phân tích cú pháp, hình học, ràng buộc, hàm mục tiêu, baseline và contextual ALNS, khả năng tái lập, CLI và benchmark.
 
 ## Giai đoạn 2 — Rolling horizon
 

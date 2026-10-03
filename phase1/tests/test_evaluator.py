@@ -90,6 +90,30 @@ def test_zero_priority_has_zero_risk_delay():
     assert math.isfinite(result.objective)
 
 
+def test_route_risk_delay_contributions_sum_to_solution_risk_delay():
+    instance = schedule_instance()
+    evaluator = Evaluator(instance, 12, 0.5, 0.5)
+    solution = Solution(((1,), (2,)))
+
+    evaluated = evaluator.solution(solution)
+    contribution = sum(
+        evaluator.route_risk_delay(route_result)
+        for route_result in evaluated.routes
+    )
+
+    assert contribution == pytest.approx(evaluated.risk_delay)
+
+
+def test_route_risk_delay_is_zero_when_total_priority_is_zero():
+    instance = make_instance(
+        (Customer(1, 1, 0, 1, 0, 10, 0),),
+        priorities=(0.0,),
+    )
+    evaluator = Evaluator(instance, 10, 0.5, 0.5)
+
+    assert evaluator.route_risk_delay(evaluator.route((1,))) == 0.0
+
+
 def test_objective_uses_normalized_distance_and_weighted_risk_delay():
     instance = make_instance(
         (
