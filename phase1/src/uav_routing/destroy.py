@@ -38,21 +38,44 @@ class DestroyOperator(Protocol):
     ) -> DestroyResult: ...
 
 
+@dataclass(frozen=True)
+class RelatednessTable:
+    """Per-instance lookups and normalization maxima for relatedness."""
+
+    customers: dict[int, Customer]
+    indices: dict[int, int]
+    maxima: tuple[float, float, float, float]
+
+
+def relatedness_table(instance: Instance) -> RelatednessTable:
+    customers = {customer.id: customer for customer in instance.customers}
+    indices = {
+        customer.id: index for index, customer in enumerate(instance.customers, start=1)
+    }
+
+    return RelatednessTable(customers, indices, _relatedness_maxima(instance, indices))
+
+
 def relatedness(
     instance: Instance,
     left_id: int,
     right_id: int,
     weights: RelatednessWeights,
+    table: RelatednessTable | None = None,
 ) -> float:
-    customers = {customer.id: customer for customer in instance.customers}
+    if table is None:
+        customers = {customer.id: customer for customer in instance.customers}
+        indices = {
+            customer.id: index
+            for index, customer in enumerate(instance.customers, start=1)
+        }
+        maxima = _relatedness_maxima(instance, indices)
+    else:
+        customers, indices, maxima = table.customers, table.indices, table.maxima
 
     if left_id not in customers or right_id not in customers:
         raise ValueError("relatedness requires known customer ids")
 
-    indices = {
-        customer.id: index for index, customer in enumerate(instance.customers, start=1)
-    }
-    maxima = _relatedness_maxima(instance, indices)
     differences = _customer_differences(
         instance,
         customers[left_id],
@@ -213,6 +236,19 @@ class RelatedRemoval(RandomRemoval):
         self.weights = weights or RelatednessWeights(1.0, 1.0, 1.0, 1.0)
         self.determinism = determinism
 
+    def table_for(self, instance: Instance) -> RelatednessTable:
+        """Return the cached relatedness table for ``instance``.
+
+        The cache keeps a reference to the instance so its id cannot be reused.
+        """
+        cached = getattr(self, "_table_cache", None)
+
+        if cached is None or cached[0] is not instance:
+            cached = (instance, relatedness_table(instance))
+            self._table_cache = cached
+
+        return cached[1]
+
     def apply(
         self, solution, instance, evaluator, rng, q, constraints=None
     ) -> DestroyResult:
@@ -223,6 +259,7 @@ class RelatedRemoval(RandomRemoval):
             return DestroyResult(solution, ())
 
         selected = [int(rng.choice(served))]
+        table = self.table_for(instance)
 
         while len(selected) < count:
             reference = int(rng.choice(selected))
@@ -230,7 +267,7 @@ class RelatedRemoval(RandomRemoval):
             ranked = sorted(
                 candidates,
                 key=lambda cid: (
-                    relatedness(instance, reference, cid, self.weights),
+                    relatedness(instance, reference, cid, self.weights, table),
                     cid,
                 ),
             )
