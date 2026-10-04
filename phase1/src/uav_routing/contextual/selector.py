@@ -11,6 +11,7 @@ from .context import CONTEXT_DIMENSION
 from .linucb import DisjointLinUCB
 
 OperatorPair = tuple[str, str]
+_TEMPERATURE_INDEX = 2
 
 
 @dataclass(frozen=True)
@@ -61,11 +62,12 @@ class OperatorPairSelector:
 
         self._bandit = DisjointLinUCB(
             self._arms,
-            CONTEXT_DIMENSION,
+            CONTEXT_DIMENSION - (not config.include_temperature),
             config.linucb_exploration,
             config.linucb_regularization,
             rng,
         )
+        self._include_temperature = config.include_temperature
         self._maximum_raw_reward = maximum_raw_reward
         self._uses = {arm: 0 for arm in self._arms}
         self._raw_totals = {arm: 0.0 for arm in self._arms}
@@ -75,7 +77,7 @@ class OperatorPairSelector:
         return self._arms
 
     def select(self, context: np.ndarray) -> OperatorPair:
-        return self._bandit.select(context)
+        return self._bandit.select(self._project_context(context))
 
     def record(
         self,
@@ -100,10 +102,31 @@ class OperatorPairSelector:
             raise ValueError("raw_reward would produce a nonfinite total")
 
         normalized_reward = raw_reward / self._maximum_raw_reward
-        self._bandit.update(arm, context, normalized_reward)
+        bandit_context = self._project_context(context)
+        self._bandit.update(arm, bandit_context, normalized_reward)
 
         self._uses[arm] += 1
         self._raw_totals[arm] = next_total
+
+    def _project_context(self, context: np.ndarray) -> np.ndarray:
+        if not isinstance(context, np.ndarray) or context.shape != (
+            CONTEXT_DIMENSION,
+        ):
+            raise ValueError("context must contain all contextual features")
+
+        if not np.isrealobj(context) or not np.issubdtype(context.dtype, np.number):
+            raise ValueError("context must contain only finite numbers")
+
+        with np.errstate(over="ignore", invalid="ignore"):
+            numeric_context = np.asarray(context, dtype=float)
+
+        if not np.all(np.isfinite(numeric_context)):
+            raise ValueError("context must contain only finite numbers")
+
+        if self._include_temperature:
+            return numeric_context
+
+        return np.delete(numeric_context, _TEMPERATURE_INDEX)
 
     def snapshot(self) -> tuple[PairSelectionStats, ...]:
         return tuple(

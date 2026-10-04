@@ -132,6 +132,18 @@ def test_selection_uses_full_two_dimensional_linear_system():
     assert bandit.select(np.array([0.0, 1.0])) == "second"
 
 
+def test_selection_reuses_rank_one_inverse_updates(monkeypatch):
+    bandit = _bandit(exploration=1.0, regularization=1.0)
+    bandit.update("first", np.array([1.0, 1.0]), 0.5)
+
+    def unexpected_solve(*args, **kwargs):
+        raise AssertionError("selection must not solve a linear system per arm")
+
+    monkeypatch.setattr(np.linalg, "solve", unexpected_solve)
+
+    assert bandit.select(np.array([1.0, 0.0])) in ("first", "second")
+
+
 def test_update_changes_only_selected_arm_by_outer_product_and_reward():
     bandit = _bandit(regularization=1.0)
     bandit.update("first", np.array([2.0, 3.0]), 0.5)

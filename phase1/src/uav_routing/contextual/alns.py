@@ -8,19 +8,21 @@ import numpy as np
 from uav_routing.alns import (
     _audit_best_solution,
     _operators,
-    accept_score,
-    classify_reward,
+    accept_evaluation,
+    classify_evaluation_reward,
     cool_temperature,
 )
 from uav_routing.config import ALNSConfig
-from uav_routing.evaluator import Evaluator, lexicographically_better
+from uav_routing.evaluator import Evaluator
 from uav_routing.initial import build_initial_solution
 from uav_routing.models import Instance, Solution, SolutionEvaluation
 from uav_routing.repair import RepairContext
+from uav_routing.scoring import is_better
 
 from .config import ContextualBanditConfig
 from .context import SearchHistory, build_context
 from .selector import OperatorPairSelector, PairSelectionStats
+from .warm_start import compress_short_routes
 
 
 @dataclass(frozen=True)
@@ -63,23 +65,30 @@ def _candidate_outcome(repaired, state, evaluator, config, rng) -> CandidateOutc
     if not candidate_evaluation.feasible:
         return CandidateOutcome(0.0, False, False, False)
 
-    acceptance = accept_score(
-        candidate_evaluation.score,
-        state.current_evaluation.score,
+    acceptance = accept_evaluation(
+        candidate_evaluation,
+        state.current_evaluation,
         state.temperature,
         rng,
+        config,
     )
-    improved = lexicographically_better(
-        candidate_evaluation.score, state.current_evaluation.score
+    improved = is_better(
+        candidate_evaluation,
+        state.current_evaluation,
+        config.score_policy,
+        config.risk_threshold,
     )
-    new_best = lexicographically_better(
-        candidate_evaluation.score, state.best_evaluation.score
+    new_best = is_better(
+        candidate_evaluation,
+        state.best_evaluation,
+        config.score_policy,
+        config.risk_threshold,
     )
 
-    reward = classify_reward(
-        candidate_evaluation.score,
-        state.current_evaluation.score,
-        state.best_evaluation.score,
+    reward = classify_evaluation_reward(
+        candidate_evaluation,
+        state.current_evaluation,
+        state.best_evaluation,
         acceptance,
         config,
     )
@@ -101,10 +110,15 @@ class ContextualALNSSolver:
         instance: Instance,
         alns_config: ALNSConfig,
         bandit_config: ContextualBanditConfig,
+        *,
+        destroy_operators=None,
+        repair_operators=None,
     ) -> None:
         self.instance = instance
         self.alns_config = alns_config
         self.bandit_config = bandit_config
+        self.destroy_operators = destroy_operators
+        self.repair_operators = repair_operators
 
     def run(self) -> ContextualSearchResult:
         started = time.perf_counter()
@@ -124,12 +138,20 @@ class ContextualALNSSolver:
         initial, d_ref = build_initial_solution(
             self.instance, config.alpha, config.beta
         )
+
+        if bandit_config.short_route_warm_start:
+            initial = compress_short_routes(
+                self.instance, initial, d_ref, config.alpha, config.beta
+            )
+
         evaluator = Evaluator(self.instance, d_ref, config.alpha, config.beta)
         repair_context = RepairContext(
             self.instance, evaluator, d_ref, config.alpha, config.beta
         )
 
-        destroy_operators, repair_operators = _operators(config, None, None)
+        destroy_operators, repair_operators = _operators(
+            config, self.destroy_operators, self.repair_operators
+        )
         destroy_names = tuple(operator.name for operator in destroy_operators)
         repair_names = tuple(operator.name for operator in repair_operators)
 
@@ -207,7 +229,14 @@ def run_contextual_alns(
     instance: Instance,
     alns_config: ALNSConfig,
     bandit_config: ContextualBanditConfig | None = None,
+    *,
+    destroy_operators=None,
+    repair_operators=None,
 ) -> ContextualSearchResult:
     return ContextualALNSSolver(
-        instance, alns_config, bandit_config or ContextualBanditConfig()
+        instance,
+        alns_config,
+        bandit_config or ContextualBanditConfig(),
+        destroy_operators=destroy_operators,
+        repair_operators=repair_operators,
     ).run()

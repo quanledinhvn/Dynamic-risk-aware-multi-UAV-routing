@@ -52,10 +52,29 @@ def relatedness(
         customer.id: index for index, customer in enumerate(instance.customers, start=1)
     }
     maxima = _relatedness_maxima(instance, indices)
-    differences = _customer_differences(
+
+    return _relatedness_from_precomputed(
         instance,
         customers[left_id],
         customers[right_id],
+        weights,
+        indices,
+        maxima,
+    )
+
+
+def _relatedness_from_precomputed(
+    instance: Instance,
+    left: Customer,
+    right: Customer,
+    weights: RelatednessWeights,
+    indices: dict[int, int],
+    maxima: tuple[float, float, float, float],
+) -> float:
+    differences = _customer_differences(
+        instance,
+        left,
+        right,
         indices,
     )
 
@@ -198,6 +217,13 @@ class RelatedRemoval(RandomRemoval):
         if count == 0:
             return DestroyResult(solution, ())
 
+        customers = {customer.id: customer for customer in instance.customers}
+        indices = {
+            customer.id: index
+            for index, customer in enumerate(instance.customers, start=1)
+        }
+        maxima = _relatedness_maxima(instance, indices)
+
         selected = [int(rng.choice(served))]
 
         while len(selected) < count:
@@ -206,7 +232,14 @@ class RelatedRemoval(RandomRemoval):
             ranked = sorted(
                 candidates,
                 key=lambda cid: (
-                    relatedness(instance, reference, cid, self.weights),
+                    _relatedness_from_precomputed(
+                        instance,
+                        customers[reference],
+                        customers[cid],
+                        self.weights,
+                        indices,
+                        maxima,
+                    ),
                     cid,
                 ),
             )

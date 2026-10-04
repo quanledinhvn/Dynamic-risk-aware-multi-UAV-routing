@@ -59,12 +59,13 @@ def test_contextual_config_loads_all_bandit_values(benchmark_file):
                 "context_window": 17,
                 "linucb_exploration": 0.25,
                 "linucb_regularization": 2.0,
+                "include_temperature": False,
             },
         )
     )
 
     assert config.algorithm == "contextual"
-    assert config.bandit == ContextualBanditConfig(17, 0.25, 2.0)
+    assert config.bandit == ContextualBanditConfig(17, 0.25, 2.0, False)
 
 
 @pytest.mark.parametrize(
@@ -102,6 +103,7 @@ def test_algorithm_cli_overrides_config(
         {"contextual_bandit": {"context_window": 0}},
         {"contextual_bandit": {"linucb_exploration": -1}},
         {"contextual_bandit": {"linucb_regularization": 0}},
+        {"contextual_bandit": {"include_temperature": 0}},
     ],
 )
 def test_invalid_algorithm_or_bandit_config_is_rejected(benchmark_file, overrides):
@@ -273,6 +275,7 @@ def test_contextual_default_solver_is_picklable_and_preserves_order(tmp_path):
     assert {row["context_window"] for row in rows} == {17}
     assert {row["linucb_exploration"] for row in rows} == {0.25}
     assert {row["linucb_regularization"] for row in rows} == {2.0}
+    assert {row["include_temperature"] for row in rows} == {True}
 
     assert not (tmp_path / ".tmp").exists()
 
@@ -360,6 +363,8 @@ def test_baseline_with_supplied_bandit_has_empty_bandit_values():
         {"context_window": 18},
         {"linucb_exploration": 0.75},
         {"linucb_regularization": 3.0},
+        {"include_temperature": False},
+        {"short_route_warm_start": True},
     ],
 )
 def test_aggregate_separates_each_experiment_dimension(tmp_path, difference):
@@ -403,8 +408,23 @@ def test_aggregate_combines_seeds_with_same_contextual_parameters(tmp_path):
     assert len(combined) == 1
     assert combined[0]["runs"] == "2"
     assert combined[0]["context_window"] == "17"
-
     assert float(combined[0]["distance_mean"]) == 101.5
+
+
+def test_contextual_benchmark_records_short_route_warm_start():
+    config = BenchmarkConfig(
+        (C101,),
+        (0,),
+        ALNSConfig(iterations=1),
+        customer_limit=100,
+        algorithm="contextual",
+        bandit=ContextualBanditConfig(short_route_warm_start=True),
+    )
+
+    row = run_benchmark(config)[0]
+
+    assert row["short_route_warm_start"] is True
+    assert row["vehicles"] == 11
 
 
 def fake_solver(path, config, customer_limit, risk_limit):
@@ -590,9 +610,13 @@ def test_raw_and_aggregate_csv_have_stable_schema(tmp_path):
         "iterations",
         "alpha",
         "beta",
+        "score_policy",
+        "risk_threshold",
         "context_window",
         "linucb_exploration",
         "linucb_regularization",
+        "include_temperature",
+        "short_route_warm_start",
         "vehicles",
         "distance",
         "risk_delay",
@@ -609,9 +633,13 @@ def test_raw_and_aggregate_csv_have_stable_schema(tmp_path):
         "iterations",
         "alpha",
         "beta",
+        "score_policy",
+        "risk_threshold",
         "context_window",
         "linucb_exploration",
         "linucb_regularization",
+        "include_temperature",
+        "short_route_warm_start",
         "runs",
         "vehicles_mean",
         "vehicles_std",

@@ -22,7 +22,13 @@ from .contextual.alns import run_contextual_alns
 from .contextual.config import ContextualBanditConfig
 from .parser import parse_instance
 
-BANDIT_FIELDS = ("context_window", "linucb_exploration", "linucb_regularization")
+BANDIT_FIELDS = (
+    "context_window",
+    "linucb_exploration",
+    "linucb_regularization",
+    "include_temperature",
+    "short_route_warm_start",
+)
 
 RAW_FIELDS = (
     "instance",
@@ -33,9 +39,13 @@ RAW_FIELDS = (
     "iterations",
     "alpha",
     "beta",
+    "score_policy",
+    "risk_threshold",
     "context_window",
     "linucb_exploration",
     "linucb_regularization",
+    "include_temperature",
+    "short_route_warm_start",
     "vehicles",
     "distance",
     "risk_delay",
@@ -53,9 +63,13 @@ AGGREGATE_FIELDS = (
     "iterations",
     "alpha",
     "beta",
+    "score_policy",
+    "risk_threshold",
     "context_window",
     "linucb_exploration",
     "linucb_regularization",
+    "include_temperature",
+    "short_route_warm_start",
     "runs",
     "vehicles_mean",
     "vehicles_std",
@@ -224,6 +238,8 @@ def _solve_job(
 
     result = dict(row)
     result["algorithm"] = algorithm
+    result["score_policy"] = alns.score_policy
+    result["risk_threshold"] = alns.risk_threshold
 
     for field in BANDIT_FIELDS:
         result[field] = getattr(bandit, field) if bandit is not None else None
@@ -348,7 +364,13 @@ def _solve_one(
         result = run_alns(instance, config)
         payload = result_to_dict(result, instance, config)
 
-    row = {key: payload[key] for key in RAW_FIELDS if key not in BANDIT_FIELDS}
+    row = {
+        key: payload[key]
+        for key in RAW_FIELDS
+        if key not in BANDIT_FIELDS and key in payload
+    }
+    row["score_policy"] = config.score_policy
+    row["risk_threshold"] = config.risk_threshold
     row.update(
         {
             key: getattr(bandit, key) if algorithm == "contextual" else None
@@ -373,9 +395,13 @@ def _aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
             row["iterations"],
             row["alpha"],
             row["beta"],
+            row.get("score_policy", "lexicographic"),
+            row.get("risk_threshold", 0.2),
             row.get("context_window"),
             row.get("linucb_exploration"),
             row.get("linucb_regularization"),
+            row.get("include_temperature"),
+            row.get("short_route_warm_start"),
         )
         grouped.setdefault(key, []).append(row)
 
@@ -390,7 +416,7 @@ def _aggregate(rows: list[dict[str, object]]) -> list[dict[str, object]]:
 def _aggregate_group(
     key: tuple[object, ...], group: list[dict[str, object]]
 ) -> dict[str, object]:
-    result: dict[str, object] = dict(zip(AGGREGATE_FIELDS[:10], key, strict=True))
+    result: dict[str, object] = dict(zip(AGGREGATE_FIELDS[:14], key, strict=True))
     result["runs"] = len(group)
 
     for field in ("vehicles", "distance", "risk_delay", "objective"):

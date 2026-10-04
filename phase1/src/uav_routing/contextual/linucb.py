@@ -60,6 +60,9 @@ class DisjointLinUCB:
             )
             for arm in arms
         }
+        self._inverse_matrices = {
+            arm: np.eye(dimension, dtype=float) / regularization for arm in arms
+        }
 
     def _validate_context(self, context: np.ndarray) -> np.ndarray:
         if not isinstance(context, np.ndarray) or context.shape != (self._dimension,):
@@ -86,10 +89,12 @@ class DisjointLinUCB:
 
         for arm in self._arms:
             state = self._states[arm]
+            inverse = self._inverse_matrices[arm]
 
             with np.errstate(over="ignore", invalid="ignore"):
-                coefficients = np.linalg.solve(state.matrix, state.reward_vector)
-                inverse_context = np.linalg.solve(state.matrix, context)
+                inverse_context = inverse @ context
+                coefficients = inverse @ state.reward_vector
+
                 mean = float(context @ coefficients)
                 variance = float(context @ inverse_context)
 
@@ -123,10 +128,18 @@ class DisjointLinUCB:
             raise ValueError("reward must be finite")
 
         state = self._states[arm]
+        inverse = self._inverse_matrices[arm]
 
         with np.errstate(over="ignore", invalid="ignore"):
             next_matrix = state.matrix + np.outer(context, context)
             next_reward_vector = state.reward_vector + reward * context
+
+            inverse_context = inverse @ context
+            denominator = 1.0 + float(context @ inverse_context)
+            inverse_adjustment = (
+                np.outer(inverse_context, inverse_context) / denominator
+            )
+            next_inverse = inverse - inverse_adjustment
 
         if not np.all(np.isfinite(next_matrix)):
             raise ValueError("context would produce a nonfinite arm matrix")
@@ -134,8 +147,15 @@ class DisjointLinUCB:
         if not np.all(np.isfinite(next_reward_vector)):
             raise ValueError("reward would produce a nonfinite arm vector")
 
+        if not math.isfinite(denominator) or denominator <= 0:
+            raise ValueError("context would produce a nonfinite arm matrix")
+
+        if not np.all(np.isfinite(next_inverse)):
+            raise ValueError("context would produce a nonfinite arm matrix")
+
         state.matrix[...] = next_matrix
         state.reward_vector[...] = next_reward_vector
+        inverse[...] = (next_inverse + next_inverse.T) * 0.5
 
     def state(self, arm: Hashable) -> LinUCBArmState:
         if arm not in self._states:

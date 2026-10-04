@@ -10,6 +10,8 @@ class ALNSConfig:
     seed: int = 42
     alpha: float = 0.5
     beta: float = 0.5
+    score_policy: str = "lexicographic"
+    risk_threshold: float = 0.2
     q_min: int = 2
     q_max: int = 5
     segment_length: int = 100
@@ -61,6 +63,7 @@ def _type_errors(config: ALNSConfig) -> list[str]:
     real_fields = {
         "alpha": config.alpha,
         "beta": config.beta,
+        "risk_threshold": config.risk_threshold,
         "reaction_factor": config.reaction_factor,
         "initial_temperature": config.initial_temperature,
         "cooling_rate": config.cooling_rate,
@@ -81,6 +84,9 @@ def _type_errors(config: ALNSConfig) -> list[str]:
         for name, value in integer_fields.items()
         if isinstance(value, bool) or not isinstance(value, int)
     ]
+
+    if not isinstance(config.score_policy, str):
+        errors.append("score_policy must be a string")
     
     errors.extend(
         f"{name} must be a finite number"
@@ -105,6 +111,14 @@ def _validation_rules(config: ALNSConfig) -> tuple[tuple[bool, str], ...]:
         (config.iterations > 0, "iterations must be positive"),
         (config.segment_length > 0, "segment_length must be positive"),
         (0 < config.q_min <= config.q_max, "require 0 < q_min <= q_max"),
+        (
+            config.score_policy in {"lexicographic", "emergency_gate"},
+            "score_policy must be lexicographic or emergency_gate",
+        ),
+        (
+            0 <= config.risk_threshold <= 1,
+            "risk_threshold must be in [0, 1]",
+        ),
         (
             config.alpha >= 0 and config.beta >= 0,
             "alpha and beta must be non-negative",
