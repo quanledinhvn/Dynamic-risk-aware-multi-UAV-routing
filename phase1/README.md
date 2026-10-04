@@ -277,6 +277,16 @@ uv run python -m uav_routing.dynamic.experiment \
 - Các cấu hình chính: `configs/dynamic/benchmark_n25_d{5,12,25}.json`.
 - Có thể ghi đè `--seeds`, `--policies`, `--epoch-length`, `--iterations-epoch0`, `--iterations-per-epoch` từ dòng lệnh.
 
+### Phân tích thống kê
+
+```bash
+uv run python -m uav_routing.dynamic.analysis \
+  --results results/dynamic_n25_d5 results/dynamic_n100_d5 \
+  --reference warm_alns --output results/analysis/main_policies.md
+```
+
+So sánh theo cặp trên cùng kịch bản và seed: thắng/thua theo thứ tự từ điển $(U, K, F)$, kiểm định Wilcoxon signed-rank trên $F$ với hiệu chỉnh Holm. Chế độ `--grid LABEL=DIR ...` so sánh các cấu hình của cùng một chính sách. Kết quả ablation và kết luận ở [docs/2026-10-04-ablation.md](docs/2026-10-04-ablation.md).
+
 ### Khả năng tái lập
 
 Cùng kịch bản, cấu hình ALNS, cấu hình rolling horizon và seed cho cùng nghiệm thực hiện, lịch sử epoch và metric. Seed của từng epoch được dẫn xuất xác định từ seed cấu hình và chỉ số epoch.
