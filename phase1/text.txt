@@ -163,3 +163,11 @@ scripts/sky_benchmark.sh launch \
   --region ap-southeast-1 \
   --instance-type c7a.2xlarge \
   --cluster uav-p1-c100-r5-1000-8cpu
+
+
+scripts/sky_benchmark.sh launch \
+  --config phase1/configs/contextual/benchmark_p1_c100_r5_1000_lexi.json \
+  --workers 8 \
+  --region ap-southeast-1 \
+  --instance-type c7a.2xlarge \
+  --cluster uav-p1-c100-r5-1000-8cpu
