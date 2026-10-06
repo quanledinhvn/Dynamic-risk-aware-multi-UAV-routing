@@ -140,3 +140,24 @@ def test_same_seed_is_reproducible_through_cli(capsys):
         epoch.pop("runtime_seconds")
 
     assert left == right
+
+
+def test_contextual_policy_exposes_bandit_configuration(capsys):
+    code, payload, _ = _run(
+        capsys,
+        [
+            "--policy",
+            "contextual_warm_alns",
+            "--context-window",
+            "7",
+            "--linucb-exploration",
+            "0.25",
+        ],
+    )
+
+    assert code == 0
+    assert payload["policy"] == "contextual_warm_alns"
+    assert payload["contextual_bandit"]["context_window"] == 7
+    assert payload["contextual_bandit"]["linucb_exploration"] == 0.25
+
+    assert payload["feasible"] is True

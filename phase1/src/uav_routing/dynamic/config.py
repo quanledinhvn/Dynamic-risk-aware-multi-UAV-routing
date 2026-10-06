@@ -3,7 +3,12 @@
 import math
 from dataclasses import dataclass
 
-POLICIES = ("greedy_insert", "cold_restart", "warm_alns")
+POLICIES = (
+    "greedy_insert",
+    "cold_restart",
+    "warm_alns",
+    "contextual_warm_alns",
+)
 TRIGGERS = ("periodic", "event", "hybrid")
 
 

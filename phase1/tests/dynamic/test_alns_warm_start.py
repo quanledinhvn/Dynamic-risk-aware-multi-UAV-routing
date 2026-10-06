@@ -3,6 +3,7 @@ from helpers import make_instance
 
 from uav_routing.alns import ALNSSolver, run_alns
 from uav_routing.config import ALNSConfig
+from uav_routing.dynamic.policies import contextual_warm_alns
 from uav_routing.evaluator import Evaluator, lexicographically_better
 from uav_routing.initial import InitialSolutionError, build_initial_solution
 from uav_routing.models import Customer, SearchConstraints, Solution
@@ -100,3 +101,25 @@ def test_d_ref_override_without_initial_solution_is_used():
     result = run_alns(INSTANCE, ALNSConfig(iterations=1, seed=1), d_ref=1234.5)
 
     assert result.d_ref == 1234.5
+
+
+def test_contextual_warm_alns_uses_epoch_start_and_locked_prefix():
+    prefix = WARM.routes[0][:1]
+    constraints = SearchConstraints(locked_prefixes=(prefix,), free_departure=5.0)
+
+    result = contextual_warm_alns(
+        INSTANCE,
+        WARM,
+        constraints,
+        D_REF,
+        CONFIG,
+        20,
+        17,
+    )
+
+    assert result.initial_solution == WARM
+    assert result.best_solution.routes[0][:1] == prefix
+    assert result.iterations == 20
+
+    assert result.seed == 17
+    assert result.evaluation.feasible

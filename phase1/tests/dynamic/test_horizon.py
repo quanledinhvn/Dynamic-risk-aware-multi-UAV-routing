@@ -93,6 +93,19 @@ def test_periodic_trigger_produces_expected_epochs():
     assert sum(record.iterations for record in result.epochs) == result.total_iterations
 
 
+def test_contextual_policy_runs_at_epoch_zero_and_every_dynamic_epoch():
+    config = replace(CONFIG, policy="contextual_warm_alns")
+
+    result = run_rolling_horizon(TINY, ALNS, config)
+
+    assert result.policy == "contextual_warm_alns"
+    assert result.total_iterations == 50 + 4 * 20
+    assert [record.iterations for record in result.epochs] == [50, 20, 20, 20, 20]
+
+    assert result.evaluation.feasible
+    assert _served(result.realized) == [1, 2, 3]
+
+
 def test_event_trigger_visits_event_times_and_horizon():
     result = run_rolling_horizon(TINY, ALNS, replace(CONFIG, trigger="event"))
 
@@ -133,7 +146,10 @@ def test_realized_solution_is_feasible_and_serves_arrivals():
     assert result.runtime_seconds >= 0.0
 
 
-@pytest.mark.parametrize("policy", ["greedy_insert", "cold_restart", "warm_alns"])
+@pytest.mark.parametrize(
+    "policy",
+    ["greedy_insert", "cold_restart", "warm_alns", "contextual_warm_alns"],
+)
 def test_same_seed_reproduces_simulation_result(policy):
     config = replace(CONFIG, policy=policy)
 

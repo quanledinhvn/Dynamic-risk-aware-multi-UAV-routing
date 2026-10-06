@@ -2,11 +2,13 @@
 
 import time as clock
 from dataclasses import replace
+from functools import partial
 
 import numpy as np
 
 from uav_routing.alns import SearchResult, run_alns
 from uav_routing.config import ALNSConfig
+from uav_routing.contextual.config import ContextualBanditConfig
 from uav_routing.evaluator import Evaluator
 from uav_routing.initial import build_initial_solution
 from uav_routing.models import Instance, SearchConstraints, Solution
@@ -16,7 +18,12 @@ from .config import RollingHorizonConfig
 from .events import apply_events, drop_customers
 from .locking import lock_solution
 from .models import DeadlineUpdate, EpochRecord, Event, Scenario, SimulationResult
-from .policies import POLICIES, EpochSolver, evaluate_only
+from .policies import (
+    POLICIES,
+    EpochSolver,
+    contextual_warm_alns,
+    evaluate_only,
+)
 from .projection import lost_customers, project, triage
 from .scenario import base_instance
 
@@ -112,6 +119,23 @@ class _Simulation:
     def _solve_epoch_zero(self) -> SearchResult:
         seed = epoch_seed(self.config.seed, 0)
         alns = replace(self.alns, seed=seed)
+
+        if self.config.policy == "contextual_warm_alns":
+            initial, d_ref = build_initial_solution(
+                self.instance,
+                alns.alpha,
+                alns.beta,
+            )
+
+            return self.solver(
+                self.instance,
+                initial,
+                self.constraints,
+                d_ref,
+                alns,
+                self.config.iterations_epoch0,
+                seed,
+            )
 
         if self.config.iterations_epoch0 > 0:
             return run_alns(
@@ -269,6 +293,7 @@ def run_rolling_horizon(
     alns: ALNSConfig,
     config: RollingHorizonConfig,
     solver: EpochSolver | None = None,
+    bandit: ContextualBanditConfig | None = None,
 ) -> SimulationResult:
     config.validate()
     alns.validate()
@@ -277,6 +302,15 @@ def run_rolling_horizon(
         if config.policy not in POLICIES:
             raise ValueError(f"unknown policy {config.policy!r}")
 
-        solver = POLICIES[config.policy]
+        if config.policy == "contextual_warm_alns":
+            if bandit is not None:
+                bandit.validate()
+
+            solver = partial(
+                contextual_warm_alns,
+                bandit=bandit or ContextualBanditConfig(),
+            )
+        else:
+            solver = POLICIES[config.policy]
 
     return _Simulation(scenario, alns, config, solver).run()

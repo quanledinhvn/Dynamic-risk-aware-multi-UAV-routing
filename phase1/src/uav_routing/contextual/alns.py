@@ -8,14 +8,20 @@ import numpy as np
 from uav_routing.alns import (
     _audit_best_solution,
     _operators,
+    _starting_point,
     accept_evaluation,
     classify_evaluation_reward,
     cool_temperature,
 )
 from uav_routing.config import ALNSConfig
 from uav_routing.evaluator import Evaluator
-from uav_routing.initial import build_initial_solution
-from uav_routing.models import Instance, Solution, SolutionEvaluation
+from uav_routing.initial import InitialSolutionError
+from uav_routing.models import (
+    Instance,
+    SearchConstraints,
+    Solution,
+    SolutionEvaluation,
+)
 from uav_routing.repair import RepairContext
 from uav_routing.scoring import is_better
 
@@ -55,12 +61,18 @@ class _SearchState:
     temperature: float
 
 
-def _candidate_outcome(repaired, state, evaluator, config, rng) -> CandidateOutcome:
+def _candidate_outcome(
+    repaired, state, evaluator, config, rng, constraints=None
+) -> CandidateOutcome:
     if not repaired.success or repaired.solution is None:
         return CandidateOutcome(0.0, False, False, False)
 
     candidate = repaired.solution
-    candidate_evaluation = evaluator.solution(candidate)
+    candidate_evaluation = (
+        evaluator.solution(candidate, constraints)
+        if constraints is not None
+        else evaluator.solution(candidate)
+    )
 
     if not candidate_evaluation.feasible:
         return CandidateOutcome(0.0, False, False, False)
@@ -113,12 +125,20 @@ class ContextualALNSSolver:
         *,
         destroy_operators=None,
         repair_operators=None,
+        initial_solution: Solution | None = None,
+        constraints: SearchConstraints | None = None,
+        d_ref: float | None = None,
     ) -> None:
         self.instance = instance
         self.alns_config = alns_config
         self.bandit_config = bandit_config
+
         self.destroy_operators = destroy_operators
         self.repair_operators = repair_operators
+
+        self.initial_solution = initial_solution
+        self.constraints = constraints
+        self.d_ref = d_ref
 
     def run(self) -> ContextualSearchResult:
         started = time.perf_counter()
@@ -135,18 +155,31 @@ class ContextualALNSSolver:
             raise ValueError("at least one operator reward must be positive")
 
         rng = np.random.default_rng(config.seed)
-        initial, d_ref = build_initial_solution(
-            self.instance, config.alpha, config.beta
+        initial, d_ref = _starting_point(
+            self.instance,
+            config,
+            self.initial_solution,
+            self.d_ref,
         )
 
-        if bandit_config.short_route_warm_start:
+        has_locked_customers = (
+            self.constraints is not None
+            and bool(self.constraints.locked_customers())
+        )
+
+        if bandit_config.short_route_warm_start and not has_locked_customers:
             initial = compress_short_routes(
                 self.instance, initial, d_ref, config.alpha, config.beta
             )
 
         evaluator = Evaluator(self.instance, d_ref, config.alpha, config.beta)
         repair_context = RepairContext(
-            self.instance, evaluator, d_ref, config.alpha, config.beta
+            self.instance,
+            evaluator,
+            d_ref,
+            config.alpha,
+            config.beta,
+            self.constraints or SearchConstraints(),
         )
 
         destroy_operators, repair_operators = _operators(
@@ -166,7 +199,14 @@ class ContextualALNSSolver:
         repair_by_name = {operator.name: operator for operator in repair_operators}
 
         history = SearchHistory(bandit_config.context_window)
-        initial_evaluation = evaluator.solution(initial)
+        initial_evaluation = evaluator.solution(initial, self.constraints)
+
+        if not initial_evaluation.feasible:
+            raise InitialSolutionError(
+                "initial solution is infeasible: "
+                + ", ".join(initial_evaluation.violations)
+            )
+
         state = _SearchState(
             current=initial,
             current_evaluation=initial_evaluation,
@@ -190,13 +230,31 @@ class ContextualALNSSolver:
             q = int(rng.integers(config.q_min, config.q_max + 1))
             destroy_name, repair_name = selector.select(context)
 
-            destroyed = destroy_by_name[destroy_name].apply(
-                state.current, self.instance, evaluator, rng, q
-            )
+            if self.constraints is None:
+                destroyed = destroy_by_name[destroy_name].apply(
+                    state.current, self.instance, evaluator, rng, q
+                )
+            else:
+                destroyed = destroy_by_name[destroy_name].apply(
+                    state.current,
+                    self.instance,
+                    evaluator,
+                    rng,
+                    q,
+                    self.constraints,
+                )
+
             repaired = repair_by_name[repair_name].apply(
                 destroyed.partial, destroyed.removed, repair_context
             )
-            outcome = _candidate_outcome(repaired, state, evaluator, config, rng)
+            outcome = _candidate_outcome(
+                repaired,
+                state,
+                evaluator,
+                config,
+                rng,
+                self.constraints,
+            )
 
             selector.record((destroy_name, repair_name), context, outcome.raw_reward)
             history.record(
@@ -209,7 +267,11 @@ class ContextualALNSSolver:
             )
 
         final_evaluation = _audit_best_solution(
-            self.instance, state.best, d_ref, config
+            self.instance,
+            state.best,
+            d_ref,
+            config,
+            self.constraints,
         )
 
         return ContextualSearchResult(
@@ -232,6 +294,9 @@ def run_contextual_alns(
     *,
     destroy_operators=None,
     repair_operators=None,
+    initial_solution: Solution | None = None,
+    constraints: SearchConstraints | None = None,
+    d_ref: float | None = None,
 ) -> ContextualSearchResult:
     return ContextualALNSSolver(
         instance,
@@ -239,4 +304,7 @@ def run_contextual_alns(
         bandit_config or ContextualBanditConfig(),
         destroy_operators=destroy_operators,
         repair_operators=repair_operators,
+        initial_solution=initial_solution,
+        constraints=constraints,
+        d_ref=d_ref,
     ).run()

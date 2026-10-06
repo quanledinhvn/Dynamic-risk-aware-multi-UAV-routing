@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from uav_routing.config import ALNSConfig
+from uav_routing.contextual.config import ContextualBanditConfig
 from uav_routing.dynamic.config import RollingHorizonConfig
 from uav_routing.dynamic.experiment import (
     AGGREGATE_FIELDS,
@@ -49,6 +50,26 @@ def test_raw_rows_have_one_row_per_scenario_seed_policy():
     assert all(row["dynamic_customers"] == 1 for row in rows)
     assert all(row["degree_of_dynamism"] == pytest.approx(1 / 3) for row in rows)
     assert all(row["epochs"] == 5 for row in rows)
+
+
+def test_contextual_policy_records_bandit_hyperparameters():
+    config = replace(
+        CONFIG,
+        seeds=(1,),
+        policies=("contextual_warm_alns",),
+        bandit=ContextualBanditConfig(
+            context_window=7,
+            linucb_exploration=0.25,
+        ),
+    )
+
+    [row] = run_dynamic_benchmark(config)
+
+    assert row["policy"] == "contextual_warm_alns"
+    assert row["context_window"] == 7
+    assert row["linucb_exploration"] == 0.25
+
+    assert row["feasible"] is True
 
 
 def test_clairvoyant_is_shared_per_scenario_seed_and_gap_is_filled():

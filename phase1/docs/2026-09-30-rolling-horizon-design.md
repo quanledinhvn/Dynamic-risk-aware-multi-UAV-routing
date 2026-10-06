@@ -296,7 +296,9 @@ Bộ đọc từ chối sự kiện có thời điểm âm, vượt horizon, kh�
 
 ## 12. Tương thích với contextual bandit và NSGA-III
 
-- `ContextualALNSSolver` dùng chung `_operators`, `Evaluator` và `RepairContext`; khi nhận cùng ba tham số `initial_solution`, `constraints`, `d_ref` nó thay thế được `warm_alns` mà không sửa `horizon.py`. Bước 14 gọi qua một callable `solver(instance, initial, constraints, d_ref, config, rng)`.
+- `ContextualALNSSolver` dùng chung `_operators`, `Evaluator` và `RepairContext`; nó nhận `initial_solution`, `constraints`, `d_ref` qua cùng contract warm-start của ALNS baseline.
+- Chính sách `contextual_warm_alns` chạy LinUCB ở epoch 0 và mọi epoch tái tối ưu. Destroy không được tháo khách hàng thuộc prefix đã khóa, repair không được chèn vào prefix và audit cuối epoch dùng cùng `SearchConstraints`.
+- Rolling horizon truyền nghiệm qua các epoch nhưng LinUCB hiện được khởi tạo lại cho từng epoch. Carry-over trạng thái LinUCB là một ablation riêng, chưa phải hành vi mặc định.
 - NSGA-III có thể dùng `Project` và `LockState` để đóng băng tiền tố trong population; phần này thuộc nhánh khác.
 
 ## 13. Kiểm thử

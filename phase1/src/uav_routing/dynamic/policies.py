@@ -5,6 +5,8 @@ from typing import Protocol
 
 from uav_routing.alns import SearchResult, run_alns
 from uav_routing.config import ALNSConfig
+from uav_routing.contextual.alns import run_contextual_alns
+from uav_routing.contextual.config import ContextualBanditConfig
 from uav_routing.evaluator import Evaluator
 from uav_routing.initial import InitialSolutionError
 from uav_routing.models import Instance, SearchConstraints, Solution
@@ -79,6 +81,42 @@ def warm_alns(
     )
 
 
+def contextual_warm_alns(
+    instance: Instance,
+    initial: Solution,
+    constraints: SearchConstraints,
+    d_ref: float,
+    alns: ALNSConfig,
+    iterations: int,
+    seed: int,
+    bandit: ContextualBanditConfig | None = None,
+) -> SearchResult:
+    """Run contextual ALNS from the feasible plan projected into an epoch."""
+    if iterations <= 0:
+        return evaluate_only(instance, initial, constraints, d_ref, alns, seed)
+
+    result = run_contextual_alns(
+        instance,
+        replace(alns, iterations=iterations, seed=seed),
+        bandit,
+        initial_solution=initial,
+        constraints=constraints,
+        d_ref=d_ref,
+    )
+
+    return SearchResult(
+        initial_solution=result.initial_solution,
+        final_current=result.final_current,
+        best_solution=result.best_solution,
+        d_ref=result.d_ref,
+        evaluation=result.evaluation,
+        iterations=result.iterations,
+        seed=result.seed,
+        runtime_seconds=result.runtime_seconds,
+        operator_stats=(),
+    )
+
+
 def cold_restart(
     instance, initial, constraints, d_ref, alns, iterations, seed
 ) -> SearchResult:
@@ -140,4 +178,5 @@ POLICIES: dict[str, EpochSolver] = {
     "greedy_insert": greedy_insert,
     "cold_restart": cold_restart,
     "warm_alns": warm_alns,
+    "contextual_warm_alns": contextual_warm_alns,
 }

@@ -14,11 +14,13 @@ import statistics
 import sys
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
+from functools import partial
 from pathlib import Path
 
 from uav_routing.alns import SearchInvariantError
 from uav_routing.config import ALNSConfig
+from uav_routing.contextual.config import ContextualBanditConfig
 from uav_routing.experiment import (
     _create_run_directory,
     _read_result,
@@ -41,6 +43,11 @@ RAW_FIELDS = (
     "dynamic_customers",
     "degree_of_dynamism",
     "policy",
+    "context_window",
+    "linucb_exploration",
+    "linucb_regularization",
+    "include_temperature",
+    "short_route_warm_start",
     "trigger",
     "epoch_length",
     "seed",
@@ -94,6 +101,7 @@ class DynamicBenchmarkConfig:
     policies: tuple[str, ...]
     alns: ALNSConfig
     rolling: RollingHorizonConfig
+    bandit: ContextualBanditConfig = field(default_factory=ContextualBanditConfig)
     checkpoint_dir: Path | None = None
     workers: int = 1
 
@@ -103,7 +111,7 @@ def run_dynamic_benchmark(
 ) -> list[dict[str, object]]:
     _validate_config(config)
 
-    run_policy = runner or _run_policy
+    run_policy = runner or partial(_run_policy, bandit=config.bandit)
     jobs = _jobs(config)
 
     if config.workers == 1:
@@ -266,10 +274,13 @@ def _run_policy(
     alns: ALNSConfig,
     rolling: RollingHorizonConfig,
     budget: int,
+    *,
+    bandit: ContextualBanditConfig | None = None,
 ) -> dict[str, object]:
     scenario = load_scenario(scenario_path)
     config = replace(rolling, policy=policy, seed=seed)
-    result = run_rolling_horizon(scenario, alns, config)
+    active_bandit = bandit if policy == "contextual_warm_alns" else None
+    result = run_rolling_horizon(scenario, alns, config, bandit=active_bandit)
     evaluation = result.evaluation
 
     dynamic = sum(isinstance(event, CustomerArrival) for event in scenario.events)
@@ -282,6 +293,23 @@ def _run_policy(
         "dynamic_customers": dynamic,
         "degree_of_dynamism": dynamic / (scenario.static_customers + dynamic),
         "policy": policy,
+        "context_window": (
+            active_bandit.context_window if active_bandit is not None else None
+        ),
+        "linucb_exploration": (
+            active_bandit.linucb_exploration if active_bandit is not None else None
+        ),
+        "linucb_regularization": (
+            active_bandit.linucb_regularization if active_bandit is not None else None
+        ),
+        "include_temperature": (
+            active_bandit.include_temperature if active_bandit is not None else None
+        ),
+        "short_route_warm_start": (
+            active_bandit.short_route_warm_start
+            if active_bandit is not None
+            else None
+        ),
         "trigger": config.trigger,
         "epoch_length": effective_epoch_length(config, scenario.horizon),
         "seed": seed,
@@ -426,6 +454,9 @@ def _load_config(path: Path) -> DynamicBenchmarkConfig:
         policies=tuple(str(value) for value in values.get("policies", POLICIES)),
         alns=ALNSConfig.from_dict(values.get("alns", {})),
         rolling=RollingHorizonConfig.from_dict(values.get("rolling", {})),
+        bandit=ContextualBanditConfig.from_dict(
+            values.get("contextual_bandit", {})
+        ),
     )
 
 
@@ -464,6 +495,7 @@ def _validate_config(config: DynamicBenchmarkConfig) -> None:
 
     config.alns.validate()
     config.rolling.validate()
+    config.bandit.validate()
 
 
 if __name__ == "__main__":

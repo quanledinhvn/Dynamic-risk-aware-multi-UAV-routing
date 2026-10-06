@@ -17,7 +17,8 @@ from uav_routing.contextual.alns import (
 from uav_routing.contextual.context import SearchHistory
 from uav_routing.destroy import DestroyResult
 from uav_routing.evaluator import Evaluator
-from uav_routing.models import Solution, SolutionEvaluation
+from uav_routing.initial import build_initial_solution
+from uav_routing.models import SearchConstraints, Solution, SolutionEvaluation
 from uav_routing.parser import parse_instance
 from uav_routing.repair import RepairResult
 
@@ -237,6 +238,29 @@ def test_complete_search_is_feasible_and_reproducible():
         second.evaluation,
         second.pair_selection_stats,
     )
+
+
+def test_contextual_search_accepts_locked_warm_start():
+    instance = _instance()
+    config = replace(ALNSConfig(), iterations=10, seed=9, q_min=1, q_max=2)
+    initial, d_ref = build_initial_solution(instance, config.alpha, config.beta)
+    prefix = initial.routes[0][:1]
+    constraints = SearchConstraints(locked_prefixes=(prefix,))
+
+    result = run_contextual_alns(
+        instance,
+        config,
+        initial_solution=initial,
+        constraints=constraints,
+        d_ref=d_ref,
+    )
+
+    assert result.initial_solution == initial
+    assert result.best_solution.routes[0][:1] == prefix
+    assert result.d_ref == d_ref
+
+    assert result.iterations == 10
+    assert result.evaluation.feasible
 
 
 def test_failed_repair_still_records_pair_and_history(monkeypatch):

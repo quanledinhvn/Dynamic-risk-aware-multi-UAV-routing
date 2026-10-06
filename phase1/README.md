@@ -254,6 +254,7 @@ Phần động nằm trong subpackage `uav_routing.dynamic`. Thiết kế đầy
 | `greedy_insert` | Chỉ chèn sự kiện mới, không chạy ALNS |
 | `cold_restart` | Xây lại phần tự do từ đầu rồi chạy ALNS |
 | `warm_alns` | ALNS từ nghiệm epoch trước (mặc định) |
+| `contextual_warm_alns` | Rolling horizon warm-start, dùng LinUCB chọn cặp destroy–repair trong từng epoch |
 | clairvoyant | Một lần ALNS tĩnh trên instance cuối với cùng ngân sách; dùng làm tham chiếu cho `gap` |
 
 ### Sinh kịch bản
@@ -285,6 +286,24 @@ uv run python -m uav_routing.dynamic.cli simulate \
 
 JSON gồm cấu hình, số UAV, quãng đường, risk delay, objective, khách hàng không phục vụ, lịch sử từng epoch (thời điểm, sự kiện tiết lộ, số khách hàng khóa, `rejected`, objective, số vòng lặp, runtime) và các tuyến kèm lịch phục vụ.
 
+Để chạy phương pháp kết hợp dynamic + contextual:
+
+```bash
+uv run python -m uav_routing.dynamic.cli simulate \
+  --scenario ../dataset/solomon_dynamic/c101-n25-d5-s0.json \
+  --policy contextual_warm_alns \
+  --trigger periodic \
+  --epoch-fraction 0.05 \
+  --iterations-epoch0 2000 \
+  --iterations-per-epoch 500 \
+  --context-window 100 \
+  --linucb-exploration 0.5 \
+  --linucb-regularization 1.0 \
+  --seed 42
+```
+
+Rolling horizon chịu trách nhiệm tiết lộ event, khóa prefix đã thực thi, chiếu và triage nghiệm. `contextual_warm_alns` nhận chính nghiệm khả thi đó cùng `SearchConstraints` và $D_{\mathrm{ref}}$, rồi dùng LinUCB thay roulette để chọn một trong 15 cặp destroy–repair. Mô hình LinUCB hiện được khởi tạo lại ở đầu mỗi epoch; nghiệm và các prefix khóa được truyền xuyên epoch, còn trạng thái học của bandit chưa được truyền xuyên epoch.
+
 ### Benchmark động
 
 ```bash
@@ -299,6 +318,7 @@ uv run python -m uav_routing.dynamic.experiment \
 - `aggregate.csv`: thống kê theo kịch bản, chính sách, trigger và độ dài epoch.
 - Clairvoyant chạy một lần cho mỗi cặp kịch bản/seed với ngân sách `iterations_epoch0 + số epoch × iterations_per_epoch`.
 - Các cấu hình chính: `configs/dynamic/benchmark_n25_d{5,12,25}.json`.
+- Cấu hình smoke so sánh trực tiếp `warm_alns` và `contextual_warm_alns`: `configs/dynamic/contextual_smoke.json`.
 - Có thể ghi đè `--seeds`, `--policies`, `--epoch-length`, `--iterations-epoch0`, `--iterations-per-epoch` từ dòng lệnh.
 
 ### Phân tích thống kê

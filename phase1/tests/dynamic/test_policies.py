@@ -42,8 +42,13 @@ def _served(solution: Solution) -> list[int]:
     return sorted(c for route in solution.routes for c in route)
 
 
-def test_policy_table_exposes_three_policies():
-    assert set(POLICIES) == {"greedy_insert", "cold_restart", "warm_alns"}
+def test_policy_table_exposes_all_epoch_solvers():
+    assert set(POLICIES) == {
+        "greedy_insert",
+        "cold_restart",
+        "warm_alns",
+        "contextual_warm_alns",
+    }
 
 
 def test_evaluate_only_wraps_initial_without_search():

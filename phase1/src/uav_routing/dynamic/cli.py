@@ -4,11 +4,13 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from dataclasses import asdict
 from pathlib import Path
 
 from uav_routing.alns import SearchInvariantError
 from uav_routing.cli import _route_to_dict, _write_json_atomic
 from uav_routing.config import ALNSConfig
+from uav_routing.contextual.config import ContextualBanditConfig
 from uav_routing.initial import InitialSolutionError
 
 from .config import POLICIES, TRIGGERS, RollingHorizonConfig
@@ -35,6 +37,7 @@ def simulation_to_dict(
     scenario: Scenario,
     config: RollingHorizonConfig,
     alns: ALNSConfig,
+    bandit: ContextualBanditConfig | None = None,
 ) -> dict[str, object]:
     evaluation = result.evaluation
     routes = [
@@ -64,6 +67,7 @@ def simulation_to_dict(
         "total_iterations": result.total_iterations,
         "alpha": float(alns.alpha),
         "beta": float(alns.beta),
+        "contextual_bandit": asdict(bandit) if bandit is not None else None,
         "d_ref": float(result.d_ref),
         "vehicles": evaluation.vehicle_count,
         "distance": float(evaluation.distance),
@@ -137,6 +141,12 @@ def _build_parser() -> argparse.ArgumentParser:
     simulate.add_argument("--seed", type=int, default=42)
     simulate.add_argument("--alpha", type=float, default=0.5)
     simulate.add_argument("--beta", type=float, default=0.5)
+    simulate.add_argument("--context-window", type=int, default=100)
+    simulate.add_argument("--linucb-exploration", type=float, default=0.5)
+    simulate.add_argument("--linucb-regularization", type=float, default=1.0)
+
+    simulate.add_argument("--exclude-temperature", action="store_true")
+    simulate.add_argument("--short-route-warm-start", action="store_true")
     simulate.add_argument("--output", type=Path)
 
     return parser
@@ -153,13 +163,23 @@ def _simulate(args: argparse.Namespace) -> dict[str, object]:
         iterations_per_epoch=args.iterations_per_epoch,
         seed=args.seed,
     )
+    bandit = None
+
+    if args.policy == "contextual_warm_alns":
+        bandit = ContextualBanditConfig(
+            context_window=args.context_window,
+            linucb_exploration=args.linucb_exploration,
+            linucb_regularization=args.linucb_regularization,
+            include_temperature=not args.exclude_temperature,
+            short_route_warm_start=args.short_route_warm_start,
+        )
 
     alns.validate()
     config.validate()
 
     scenario = load_scenario(args.scenario)
-    result = run_rolling_horizon(scenario, alns, config)
-    payload = simulation_to_dict(result, scenario, config, alns)
+    result = run_rolling_horizon(scenario, alns, config, bandit=bandit)
+    payload = simulation_to_dict(result, scenario, config, alns, bandit)
 
     if args.output is not None:
         _write_json_atomic(args.output, payload)
