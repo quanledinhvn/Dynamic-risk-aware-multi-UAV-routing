@@ -178,3 +178,10 @@ scripts/sky_benchmark.sh launch \
   --region ap-southeast-1 \
   --instance-type c7i.2xlarge \
   --cluster uav-p1-c100-r5-1000-8cpu
+
+scripts/sky_benchmark.sh launch \
+  --config phase1/configs/standard/benchmark_c100_r5_s20_10000.json \
+  --workers 8 \
+  --region ap-southeast-1 \
+  --instance-type c7i.2xlarge \
+  --cluster uav-standard-8cpu
