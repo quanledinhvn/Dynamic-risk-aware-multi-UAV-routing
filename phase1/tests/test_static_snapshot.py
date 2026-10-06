@@ -22,13 +22,13 @@ SNAPSHOT_OBJECTIVE = 0.6417742578974153
 SNAPSHOT_D_REF = 191.8136197786562
 SNAPSHOT_USES = {
     "destroy:random": 30,
-    "destroy:worst": 41,
-    "destroy:related": 39,
-    "destroy:route": 46,
-    "destroy:risk_priority": 44,
-    "repair:greedy": 70,
-    "repair:regret2": 68,
-    "repair:risk_priority": 62,
+    "destroy:worst": 42,
+    "destroy:related": 37,
+    "destroy:route": 48,
+    "destroy:risk_priority": 43,
+    "repair:greedy": 71,
+    "repair:regret2": 66,
+    "repair:risk_priority": 63,
 }
 
 

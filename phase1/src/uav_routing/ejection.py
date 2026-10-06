@@ -36,7 +36,7 @@ class EjectionRepair:
         self.evaluations = 0
         self.used_ejections = 0
 
-        if not _valid_removed(partial, removed, context.instance):
+        if not _valid_removed(partial, removed, context):
             return RepairResult(False, None)
 
         if self.beam_width < 1 or self.max_ejections < 0 or self.max_evaluations < 0:

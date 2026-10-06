@@ -82,7 +82,7 @@ class RiskRelocateRepair:
     def apply(
         self, partial: Solution, removed: tuple[int, ...], context: RepairContext
     ) -> RepairResult:
-        if removed or not _valid_removed(partial, removed, context.instance):
+        if removed or not _valid_removed(partial, removed, context):
             return RepairResult(False, None)
 
         base = context.evaluator.solution(partial)
@@ -157,7 +157,7 @@ def _risk_regret(
     *,
     allow_new_route: bool,
 ) -> RepairResult:
-    if not _valid_removed(partial, removed, context.instance):
+    if not _valid_removed(partial, removed, context):
         return RepairResult(False, None)
 
     current = partial
