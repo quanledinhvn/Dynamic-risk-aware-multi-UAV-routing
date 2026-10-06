@@ -1,0 +1,46 @@
+=== 2026-10-04 14:57:38 start base ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/base/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/base/aggregate.csv
+=== 2026-10-04 15:06:24 done base (exit 0) ===
+=== 2026-10-04 15:06:24 start trigger_event ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/trigger_event/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/trigger_event/aggregate.csv
+=== 2026-10-04 15:15:01 done trigger_event (exit 0) ===
+=== 2026-10-04 15:15:01 start trigger_hybrid ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/trigger_hybrid/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/trigger_hybrid/aggregate.csv
+=== 2026-10-04 15:27:51 done trigger_hybrid (exit 0) ===
+=== 2026-10-04 15:27:51 start epoch_0.025 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/epoch_0.025/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/epoch_0.025/aggregate.csv
+=== 2026-10-04 15:43:24 done epoch_0.025 (exit 0) ===
+=== 2026-10-04 15:43:24 start epoch_0.1 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/epoch_0.1/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/epoch_0.1/aggregate.csv
+=== 2026-10-04 15:48:39 done epoch_0.1 (exit 0) ===
+=== 2026-10-04 15:48:39 start epoch_0.2 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/epoch_0.2/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/epoch_0.2/aggregate.csv
+=== 2026-10-04 15:52:08 done epoch_0.2 (exit 0) ===
+=== 2026-10-04 15:52:08 start budget_100 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/budget_100/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/budget_100/aggregate.csv
+=== 2026-10-04 15:55:19 done budget_100 (exit 0) ===
+=== 2026-10-04 15:55:19 start budget_250 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/budget_250/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/budget_250/aggregate.csv
+=== 2026-10-04 16:00:39 done budget_250 (exit 0) ===
+=== 2026-10-04 16:00:39 start budget_1000 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 90 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/budget_1000/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/ablation/budget_1000/aggregate.csv
+=== 2026-10-04 16:16:36 done budget_1000 (exit 0) ===
+=== ALL DONE 2026-10-04 16:16:36 ===

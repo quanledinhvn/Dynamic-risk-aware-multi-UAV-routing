@@ -1,0 +1,1213 @@
+{
+  "scenario": "c101-n95-d5-s0",
+  "instance": "c101.txt",
+  "static_customers": 95,
+  "dynamic_customers": 5,
+  "events": 9,
+  "risks": 5,
+  "horizon": 1236.0,
+  "policy": "warm_alns",
+  "trigger": "periodic",
+  "epoch_length": 61.800000000000004,
+  "epoch_fraction": 0.05,
+  "seed": 0,
+  "iterations_epoch0": 2000,
+  "iterations_per_epoch": 500,
+  "total_iterations": 12500,
+  "alpha": 0.5,
+  "beta": 0.5,
+  "d_ref": 989.4428550332319,
+  "vehicles": 11,
+  "distance": 1051.2110694226205,
+  "risk_delay": 0.10940350351141914,
+  "objective": 0.5859153858100553,
+  "feasible": true,
+  "unserved": [
+    98
+  ],
+  "unserved_priority": 0.0,
+  "runtime_seconds": 54.03001499999664,
+  "epochs": [
+    {
+      "index": 0,
+      "time": 0.0,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 0,
+      "rejected": [],
+      "vehicles": 10,
+      "distance": 928.3238107483954,
+      "risk_delay": 0.24946620160779534,
+      "objective": 0.5938475150553485,
+      "iterations": 2000,
+      "runtime_seconds": 19.953605668008095
+    },
+    {
+      "index": 1,
+      "time": 61.800000000000004,
+      "revealed": {
+        "customer_arrival": 3,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 9,
+      "rejected": [
+        98
+      ],
+      "vehicles": 11,
+      "distance": 1002.4133759446203,
+      "risk_delay": 0.1462315633533184,
+      "objective": 0.5796702384830368,
+      "iterations": 500,
+      "runtime_seconds": 4.420775767008308
+    },
+    {
+      "index": 2,
+      "time": 123.60000000000001,
+      "revealed": {
+        "customer_arrival": 1,
+        "risk_update": 0,
+        "deadline_update": 1
+      },
+      "locked_customers": 18,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1007.9084735125842,
+      "risk_delay": 0.15480475505723149,
+      "objective": 0.5867336988805356,
+      "iterations": 500,
+      "runtime_seconds": 3.772378066991223
+    },
+    {
+      "index": 3,
+      "time": 185.4,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 21,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1007.9084735125842,
+      "risk_delay": 0.15480475505723149,
+      "objective": 0.5867336988805356,
+      "iterations": 500,
+      "runtime_seconds": 3.739127267006552
+    },
+    {
+      "index": 4,
+      "time": 247.20000000000002,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 1
+      },
+      "locked_customers": 30,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1007.6219395968238,
+      "risk_delay": 0.15302902824551887,
+      "objective": 0.5857010398888085,
+      "iterations": 500,
+      "runtime_seconds": 2.950903317978373
+    },
+    {
+      "index": 5,
+      "time": 309.0,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 37,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1007.194366551898,
+      "risk_delay": 0.15302902824551887,
+      "objective": 0.5854849723095892,
+      "iterations": 500,
+      "runtime_seconds": 2.567777110991301
+    },
+    {
+      "index": 6,
+      "time": 370.8,
+      "revealed": {
+        "customer_arrival": 1,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 41,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1054.9158790797542,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5877875554044323,
+      "iterations": 500,
+      "runtime_seconds": 2.5597740649827756
+    },
+    {
+      "index": 7,
+      "time": 432.6,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 1,
+        "deadline_update": 0
+      },
+      "locked_customers": 50,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1053.0855272560898,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5868626147601326,
+      "iterations": 500,
+      "runtime_seconds": 2.0111447960080113
+    },
+    {
+      "index": 8,
+      "time": 494.40000000000003,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 58,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 1.8772352040105034
+    },
+    {
+      "index": 9,
+      "time": 556.2,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 61,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 1.6728845370234922
+    },
+    {
+      "index": 10,
+      "time": 618.0,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 70,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 1.488147025986109
+    },
+    {
+      "index": 11,
+      "time": 679.8,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 79,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 1.2332624930131715
+    },
+    {
+      "index": 12,
+      "time": 741.5999999999999,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 82,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 1.1846850319998339
+    },
+    {
+      "index": 13,
+      "time": 803.3999999999999,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 89,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 1.0491840410104487
+    },
+    {
+      "index": 14,
+      "time": 865.1999999999998,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 1,
+        "deadline_update": 0
+      },
+      "locked_customers": 95,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 0.8676530090160668
+    },
+    {
+      "index": 15,
+      "time": 926.9999999999998,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 95,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 0.8986004859907553
+    },
+    {
+      "index": 16,
+      "time": 988.7999999999997,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 96,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 0.709258796996437
+    },
+    {
+      "index": 17,
+      "time": 1050.5999999999997,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 98,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 0.311918613006128
+    },
+    {
+      "index": 18,
+      "time": 1112.3999999999996,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 98,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 0.3022439840133302
+    },
+    {
+      "index": 19,
+      "time": 1174.1999999999996,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 99,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 0.15329644200392067
+    },
+    {
+      "index": 20,
+      "time": 1235.9999999999995,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 99,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 0.1535209539870266
+    },
+    {
+      "index": 21,
+      "time": 1236.0,
+      "revealed": {
+        "customer_arrival": 0,
+        "risk_update": 0,
+        "deadline_update": 0
+      },
+      "locked_customers": 99,
+      "rejected": [],
+      "vehicles": 11,
+      "distance": 1051.2110694226205,
+      "risk_delay": 0.10940350351141914,
+      "objective": 0.5859153858100553,
+      "iterations": 500,
+      "runtime_seconds": 0.15237704801256768
+    }
+  ],
+  "routes": [
+    {
+      "route_index": 1,
+      "customers": [
+        67,
+        65,
+        63,
+        62,
+        74,
+        72,
+        61,
+        89
+      ],
+      "distance": 86.42884502037181,
+      "load": 170.0,
+      "depot_return": 851.3515913237718,
+      "schedule": [
+        {
+          "customer_id": 67,
+          "arrival": 12.206555615733702,
+          "service_start": 12.206555615733702,
+          "departure": 102.2065556157337
+        },
+        {
+          "customer_id": 65,
+          "arrival": 103.2065556157337,
+          "service_start": 103.2065556157337,
+          "departure": 193.2065556157337
+        },
+        {
+          "customer_id": 63,
+          "arrival": 195.2065556157337,
+          "service_start": 195.2065556157337,
+          "departure": 285.2065556157337
+        },
+        {
+          "customer_id": 62,
+          "arrival": 290.2065556157337,
+          "service_start": 290.2065556157337,
+          "departure": 380.2065556157337
+        },
+        {
+          "customer_id": 74,
+          "arrival": 383.2065556157337,
+          "service_start": 383.2065556157337,
+          "departure": 473.2065556157337
+        },
+        {
+          "customer_id": 72,
+          "arrival": 478.2065556157337,
+          "service_start": 478.2065556157337,
+          "departure": 568.2065556157337
+        },
+        {
+          "customer_id": 61,
+          "arrival": 571.2065556157337,
+          "service_start": 571.2065556157337,
+          "departure": 661.2065556157337
+        },
+        {
+          "customer_id": 89,
+          "arrival": 692.0772536966,
+          "service_start": 737.0,
+          "departure": 827.0
+        }
+      ]
+    },
+    {
+      "route_index": 2,
+      "customers": [
+        43,
+        42,
+        41,
+        40,
+        44,
+        46,
+        45,
+        48,
+        51,
+        50,
+        52,
+        49,
+        47
+      ],
+      "distance": 64.80747449698114,
+      "load": 160.0,
+      "depot_return": 1234.807474496981,
+      "schedule": [
+        {
+          "customer_id": 43,
+          "arrival": 16.55294535724685,
+          "service_start": 16.55294535724685,
+          "departure": 106.55294535724684
+        },
+        {
+          "customer_id": 42,
+          "arrival": 109.55294535724684,
+          "service_start": 109.55294535724684,
+          "departure": 199.55294535724684
+        },
+        {
+          "customer_id": 41,
+          "arrival": 201.55294535724684,
+          "service_start": 201.55294535724684,
+          "departure": 291.5529453572468
+        },
+        {
+          "customer_id": 40,
+          "arrival": 293.5529453572468,
+          "service_start": 293.5529453572468,
+          "departure": 383.5529453572468
+        },
+        {
+          "customer_id": 44,
+          "arrival": 386.5529453572468,
+          "service_start": 386.5529453572468,
+          "departure": 476.5529453572468
+        },
+        {
+          "customer_id": 46,
+          "arrival": 479.381372481993,
+          "service_start": 479.381372481993,
+          "departure": 569.381372481993
+        },
+        {
+          "customer_id": 45,
+          "arrival": 571.381372481993,
+          "service_start": 571.381372481993,
+          "departure": 661.381372481993
+        },
+        {
+          "customer_id": 48,
+          "arrival": 663.381372481993,
+          "service_start": 663.381372481993,
+          "departure": 753.381372481993
+        },
+        {
+          "customer_id": 51,
+          "arrival": 756.381372481993,
+          "service_start": 756.381372481993,
+          "departure": 846.381372481993
+        },
+        {
+          "customer_id": 50,
+          "arrival": 848.6174404594929,
+          "service_start": 848.6174404594929,
+          "departure": 938.6174404594929
+        },
+        {
+          "customer_id": 52,
+          "arrival": 941.7797181196612,
+          "service_start": 941.7797181196612,
+          "departure": 1031.779718119661
+        },
+        {
+          "customer_id": 49,
+          "arrival": 1034.779718119661,
+          "service_start": 1034.779718119661,
+          "departure": 1124.779718119661
+        },
+        {
+          "customer_id": 47,
+          "arrival": 1126.779718119661,
+          "service_start": 1126.779718119661,
+          "departure": 1216.779718119661
+        }
+      ]
+    },
+    {
+      "route_index": 3,
+      "customers": [
+        5,
+        3,
+        7,
+        37,
+        38,
+        39,
+        36,
+        34,
+        22
+      ],
+      "distance": 112.53134884432043,
+      "load": 160.0,
+      "depot_return": 975.3551451610135,
+      "schedule": [
+        {
+          "customer_id": 5,
+          "arrival": 15.132745950421556,
+          "service_start": 15.132745950421556,
+          "departure": 105.13274595042155
+        },
+        {
+          "customer_id": 3,
+          "arrival": 106.13274595042155,
+          "service_start": 106.13274595042155,
+          "departure": 196.13274595042157
+        },
+        {
+          "customer_id": 7,
+          "arrival": 198.13274595042157,
+          "service_start": 198.13274595042157,
+          "departure": 288.13274595042157
+        },
+        {
+          "customer_id": 37,
+          "arrival": 334.17620368330694,
+          "service_start": 383.0,
+          "departure": 473.0
+        },
+        {
+          "customer_id": 38,
+          "arrival": 475.0,
+          "service_start": 479.0,
+          "departure": 569.0
+        },
+        {
+          "customer_id": 39,
+          "arrival": 574.0,
+          "service_start": 574.0,
+          "departure": 664.0
+        },
+        {
+          "customer_id": 36,
+          "arrival": 669.0,
+          "service_start": 669.0,
+          "departure": 759.0
+        },
+        {
+          "customer_id": 34,
+          "arrival": 762.0,
+          "service_start": 762.0,
+          "departure": 852.0
+        },
+        {
+          "customer_id": 22,
+          "arrival": 873.1896201004171,
+          "service_start": 873.1896201004171,
+          "departure": 963.1896201004171
+        }
+      ]
+    },
+    {
+      "route_index": 4,
+      "customers": [
+        13,
+        27,
+        29,
+        30,
+        28,
+        26,
+        23,
+        21
+      ],
+      "distance": 84.23671404605496,
+      "load": 120.0,
+      "depot_return": 1014.1980390271856,
+      "schedule": [
+        {
+          "customer_id": 13,
+          "arrival": 30.805843601498726,
+          "service_start": 30.805843601498726,
+          "departure": 120.80584360149872
+        },
+        {
+          "customer_id": 27,
+          "arrival": 143.8275724679414,
+          "service_start": 261.0,
+          "departure": 351.0
+        },
+        {
+          "customer_id": 29,
+          "arrival": 354.605551275464,
+          "service_start": 358.0,
+          "departure": 448.0
+        },
+        {
+          "customer_id": 30,
+          "arrival": 453.0,
+          "service_start": 453.0,
+          "departure": 543.0
+        },
+        {
+          "customer_id": 28,
+          "arrival": 546.0,
+          "service_start": 546.0,
+          "departure": 636.0
+        },
+        {
+          "customer_id": 26,
+          "arrival": 638.0,
+          "service_start": 638.0,
+          "departure": 728.0
+        },
+        {
+          "customer_id": 23,
+          "arrival": 731.0,
+          "service_start": 732.0,
+          "departure": 822.0
+        },
+        {
+          "customer_id": 21,
+          "arrival": 825.605551275464,
+          "service_start": 914.0,
+          "departure": 1004.0
+        }
+      ]
+    },
+    {
+      "route_index": 5,
+      "customers": [
+        20,
+        24,
+        25,
+        8,
+        10,
+        11,
+        9,
+        6,
+        4,
+        1,
+        75
+      ],
+      "distance": 73.66688131956214,
+      "load": 170.0,
+      "depot_return": 1110.8113883008418,
+      "schedule": [
+        {
+          "customer_id": 20,
+          "arrival": 10.0,
+          "service_start": 10.0,
+          "departure": 100.0
+        },
+        {
+          "customer_id": 24,
+          "arrival": 105.0,
+          "service_start": 105.0,
+          "departure": 195.0
+        },
+        {
+          "customer_id": 25,
+          "arrival": 197.0,
+          "service_start": 197.0,
+          "departure": 287.0
+        },
+        {
+          "customer_id": 8,
+          "arrival": 307.61552812808833,
+          "service_start": 307.61552812808833,
+          "departure": 397.61552812808833
+        },
+        {
+          "customer_id": 10,
+          "arrival": 401.2210794035523,
+          "service_start": 401.2210794035523,
+          "departure": 491.2210794035523
+        },
+        {
+          "customer_id": 11,
+          "arrival": 494.2210794035523,
+          "service_start": 494.2210794035523,
+          "departure": 584.2210794035523
+        },
+        {
+          "customer_id": 9,
+          "arrival": 587.3833570637206,
+          "service_start": 587.3833570637206,
+          "departure": 677.3833570637206
+        },
+        {
+          "customer_id": 6,
+          "arrival": 679.6194250412204,
+          "service_start": 679.6194250412204,
+          "departure": 769.6194250412204
+        },
+        {
+          "customer_id": 4,
+          "arrival": 771.8554930187203,
+          "service_start": 771.8554930187203,
+          "departure": 861.8554930187203
+        },
+        {
+          "customer_id": 1,
+          "arrival": 864.8554930187203,
+          "service_start": 912.0,
+          "departure": 1002.0
+        },
+        {
+          "customer_id": 75,
+          "arrival": 1005.0,
+          "service_start": 1005.0,
+          "departure": 1095.0
+        }
+      ]
+    },
+    {
+      "route_index": 6,
+      "customers": [
+        81,
+        78,
+        76,
+        71,
+        70,
+        73,
+        77,
+        79,
+        80
+      ],
+      "distance": 127.29748041459519,
+      "load": 150.0,
+      "depot_return": 937.2974804145953,
+      "schedule": [
+        {
+          "customer_id": 81,
+          "arrival": 47.43416490252569,
+          "service_start": 47.43416490252569,
+          "departure": 137.43416490252568
+        },
+        {
+          "customer_id": 78,
+          "arrival": 140.43416490252568,
+          "service_start": 140.43416490252568,
+          "departure": 230.43416490252568
+        },
+        {
+          "customer_id": 76,
+          "arrival": 232.43416490252568,
+          "service_start": 232.43416490252568,
+          "departure": 322.4341649025257
+        },
+        {
+          "customer_id": 71,
+          "arrival": 327.4341649025257,
+          "service_start": 327.4341649025257,
+          "departure": 417.4341649025257
+        },
+        {
+          "customer_id": 70,
+          "arrival": 422.4341649025257,
+          "service_start": 422.4341649025257,
+          "departure": 512.4341649025257
+        },
+        {
+          "customer_id": 73,
+          "arrival": 515.4341649025257,
+          "service_start": 515.4341649025257,
+          "departure": 605.4341649025257
+        },
+        {
+          "customer_id": 77,
+          "arrival": 609.4341649025257,
+          "service_start": 609.4341649025257,
+          "departure": 699.4341649025257
+        },
+        {
+          "customer_id": 79,
+          "arrival": 700.4341649025257,
+          "service_start": 700.4341649025257,
+          "departure": 790.4341649025257
+        },
+        {
+          "customer_id": 80,
+          "arrival": 795.8193297096602,
+          "service_start": 795.8193297096602,
+          "departure": 885.8193297096602
+        }
+      ]
+    },
+    {
+      "route_index": 7,
+      "customers": [
+        57,
+        55,
+        54,
+        53,
+        56,
+        58,
+        64,
+        66
+      ],
+      "distance": 101.96295371364664,
+      "load": 190.0,
+      "depot_return": 932.5529453572468,
+      "schedule": [
+        {
+          "customer_id": 57,
+          "arrival": 35.0,
+          "service_start": 35.0,
+          "departure": 125.0
+        },
+        {
+          "customer_id": 55,
+          "arrival": 127.0,
+          "service_start": 127.0,
+          "departure": 217.0
+        },
+        {
+          "customer_id": 54,
+          "arrival": 222.0,
+          "service_start": 222.0,
+          "departure": 312.0
+        },
+        {
+          "customer_id": 53,
+          "arrival": 317.3851648071345,
+          "service_start": 317.3851648071345,
+          "departure": 407.3851648071345
+        },
+        {
+          "customer_id": 56,
+          "arrival": 411.3851648071345,
+          "service_start": 411.3851648071345,
+          "departure": 501.3851648071345
+        },
+        {
+          "customer_id": 58,
+          "arrival": 503.3851648071345,
+          "service_start": 503.3851648071345,
+          "departure": 593.3851648071345
+        },
+        {
+          "customer_id": 64,
+          "arrival": 620.3109888428071,
+          "service_start": 632.0,
+          "departure": 722.0
+        },
+        {
+          "customer_id": 66,
+          "arrival": 727.0990195135928,
+          "service_start": 826.0,
+          "departure": 916.0
+        }
+      ]
+    },
+    {
+      "route_index": 8,
+      "customers": [
+        32,
+        33,
+        31,
+        35,
+        60,
+        59,
+        68,
+        69
+      ],
+      "distance": 134.23898844701043,
+      "load": 150.0,
+      "depot_return": 1021.8113883008419,
+      "schedule": [
+        {
+          "customer_id": 32,
+          "arrival": 31.622776601683793,
+          "service_start": 31.622776601683793,
+          "departure": 121.6227766016838
+        },
+        {
+          "customer_id": 33,
+          "arrival": 123.6227766016838,
+          "service_start": 123.6227766016838,
+          "departure": 213.6227766016838
+        },
+        {
+          "customer_id": 31,
+          "arrival": 219.0079414088183,
+          "service_start": 219.0079414088183,
+          "departure": 309.0079414088183
+        },
+        {
+          "customer_id": 35,
+          "arrival": 314.0079414088183,
+          "service_start": 314.0079414088183,
+          "departure": 404.0079414088183
+        },
+        {
+          "customer_id": 60,
+          "arrival": 446.43434828001114,
+          "service_start": 562.0,
+          "departure": 652.0
+        },
+        {
+          "customer_id": 59,
+          "arrival": 662.4403065089106,
+          "service_start": 662.4403065089106,
+          "departure": 752.4403065089106
+        },
+        {
+          "customer_id": 68,
+          "arrival": 768.9932518661574,
+          "service_start": 768.9932518661574,
+          "departure": 858.9932518661574
+        },
+        {
+          "customer_id": 69,
+          "arrival": 863.9932518661574,
+          "service_start": 916.0,
+          "departure": 1006.0
+        }
+      ]
+    },
+    {
+      "route_index": 9,
+      "customers": [
+        90,
+        87,
+        86,
+        83,
+        82,
+        84,
+        85,
+        88,
+        91
+      ],
+      "distance": 74.63558692267769,
+      "load": 160.0,
+      "depot_return": 948.360679774998,
+      "schedule": [
+        {
+          "customer_id": 90,
+          "arrival": 20.615528128088304,
+          "service_start": 20.615528128088304,
+          "departure": 110.6155281280883
+        },
+        {
+          "customer_id": 87,
+          "arrival": 115.6155281280883,
+          "service_start": 115.6155281280883,
+          "departure": 205.6155281280883
+        },
+        {
+          "customer_id": 86,
+          "arrival": 206.6155281280883,
+          "service_start": 206.6155281280883,
+          "departure": 296.6155281280883
+        },
+        {
+          "customer_id": 83,
+          "arrival": 302.6155281280883,
+          "service_start": 302.6155281280883,
+          "departure": 392.6155281280883
+        },
+        {
+          "customer_id": 82,
+          "arrival": 395.6155281280883,
+          "service_start": 395.6155281280883,
+          "departure": 485.6155281280883
+        },
+        {
+          "customer_id": 84,
+          "arrival": 491.4464800229336,
+          "service_start": 491.4464800229336,
+          "departure": 581.4464800229337
+        },
+        {
+          "customer_id": 85,
+          "arrival": 584.2749071476799,
+          "service_start": 584.2749071476799,
+          "departure": 674.2749071476799
+        },
+        {
+          "customer_id": 88,
+          "arrival": 677.2749071476799,
+          "service_start": 677.2749071476799,
+          "departure": 767.2749071476799
+        },
+        {
+          "customer_id": 91,
+          "arrival": 772.2749071476799,
+          "service_start": 836.0,
+          "departure": 926.0
+        }
+      ]
+    },
+    {
+      "route_index": 10,
+      "customers": [
+        17,
+        18,
+        19,
+        15,
+        16,
+        14,
+        12
+      ],
+      "distance": 94.38051714001297,
+      "load": 160.0,
+      "depot_return": 792.0788655293195,
+      "schedule": [
+        {
+          "customer_id": 17,
+          "arrival": 33.301651610693426,
+          "service_start": 99.0,
+          "departure": 189.0
+        },
+        {
+          "customer_id": 18,
+          "arrival": 192.0,
+          "service_start": 192.0,
+          "departure": 282.0
+        },
+        {
+          "customer_id": 19,
+          "arrival": 287.0,
+          "service_start": 287.0,
+          "departure": 377.0
+        },
+        {
+          "customer_id": 15,
+          "arrival": 382.0,
+          "service_start": 384.0,
+          "departure": 474.0
+        },
+        {
+          "customer_id": 16,
+          "arrival": 479.0,
+          "service_start": 479.0,
+          "departure": 569.0
+        },
+        {
+          "customer_id": 14,
+          "arrival": 571.0,
+          "service_start": 571.0,
+          "departure": 661.0
+        },
+        {
+          "customer_id": 12,
+          "arrival": 664.0,
+          "service_start": 664.0,
+          "departure": 754.0
+        }
+      ]
+    },
+    {
+      "route_index": 11,
+      "customers": [
+        96,
+        95,
+        94,
+        92,
+        93,
+        97,
+        100,
+        99,
+        2
+      ],
+      "distance": 97.02427905738712,
+      "load": 200.0,
+      "depot_return": 974.9687663027472,
+      "schedule": [
+        {
+          "customer_id": 96,
+          "arrival": 36.05551275463989,
+          "service_start": 95.0,
+          "departure": 185.0
+        },
+        {
+          "customer_id": 95,
+          "arrival": 187.0,
+          "service_start": 196.0,
+          "departure": 286.0
+        },
+        {
+          "customer_id": 94,
+          "arrival": 289.605551275464,
+          "service_start": 289.605551275464,
+          "departure": 379.605551275464
+        },
+        {
+          "customer_id": 92,
+          "arrival": 383.211102550928,
+          "service_start": 383.211102550928,
+          "departure": 473.211102550928
+        },
+        {
+          "customer_id": 93,
+          "arrival": 475.211102550928,
+          "service_start": 475.211102550928,
+          "departure": 565.211102550928
+        },
+        {
+          "customer_id": 97,
+          "arrival": 570.211102550928,
+          "service_start": 570.211102550928,
+          "departure": 660.211102550928
+        },
+        {
+          "customer_id": 100,
+          "arrival": 665.211102550928,
+          "service_start": 665.211102550928,
+          "departure": 755.211102550928
+        },
+        {
+          "customer_id": 99,
+          "arrival": 760.211102550928,
+          "service_start": 760.211102550928,
+          "departure": 850.211102550928
+        },
+        {
+          "customer_id": 2,
+          "arrival": 864.3532381746589,
+          "service_start": 864.3532381746589,
+          "departure": 954.3532381746589
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+=== 2026-10-04 08:42:22 start n100 d5 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 810 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/dynamic_n100_d5/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/dynamic_n100_d5/aggregate.csv
+=== 2026-10-04 10:48:26 done n100 d5 (exit 0) ===
+=== 2026-10-04 10:48:26 start n100 d12 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 810 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/dynamic_n100_d12/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/dynamic_n100_d12/aggregate.csv
+=== 2026-10-04 12:51:16 done n100 d12 (exit 0) ===
+=== 2026-10-04 12:51:16 start n100 d25 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 810 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/dynamic_n100_d25/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/dynamic_n100_d25/aggregate.csv
+=== 2026-10-04 14:46:04 done n100 d25 (exit 0) ===
+=== ALL DONE 2026-10-04 14:46:04 ===

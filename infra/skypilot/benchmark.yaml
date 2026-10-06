@@ -1,0 +1,95 @@
+name: uav-phase1-benchmark
+
+workdir: .
+
+resources:
+  infra: aws
+  disk_size: 30
+
+envs:
+  BENCHMARK_CONFIG:
+  BENCHMARK_WORKERS:
+  BENCHMARK_OUTPUT_DIR:
+  BENCHMARK_S3_BUCKET:
+  BENCHMARK_RUN_ID:
+
+file_mounts:
+  /mnt/uav-benchmark-results:
+    name: ${BENCHMARK_S3_BUCKET}
+    store: s3
+    mode: MOUNT
+
+setup: |
+  set -euo pipefail
+  command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.local/bin:$PATH"
+  cd phase1
+  uv sync --frozen
+
+run: |
+  set -euo pipefail
+  export PATH="$HOME/.local/bin:$PATH"
+  export OMP_NUM_THREADS=1
+  export OPENBLAS_NUM_THREADS=1
+  export MKL_NUM_THREADS=1
+
+  export NUMEXPR_NUM_THREADS=1
+  local_output="$PWD/$BENCHMARK_OUTPUT_DIR"
+  s3_run_dir="/mnt/uav-benchmark-results/runs/$BENCHMARK_RUN_ID"
+  smoke_output="$local_output/.smoke"
+  mkdir -p "$local_output"
+
+  archive_artifacts() {
+    local benchmark_status="$?"
+    local copy_status=0
+    local marker_status=0
+
+    local marker="FAILED"
+    trap - EXIT
+
+    set +e
+    mkdir -p "$s3_run_dir"
+    copy_status="$?"
+
+    if [[ "$copy_status" -eq 0 ]]; then
+      cp -a "$local_output/." "$s3_run_dir/"
+      copy_status="$?"
+    fi
+
+    if [[ "$benchmark_status" -eq 0 && "$copy_status" -eq 0 ]]; then
+      marker="SUCCESS"
+    fi
+
+    rm -f "$s3_run_dir/SUCCESS" "$s3_run_dir/FAILED"
+    touch "$s3_run_dir/$marker"
+    marker_status="$?"
+
+    if [[ "$copy_status" -eq 0 ]]; then
+      copy_status="$marker_status"
+    fi
+
+    if [[ "$benchmark_status" -ne 0 ]]; then
+      exit "$benchmark_status"
+    fi
+
+    exit "$copy_status"
+  }
+
+  trap archive_artifacts EXIT
+  cd phase1
+
+  uv run python -m uav_routing.experiment \
+    --config "../$BENCHMARK_CONFIG" \
+    --iterations 2 \
+    --seeds 0 \
+    --workers 1 \
+    --output-dir "$smoke_output" \
+    2>&1 | tee "$local_output/benchmark.log"
+
+  rm -rf "$smoke_output"
+
+  uv run python -m uav_routing.experiment \
+    --config "../$BENCHMARK_CONFIG" \
+    --workers "$BENCHMARK_WORKERS" \
+    --output-dir "$local_output" \
+    2>&1 | tee -a "$local_output/benchmark.log"

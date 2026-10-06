@@ -1,0 +1,2 @@
+instance,seed,iterations,policy,vehicles,objective,distance,risk_delay,runtime
+c101,0,2,roulette,12,0.6587096575389906,1154.350484626445,0.16245382706912745,0.07644774999062065

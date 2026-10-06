@@ -1,0 +1,23 @@
+{
+  "scenarios": [
+    "../../../dataset/solomon_dynamic/c101-n25-d5-s0.json",
+    "../../../dataset/solomon_dynamic/r101-n25-d5-s0.json",
+    "../../../dataset/solomon_dynamic/rc101-n25-d5-s0.json"
+  ],
+  "seeds": [0],
+  "policies": ["greedy_insert", "cold_restart", "warm_alns"],
+  "alns": {
+    "iterations": 100,
+    "seed": 0,
+    "alpha": 0.5,
+    "beta": 0.5,
+    "q_min": 2,
+    "q_max": 5
+  },
+  "rolling": {
+    "trigger": "periodic",
+    "epoch_fraction": 0.05,
+    "iterations_epoch0": 200,
+    "iterations_per_epoch": 50
+  }
+}
