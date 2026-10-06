@@ -7,7 +7,9 @@ import pytest
 
 from uav_routing.alns import (
     Acceptance,
+    accept_evaluation,
     accept_score,
+    classify_evaluation_reward,
     classify_reward,
     cool_temperature,
     run_alns,
@@ -15,6 +17,7 @@ from uav_routing.alns import (
 from uav_routing.config import ALNSConfig
 from uav_routing.evaluator import Evaluator
 from uav_routing.initial import build_initial_solution
+from uav_routing.models import SolutionEvaluation
 from uav_routing.parser import parse_instance
 
 
@@ -24,6 +27,19 @@ class StubRng:
 
     def random(self):
         return self.value
+
+
+def _evaluation(vehicles, risk, objective):
+    return SolutionEvaluation(
+        True,
+        vehicles,
+        100.0,
+        risk,
+        objective,
+        (vehicles, objective),
+        (),
+        (),
+    )
 
 
 def test_fewer_vehicles_is_always_accepted():
@@ -55,6 +71,26 @@ def test_worse_equal_vehicle_candidate_uses_sa_probability():
     assert result.kind == "accepted_worse"
 
 
+def test_emergency_gate_accepts_safe_candidate_even_with_more_uavs():
+    config = replace(ALNSConfig(), score_policy="emergency_gate")
+    current = _evaluation(2, 0.3, 1.0)
+    candidate = _evaluation(3, 0.2, 2.0)
+
+    result = accept_evaluation(candidate, current, 0.01, StubRng(1.0), config)
+
+    assert result == Acceptance(True, "improve", 1.0)
+
+
+def test_emergency_gate_rejects_candidate_that_crosses_into_unsafe_region():
+    config = replace(ALNSConfig(), score_policy="emergency_gate")
+    current = _evaluation(3, 0.2, 2.0)
+    candidate = _evaluation(2, 0.21, 1.0)
+
+    result = accept_evaluation(candidate, current, 1.0, StubRng(0.0), config)
+
+    assert result == Acceptance(False, "reject", 0.0)
+
+
 def test_temperature_respects_floor():
     assert cool_temperature(0.01, 0.5, 0.008) == 0.008
 
@@ -78,6 +114,23 @@ def test_reward_precedence(candidate, current, best, acceptance, expected):
     config = ALNSConfig()
 
     assert classify_reward(candidate, current, best, acceptance, config) == expected
+
+
+def test_emergency_gate_reward_uses_risk_aware_best_order():
+    config = replace(ALNSConfig(), score_policy="emergency_gate")
+    candidate = _evaluation(3, 0.19, 2.0)
+    current = _evaluation(2, 0.3, 1.0)
+    best = _evaluation(2, 0.25, 1.0)
+
+    reward = classify_evaluation_reward(
+        candidate,
+        current,
+        best,
+        Acceptance(True, "improve", 1.0),
+        config,
+    )
+
+    assert reward == config.reward_best
 
 
 def test_twenty_iteration_search_returns_feasible_best_not_worse_than_initial():

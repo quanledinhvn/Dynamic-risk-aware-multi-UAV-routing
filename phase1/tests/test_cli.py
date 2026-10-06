@@ -55,6 +55,8 @@ def test_solve_writes_required_json_fields(tmp_path):
         "risks",
         "seed",
         "iterations",
+        "score_policy",
+        "risk_threshold",
         "vehicles",
         "distance",
         "risk_delay",
@@ -68,6 +70,8 @@ def test_solve_writes_required_json_fields(tmp_path):
     } <= data.keys()
     assert data["algorithm"] == "baseline"
     assert data["contextual_bandit"] is None
+    assert data["score_policy"] == "lexicographic"
+    assert data["risk_threshold"] == 0.2
 
     assert data["operators"]
     assert data["pair_selection_stats"] == []
@@ -143,6 +147,8 @@ def test_contextual_solve_uses_pair_stats_and_shared_route_schema(tmp_path):
         "context_window": 100,
         "linucb_exploration": 0.5,
         "linucb_regularization": 1.0,
+        "include_temperature": True,
+        "short_route_warm_start": False,
     }
 
     assert data["operators"] == []
@@ -182,7 +188,27 @@ def test_contextual_result_requires_explicit_bandit_config_for_serialization():
         "context_window": 17,
         "linucb_exploration": 0.25,
         "linucb_regularization": 2.0,
+        "include_temperature": True,
+        "short_route_warm_start": False,
     }
+
+
+def test_contextual_cli_enables_short_route_warm_start():
+    completed = run_cli(
+        "solve",
+        "--algorithm",
+        "contextual",
+        "--instance",
+        str(C101),
+        "--customers",
+        "100",
+        "--iterations",
+        "1",
+        "--short-route-warm-start",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout)["contextual_bandit"]["short_route_warm_start"]
 
 
 def test_baseline_result_keeps_three_argument_serialization():
@@ -211,6 +237,29 @@ def test_cli_rejects_weights_that_do_not_sum_to_one():
 
     assert completed.returncode == 2
     assert "sum to 1" in completed.stderr
+
+
+def test_cli_accepts_emergency_gate_score_policy():
+    completed = run_cli(
+        "solve",
+        "--instance",
+        str(C101),
+        "--customers",
+        "25",
+        "--iterations",
+        "1",
+        "--score-policy",
+        "emergency_gate",
+        "--risk-threshold",
+        "0.25",
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+    data = json.loads(completed.stdout)
+
+    assert data["score_policy"] == "emergency_gate"
+    assert data["risk_threshold"] == 0.25
 
 
 def test_cli_reports_input_errors_without_traceback(tmp_path):

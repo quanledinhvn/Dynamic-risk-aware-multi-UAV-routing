@@ -83,6 +83,22 @@ def test_record_normalizes_bandit_reward_and_updates_only_selected_arm():
     np.testing.assert_array_equal(untouched.matrix, np.eye(9))
 
 
+def test_temperature_feature_can_be_excluded_from_bandit_state():
+    config = ContextualBanditConfig(
+        linucb_exploration=0.0,
+        include_temperature=False,
+    )
+    selector = _selector(config=config)
+    context = _context()
+    context[2] = 0.75
+
+    selector.record(("random", "regret2"), context, 4.0)
+
+    selected = selector._bandit.state(("random", "regret2"))
+    np.testing.assert_array_equal(selected.reward_vector, [0.5] + [0.0] * 7)
+    np.testing.assert_array_equal(selected.matrix.shape, (8, 8))
+
+
 def test_snapshot_tracks_raw_total_average_and_zero_use_arms_in_order():
     selector = _selector()
     context = _context()
@@ -125,9 +141,12 @@ def test_record_rejects_unknown_arm_without_changes():
 
 
 @pytest.mark.parametrize("method", ["select", "record"])
-def test_invalid_context_is_rejected_at_bandit_boundary(method):
+@pytest.mark.parametrize(
+    "bad_context",
+    [np.full(9, float("nan")), np.full(9, "invalid")],
+)
+def test_invalid_context_is_rejected_at_bandit_boundary(method, bad_context):
     selector = _selector()
-    bad_context = np.full(9, float("nan"))
 
     with pytest.raises(ValueError, match="context"):
         if method == "select":

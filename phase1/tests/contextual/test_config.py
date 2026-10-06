@@ -13,6 +13,7 @@ def test_defaults_are_valid_and_immutable():
     assert config.context_window == 100
     assert config.linucb_exploration == 0.5
     assert config.linucb_regularization == 1.0
+    assert config.include_temperature is True
 
     assert config.validate() is None
 
@@ -62,3 +63,15 @@ def test_exploration_requires_finite_nonnegative_number(value):
 def test_regularization_requires_finite_positive_number(value):
     with pytest.raises(ValueError, match="linucb_regularization"):
         replace(ContextualBanditConfig(), linucb_regularization=value).validate()
+
+
+@pytest.mark.parametrize("value", [0, 1, None, "false"])
+def test_include_temperature_requires_boolean(value):
+    with pytest.raises(ValueError, match="include_temperature"):
+        replace(ContextualBanditConfig(), include_temperature=value).validate()
+
+
+@pytest.mark.parametrize("value", [0, 1, None, "true"])
+def test_short_route_warm_start_requires_boolean(value):
+    with pytest.raises(ValueError, match="short_route_warm_start"):
+        replace(ContextualBanditConfig(), short_route_warm_start=value).validate()

@@ -126,6 +126,12 @@ Các thành phần là:
 Mọi phần tử context phải hữu hạn. Context extractor từ chối vector sai kích
 thước hoặc chứa `NaN`/vô cực thay vì truyền dữ liệu lỗi vào selector.
 
+Mở rộng sau thực nghiệm giữ vector extractor chín chiều để bảo toàn API, nhưng
+cho phép đặt `include_temperature=false`. Khi đó selector loại phần tử thứ ba
+trước khi cập nhật LinUCB và dùng mô hình tám chiều. Giá trị mặc định là `true`;
+tham số này phải được ghi trong provenance benchmark để hai biến thể không bị
+gộp chung khi aggregate.
+
 Các đặc trưng cố định như số customer và số risk zone không được đưa vào phiên
 bản đầu vì bandit được khởi tạo mới cho mỗi lần chạy; chúng không thay đổi giữa
 các iteration của cùng một run.

@@ -87,6 +87,25 @@ def test_relatedness_combines_four_normalized_terms():
     )
 
 
+def test_related_removal_computes_normalization_once(monkeypatch):
+    from uav_routing import destroy
+
+    solution, instance, evaluator, rng = destroy_context()
+    original = destroy._relatedness_maxima
+    calls = 0
+
+    def tracked_maxima(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(destroy, "_relatedness_maxima", tracked_maxima)
+    RelatedRemoval().apply(solution, instance, evaluator, rng, q=3)
+
+    assert calls == 1
+
+
 def test_normal_removal_clamps_q_to_served_count():
     solution, instance, evaluator, rng = destroy_context()
 

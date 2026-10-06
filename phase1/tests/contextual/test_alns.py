@@ -27,12 +27,12 @@ def _instance():
     return parse_instance(path, 25)
 
 
-def _evaluation(score, *, feasible=True):
+def _evaluation(score, *, feasible=True, risk=0.0):
     return SolutionEvaluation(
         feasible=feasible,
         vehicle_count=score[0],
         distance=0.0,
-        risk_delay=0.0,
+        risk_delay=risk,
         objective=score[1],
         score=score,
         routes=(),
@@ -113,6 +113,29 @@ def test_failed_repair_has_zero_outcome_and_preserves_state():
 
     assert outcome == CandidateOutcome(0.0, False, False, False)
     assert state == original
+
+
+def test_candidate_outcome_uses_emergency_gate_for_contextual_search():
+    state = _state()
+    state.current_evaluation = _evaluation((2, 1.0), risk=0.3)
+    state.best_evaluation = _evaluation((2, 0.9), risk=0.25)
+
+    candidate = Solution(((3,),))
+    repaired = RepairResult(True, candidate)
+    evaluation = _evaluation((3, 2.0), risk=0.2)
+    config = replace(ALNSConfig(), score_policy="emergency_gate")
+
+    outcome = _candidate_outcome(
+        repaired,
+        state,
+        _Evaluator(evaluation),
+        config,
+        _Rng(1.0),
+    )
+
+    assert outcome == CandidateOutcome(20.0, True, True, True)
+    assert state.current == candidate
+    assert state.best == candidate
 
 
 @pytest.mark.parametrize(

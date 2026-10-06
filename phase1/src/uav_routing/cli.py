@@ -65,6 +65,8 @@ def result_to_dict(
         "iterations": result.iterations,
         "alpha": float(config.alpha),
         "beta": float(config.beta),
+        "score_policy": config.score_policy,
+        "risk_threshold": float(config.risk_threshold),
         "vehicles": evaluation.vehicle_count,
         "distance": float(evaluation.distance),
         "risk_delay": float(evaluation.risk_delay),
@@ -115,8 +117,15 @@ def _build_parser() -> argparse.ArgumentParser:
     solve.add_argument("--alpha", type=float, default=0.5)
     solve.add_argument("--beta", type=float, default=0.5)
     solve.add_argument(
+        "--score-policy",
+        choices=("lexicographic", "emergency_gate"),
+        default="lexicographic",
+    )
+    solve.add_argument("--risk-threshold", type=float, default=0.2)
+    solve.add_argument(
         "--algorithm", choices=("baseline", "contextual"), default="baseline"
     )
+    solve.add_argument("--short-route-warm-start", action="store_true")
     solve.add_argument("--output", type=Path)
 
     return parser
@@ -128,16 +137,23 @@ def _solve(args: argparse.Namespace) -> dict[str, object]:
         seed=args.seed,
         alpha=args.alpha,
         beta=args.beta,
+        score_policy=args.score_policy,
+        risk_threshold=args.risk_threshold,
     )
     config.validate()
 
     instance = parse_instance(args.instance, args.customers, args.risks)
 
     if args.algorithm == "contextual":
-        bandit_config = ContextualBanditConfig()
+        bandit_config = ContextualBanditConfig(
+            short_route_warm_start=args.short_route_warm_start
+        )
         result = run_contextual_alns(instance, config, bandit_config)
         payload = result_to_dict(result, instance, config, bandit_config)
     else:
+        if args.short_route_warm_start:
+            raise ValueError("--short-route-warm-start requires --algorithm contextual")
+
         result = run_alns(instance, config)
         payload = result_to_dict(result, instance, config)
 

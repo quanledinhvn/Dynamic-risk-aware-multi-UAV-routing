@@ -10,6 +10,9 @@ class ContextualBanditConfig:
     linucb_exploration: float = 0.5
     linucb_regularization: float = 1.0
 
+    include_temperature: bool = True
+    short_route_warm_start: bool = False
+
     def validate(self) -> None:
         if (
             isinstance(self.context_window, bool)
@@ -33,6 +36,12 @@ class ContextualBanditConfig:
             or self.linucb_regularization <= 0
         ):
             raise ValueError("linucb_regularization must be a finite positive number")
+
+        if not isinstance(self.include_temperature, bool):
+            raise ValueError("include_temperature must be a boolean")
+
+        if not isinstance(self.short_route_warm_start, bool):
+            raise ValueError("short_route_warm_start must be a boolean")
 
     @classmethod
     def from_dict(cls, values: dict[str, object]) -> "ContextualBanditConfig":

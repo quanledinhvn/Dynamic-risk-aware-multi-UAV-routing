@@ -139,12 +139,35 @@ Cluster name: uav-benchmark
 
 
 python -m uav_routing.cli solve \
-  --instance ../dataset/solomon_risk/c101.txt \
-  --customers 25 \
+  --instance ../dataset/solomon_risk/c103.txt \
+  --customers 100 \
   --risks 5 \
-  --iterations 100 \
+  --iterations 1000 \
   --seed 1 \
   --alpha 0.5 \
   --beta 0.5 \
   --algorithm contextual \
-  --output contextual_result.json
+  --output results/contextual_result.json
+
+
+scripts/sky_benchmark.sh launch \
+  --config phase1/configs/contextual/benchmark_p1_c100_r5_1000.json \
+  --workers 16 \
+  --region ap-southeast-1 \
+  --instance-type c7a.4xlarge \
+  --cluster uav-p1-c100-r5-1000
+
+scripts/sky_benchmark.sh launch \
+  --config phase1/configs/contextual/benchmark_p1_c100_r5_1000_new.json \
+  --workers 8 \
+  --region ap-southeast-1 \
+  --instance-type c7a.2xlarge \
+  --cluster uav-p1-c100-r5-1000-8cpu
+
+
+scripts/sky_benchmark.sh launch \
+  --config phase1/configs/contextual/benchmark_p1_c100_r5_1000_lexi.json \
+  --workers 8 \
+  --region ap-southeast-1 \
+  --instance-type c7a.2xlarge \
+  --cluster uav-p1-c100-r5-1000-8cpu

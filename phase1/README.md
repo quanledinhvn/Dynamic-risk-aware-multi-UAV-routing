@@ -74,15 +74,34 @@ $$
 
 Vì vậy, giảm số UAV được ưu tiên hơn giảm chi phí khoảng cách–rủi ro.
 
+`score_policy="emergency_gate"` thay thứ tự cố định bằng hai chế độ tại ngưỡng
+`risk_threshold` là $\tau$:
+
+$$
+\operatorname{Score}_{\mathrm{gate}}(S)=
+\begin{cases}
+(1,R(S),K(S),F(S)), & R(S)>\tau,\\
+(0,K(S),F(S),R(S)), & R(S)\leq\tau.
+\end{cases}
+$$
+
+Mọi nghiệm an toàn được ưu tiên hơn nghiệm chưa an toàn. Khi cả hai nghiệm chưa
+an toàn, giảm risk đứng trước số UAV; khi cả hai đã an toàn, số UAV lại đứng
+trước objective. Policy được dùng nhất quán để lưu `best`, acceptance và tính
+reward. Mặc định vẫn là `lexicographic`; cấu hình
+`configs/benchmark_p1_c25_r5.json` bật `emergency_gate` với $\tau=0.2$.
+
 ## Contextual Bandit ALNS
 
 Một action là một cặp destroy–repair. Năm destroy và ba repair mặc định tạo 15 arm; kích thước phá nghiệm vẫn được lấy đều từ khoảng `q_min`–`q_max`, không phải một phần của action.
 
-Trước mỗi iteration, selector nhận vector chín đặc trưng: `bias` (luôn bằng 1), tiến độ iteration, nhiệt độ đã chuẩn hóa theo log, số iteration kể từ best gần nhất chia cho `context_window`, tỷ lệ chấp nhận gần đây, tỷ lệ cải thiện current gần đây, chênh lệch số UAV giữa current và best, chênh lệch objective khi hai nghiệm dùng cùng số UAV, và độ trễ rủi ro của current. Các tỷ lệ dùng tối đa `context_window` iteration trước đó; các đặc trưng được giới hạn trong $[0,1]$.
+Trước mỗi iteration, selector tạo vector chín đặc trưng: `bias` (luôn bằng 1), tiến độ iteration, nhiệt độ đã chuẩn hóa theo log, số iteration kể từ best gần nhất chia cho `context_window`, tỷ lệ chấp nhận gần đây, tỷ lệ cải thiện current gần đây, chênh lệch số UAV giữa current và best, chênh lệch objective khi hai nghiệm dùng cùng số UAV, và độ trễ rủi ro của current. Các tỷ lệ dùng tối đa `context_window` iteration trước đó; các đặc trưng được giới hạn trong $[0,1]$. Khi `include_temperature=false`, selector bỏ đặc trưng nhiệt độ trước khi đưa context vào LinUCB; tùy chọn này hữu ích với search ngắn khi temperature gần đồng tuyến với progress.
 
 Reward giữ bốn mức rời rạc của baseline: `reward_best` khi có best mới, `reward_improve` khi cải thiện current, `reward_accepted` khi chấp nhận nghiệm xấu hơn, và $0$ khi không có cải thiện được thưởng. LinUCB nhận reward chuẩn hóa bằng raw reward chia cho mức reward lớn nhất; với cấu hình mặc định, các mức lần lượt là $1$, $0.5$, $0.1$ và $0$. Baseline tiếp tục cập nhật roulette bằng raw reward.
 
 Disjoint LinUCB giữ mô hình riêng cho từng cặp, dùng `linucb_exploration` để cân bằng điểm dự đoán và độ bất định, và `linucb_regularization` để khởi tạo mô hình. Mô hình được khởi tạo mới cho mỗi lượt chạy: chưa học qua nhiều instance, chưa xử lý risk map thay đổi trực tuyến, reward trễ hoặc phiên bản LinUCB có quên dữ liệu cũ.
+
+Tùy chọn `short_route_warm_start=true` thử hấp thụ các route có tối đa 5 khách hàng trước vòng lặp contextual. Mỗi vòng quét xét tối đa 8 route ngắn, thử ba repair hiện có và nhận lần giảm số UAV đầu tiên; tối đa 3 vòng quét. `d_ref` vẫn lấy từ nghiệm greedy gốc, còn thời gian warm start được tính vào runtime. Mặc định tùy chọn này tắt để giữ kết quả cũ. Khi so cơ chế bandit với baseline, cần dùng cùng cơ chế khởi tạo ở cả hai phía để tách tác dụng của warm start.
 
 API công khai của package `uav_routing.contextual` gồm `ContextualBanditConfig`, `ContextualALNSSolver`, `ContextualSearchResult` và `run_contextual_alns`. Baseline giữ API `run_alns` hiện có.
 
@@ -100,6 +119,8 @@ uv run python -m uav_routing.cli solve \
   --seed 42 \
   --alpha 0.5 \
   --beta 0.5 \
+  --score-policy emergency_gate \
+  --risk-threshold 0.2 \
   --output results/baseline/c101-seed42.json
 ```
 
@@ -113,8 +134,10 @@ uv run python -m uav_routing.cli solve \
   --seed 42 \
   --alpha 0.5 \
   --beta 0.5 \
-  --output results/contextual/c101-seed42.json
+    --output results/contextual/c101-seed42.json
 ```
+
+Với lệnh `solve --algorithm contextual`, thêm `--short-route-warm-start` để bật bước hấp thụ route ngắn.
 
 Kết quả JSON gồm:
 
@@ -122,7 +145,8 @@ Kết quả JSON gồm:
 - Số UAV, khoảng cách, độ trễ rủi ro, giá trị mục tiêu và tính khả thi.
 - Lộ trình và thời điểm đến, phục vụ, rời đi tại mỗi điểm.
 - `algorithm` là `baseline` hoặc `contextual`.
-- `contextual_bandit` là `null` với baseline hoặc chứa ba hyperparameter LinUCB.
+- `score_policy` và `risk_threshold` ghi lại chính sách xếp hạng nghiệm.
+- `contextual_bandit` là `null` với baseline hoặc chứa năm tham số contextual: `context_window`, `linucb_exploration`, `linucb_regularization`, `include_temperature` và `short_route_warm_start`.
 - `operators` chứa trọng số và số lần dùng roulette với baseline, và là mảng rỗng với contextual.
 - `pair_selection_stats` là mảng rỗng với baseline; contextual báo đủ 15 cặp cùng số lần dùng, tổng raw reward và raw reward trung bình. Tổng số lần dùng bằng số iteration.
 
@@ -168,11 +192,11 @@ uv run python -m uav_routing.experiment \
   --output-dir results/contextual/smoke
 ```
 
-- `raw.csv`: một dòng cho mỗi cặp bộ dữ liệu/seed. Cột theo thứ tự: `instance,customers,risks,algorithm,seed,iterations,alpha,beta,context_window,linucb_exploration,linucb_regularization,vehicles,distance,risk_delay,objective,runtime_seconds,feasible,routes`.
-- `aggregate.csv`: nhóm theo `instance,customers,risks,algorithm,iterations,alpha,beta,context_window,linucb_exploration,linucb_regularization`. Header đầy đủ:
+- `raw.csv`: một dòng cho mỗi cặp bộ dữ liệu/seed. Cột theo thứ tự: `instance,customers,risks,algorithm,seed,iterations,alpha,beta,score_policy,risk_threshold,context_window,linucb_exploration,linucb_regularization,include_temperature,short_route_warm_start,vehicles,distance,risk_delay,objective,runtime_seconds,feasible,routes`.
+- `aggregate.csv`: nhóm theo `instance,customers,risks,algorithm,iterations,alpha,beta,score_policy,risk_threshold,context_window,linucb_exploration,linucb_regularization,include_temperature,short_route_warm_start`. Header đầy đủ:
 
 ```text
-instance,customers,risks,algorithm,iterations,alpha,beta,context_window,linucb_exploration,linucb_regularization,runs,vehicles_mean,vehicles_std,vehicles_best,vehicles_worst,distance_mean,distance_std,distance_best,distance_worst,risk_delay_mean,risk_delay_std,risk_delay_best,risk_delay_worst,objective_mean,objective_std,objective_best,objective_worst,runtime_mean,runtime_std
+instance,customers,risks,algorithm,iterations,alpha,beta,score_policy,risk_threshold,context_window,linucb_exploration,linucb_regularization,include_temperature,short_route_warm_start,runs,vehicles_mean,vehicles_std,vehicles_best,vehicles_worst,distance_mean,distance_std,distance_best,distance_worst,risk_delay_mean,risk_delay_std,risk_delay_best,risk_delay_worst,objective_mean,objective_std,objective_best,objective_worst,runtime_mean,runtime_std
 ```
 
 - Ba cột hyperparameter LinUCB để trống trong CSV baseline và chứa giá trị thực trong CSV contextual. Thống kê cặp toán tử chỉ nằm trong JSON của lệnh `solve`, không nằm trong CSV.

@@ -20,6 +20,7 @@ from .evaluator import Evaluator, lexicographically_better
 from .initial import InitialSolutionError, build_initial_solution
 from .models import Instance, SearchConstraints, Solution, SolutionEvaluation
 from .repair import GreedyRepair, Regret2Repair, RepairContext, RiskPriorityRepair
+from .scoring import annealing_delta, is_better, preference_key
 
 
 @dataclass(frozen=True)
@@ -147,6 +148,66 @@ def classify_reward(candidate, current, best, acceptance, config) -> float:
         return config.reward_best
 
     if lexicographically_better(candidate, current):
+        return config.reward_improve
+
+    if acceptance.accepted and candidate != current:
+        return config.reward_accepted
+
+    return 0.0
+
+
+def accept_evaluation(
+    candidate: SolutionEvaluation,
+    current: SolutionEvaluation,
+    temperature: float,
+    rng: np.random.Generator,
+    config: ALNSConfig,
+) -> Acceptance:
+    """Apply the configured score policy to one candidate evaluation."""
+    if temperature <= 0:
+        raise ValueError("temperature must be positive")
+
+    policy = config.score_policy
+    threshold = config.risk_threshold
+
+    if is_better(candidate, current, policy, threshold):
+        return Acceptance(True, "improve", 1.0)
+
+    if preference_key(candidate, policy, threshold) == preference_key(
+        current, policy, threshold
+    ):
+        return Acceptance(True, "equal", 1.0)
+
+    delta = annealing_delta(candidate, current, policy, threshold)
+
+    if delta is None:
+        return Acceptance(False, "reject", 0.0)
+
+    probability = math.exp(-delta / temperature)
+    accepted = float(rng.random()) < probability
+
+    return Acceptance(
+        accepted,
+        "accepted_worse" if accepted else "reject",
+        probability,
+    )
+
+
+def classify_evaluation_reward(
+    candidate: SolutionEvaluation,
+    current: SolutionEvaluation,
+    best: SolutionEvaluation,
+    acceptance: Acceptance,
+    config: ALNSConfig,
+) -> float:
+    """Classify an operator reward using the configured score policy."""
+    policy = config.score_policy
+    threshold = config.risk_threshold
+
+    if is_better(candidate, best, policy, threshold):
+        return config.reward_best
+
+    if is_better(candidate, current, policy, threshold):
         return config.reward_improve
 
     if acceptance.accepted and candidate != current:
@@ -373,22 +434,26 @@ def _candidate_reward(
     if not candidate_evaluation.feasible:
         return 0.0
 
-    acceptance = accept_score(
-        candidate_evaluation.score,
-        state.current_evaluation.score,
+    acceptance = accept_evaluation(
+        candidate_evaluation,
+        state.current_evaluation,
         state.temperature,
         rng,
+        config,
     )
-    reward = classify_reward(
-        candidate_evaluation.score,
-        state.current_evaluation.score,
-        state.best_evaluation.score,
+    reward = classify_evaluation_reward(
+        candidate_evaluation,
+        state.current_evaluation,
+        state.best_evaluation,
         acceptance,
         config,
     )
 
-    if lexicographically_better(
-        candidate_evaluation.score, state.best_evaluation.score
+    if is_better(
+        candidate_evaluation,
+        state.best_evaluation,
+        config.score_policy,
+        config.risk_threshold,
     ):
         state.best = candidate
         state.best_evaluation = candidate_evaluation
@@ -463,5 +528,12 @@ def accept_candidate(
     candidate: SolutionEvaluation,
     temperature: float,
     rng: np.random.Generator,
+    config: ALNSConfig | None = None,
 ) -> Acceptance:
-    return accept_score(candidate.score, current.score, temperature, rng)
+    return accept_evaluation(
+        candidate,
+        current,
+        temperature,
+        rng,
+        config or ALNSConfig(),
+    )
