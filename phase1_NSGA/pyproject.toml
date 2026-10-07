@@ -7,6 +7,10 @@ dependencies = [
     "numpy>=2.0",
 ]
 
+[project.scripts]
+uav-routing-nsga = "uav_routing_nsga.cli:main"
+uav-routing-nsga-benchmark = "uav_routing_nsga.experiment:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.0",
