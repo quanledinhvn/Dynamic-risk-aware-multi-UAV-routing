@@ -31,11 +31,11 @@
 Chương trình Thạc sĩ Khoa học máy tính --- HUST\\[8pt]
 \textbf{Nhóm 1}\\[4pt]
 \begin{tabular}{ll}
-Le Dinh Quan & 20261225M\\
-Nguyen Minh Phuong & 20252637M\\
-Nguyen Nhat Minh & 20252093M\\
-Ta Cong Nam & 20252640M\\
-Nguyen Hoang Hai & 20252583M
+Lê Đình Quân & 20261225M\\
+Nguyễn Minh Phương & 20252637M\\
+Nguyễn Nhật Minh & 20252093M\\
+Tạ Công Nam & 20252640M\\
+Nguyễn Hoàng Hải & 20252583M
 \end{tabular}}
 \date{}
 
@@ -44,7 +44,7 @@ Nguyen Hoang Hai & 20252583M
 \vspace{-1.5em}
 \begin{abstract}
 \noindent
-Báo cáo nghiên cứu lập tuyến nhiều UAV có capacity, time window và mức ưu tiên phục vụ suy ra từ risk zones. Mục tiêu là giảm số UAV trước, sau đó cân bằng distance và risk-weighted delay. Trên nền ALNS, project bổ sung LinUCB để chọn cặp destroy--repair theo trạng thái tìm kiếm và rolling horizon để xử lý nhiệm vụ mới, risk update, deadline update. Benchmark tĩnh gồm 56 Solomon instances, mỗi instance chạy 20 seed: Contextual ALNS chưa cho thấy cải thiện có ý nghĩa thống kê so với ALNS. Trong các scenario động tổng hợp, warm-start ALNS giảm objective trung bình so với greedy insertion và cold restart, nhưng không luôn tăng tỷ lệ phục vụ đủ nhiệm vụ. Báo cáo phân tích complexity, điều kiện bảo toàn feasibility, sensitivity và giới hạn của bằng chứng hiện có. Kết quả kết hợp contextual + dynamic được để trống chờ benchmark. Mô hình hiện tại chưa bao gồm pin, tránh va chạm hoặc risk trên cạnh bay.
+Báo cáo nghiên cứu lập tuyến nhiều UAV có capacity, time window và mức ưu tiên phục vụ suy ra từ risk zones. Mục tiêu là giảm số UAV trước, sau đó cân bằng distance và risk-weighted delay. Trên nền ALNS, project bổ sung LinUCB để chọn cặp destroy--repair theo trạng thái tìm kiếm và rolling horizon để xử lý nhiệm vụ mới, risk update, deadline update. Benchmark tĩnh gồm 56 Solomon instances, mỗi instance chạy 20 seed: Contextual ALNS chưa cho thấy cải thiện có ý nghĩa thống kê so với ALNS. Trong các scenario động tổng hợp, warm-start ALNS giảm objective trung bình so với greedy insertion và cold restart, nhưng không luôn tăng tỷ lệ phục vụ đủ nhiệm vụ. Báo cáo phân tích complexity, điều kiện bảo toàn feasibility, sensitivity và giới hạn của bằng chứng hiện có. Đánh giá thực nghiệm tập trung vào contextual selection trong bài toán tĩnh và warm start trong bài toán động; hiệu quả kết hợp hai cơ chế là hướng nghiên cứu tiếp theo. Năng lượng pin, tránh va chạm và rủi ro trên chặng bay nằm ngoài phạm vi mô hình.
 \end{abstract}
 
 \section{Introduction}
@@ -66,11 +66,11 @@ Báo cáo tập trung vào ba câu hỏi nghiên cứu:
 
 \textbf{Contextual selection.} LinUCB của Li và cộng sự~\cite{linucb} cân bằng exploitation và exploration dựa trên contextual features. Project ánh xạ mỗi cặp destroy--repair thành một arm, dùng trạng thái tìm kiếm thay cho đặc trưng người dùng. Việc áp dụng này không tự động kế thừa regret guarantee của bài toán bandit gốc: reward ở đây phụ thuộc nghiệm hiện tại và thay đổi theo quá trình search.
 
-\textbf{Dynamic routing.} Pillac và cộng sự~\cite{dynamic} tổng quan routing khi thông tin được cập nhật theo thời gian và thảo luận degree of dynamism. Project dùng rolling horizon trên các sự kiện được reveal; đây là tái tối ưu theo dữ liệu quan sát, chưa phải stochastic optimization dự báo các sự kiện tương lai.
+\textbf{Dynamic routing.} Pillac và cộng sự~\cite{dynamic} tổng quan routing khi thông tin được cập nhật theo thời gian và thảo luận degree of dynamism. Nghiên cứu sử dụng rolling horizon để tái tối ưu dựa trên các sự kiện đã được công bố tại thời điểm ra quyết định; mô hình không dự báo sự kiện tương lai.
 
 \textbf{Multi-objective baseline.} NSGA-III của Deb và Jain~\cite{nsga} sử dụng reference points để duy trì đa dạng trong tối ưu nhiều mục tiêu. Project có implementation riêng và tập Pareto thực nghiệm, nhưng budget và tiêu chí chọn nghiệm khác ALNS. Kết quả NSGA-III được dùng để mô tả trade-off và hạn chế implementation, không làm bằng chứng cho thứ hạng SOTA.
 
-Project đánh giá hai giả thuyết thực nghiệm trên mô hình routing có risk priority: lựa chọn cặp operator theo trạng thái tìm kiếm có cải thiện ALNS hay không; và tái sử dụng phần tuyến chưa thực hiện có cải thiện kết quả tái tối ưu khi dữ liệu thay đổi hay không. Tổng quan hiện tại chưa đủ để khẳng định đây là khoảng trống của các nghiên cứu trước. Risk map và scenario động hiện là dữ liệu tổng hợp trên Solomon; chưa sử dụng RescueNet, C2A hoặc Homberger như định hướng mở rộng trong đề bài.
+Project đánh giá hai giả thuyết thực nghiệm trên mô hình routing có risk priority: lựa chọn cặp operator theo trạng thái tìm kiếm có cải thiện ALNS hay không; và tái sử dụng phần tuyến chưa thực hiện có cải thiện kết quả tái tối ưu khi dữ liệu thay đổi hay không. Hai giả thuyết được kiểm tra bằng các thí nghiệm đối chứng trên cùng mô hình và bộ dữ liệu.
 
 \section{Proposed Method}
 \subsection{Input, output và phạm vi mô hình}
@@ -78,21 +78,27 @@ Input tĩnh gồm tập nhiệm vụ $N=\{1,\ldots,n\}$, depot $0$, tối đa $K
 
 Output là tập tuyến có thứ tự $S=\{P_1,\ldots,P_K\}$ và service schedule, với mỗi tuyến bắt đầu và kết thúc ở depot. Ký hiệu $K$ là số UAV thực sự dùng; mỗi UAV thực hiện một tuyến trong mô hình hiện tại. Input động bổ sung chuỗi sự kiện có timestamp: customer arrival, risk update và deadline tightening. Output động còn có tập nhiệm vụ chưa phục vụ $U$.
 
-Khoảng cách và risk priority được định nghĩa đúng theo implementation:
+Khoảng cách giữa hai vị trí và điểm ưu tiên phục vụ được định nghĩa như sau:
 \begin{equation}
  d_{ij}=\|\mathbf{x}_i-\mathbf{x}_j\|_2,\qquad
  p_i=\max_{z\in Z}\left[1-\frac{\|\mathbf{x}_i-\mathbf{c}_z\|_2}{r_z}\right]_+.
 \end{equation}
-Ở đây $d_{ij}$ là distance giữa hai nút, $[u]_+=\max(0,u)$, và $p_i\in[0,1]$ là priority của nhiệm vụ $i$. Nếu không có zone thì $p_i=0$. Vận tốc được chuẩn hóa bằng 1 nên travel time bằng distance. Risk chỉ ảnh hưởng mức ưu tiên phục vụ; đi xuyên một zone không tạo thêm chi phí hoặc vi phạm.
+Ký hiệu $\|\cdot\|_2$ biểu diễn khoảng cách Euclid. Với $\mathbf{x}_i=(x_i,y_i)$ và $\mathbf{x}_j=(x_j,y_j)$ trong mặt phẳng,
+\[
+ d_{ij}=\sqrt{(x_i-x_j)^2+(y_i-y_j)^2}.
+\]
+Phép toán $[u]_+=\max(0,u)$ giữ nguyên giá trị không âm và thay giá trị âm bằng 0; $u$ là đối số bất kỳ của phép toán. Trong công thức trên, $u=1-\|\mathbf{x}_i-\mathbf{c}_z\|_2/r_z$. Nhiệm vụ tại tâm vùng có điểm ưu tiên 1; điểm giảm tuyến tính theo khoảng cách đến tâm và bằng 0 tại biên hoặc bên ngoài vùng. Nếu có nhiều vùng, $p_i$ lấy điểm lớn nhất; nếu không có vùng nào thì $p_i=0$.
 
-Capacity là giới hạn tổng demand trên tuyến, \emph{không phải battery capacity}. Deadline depot giới hạn thời gian nhiệm vụ, nhưng không thay thế một energy model. Pin thay đổi, recharge, no-fly zones, communication và collision avoidance chưa được cài đặt.
+Điểm $p_i\in[0,1]$ biểu diễn mức ưu tiên phục vụ, không phải xác suất UAV gặp sự cố. Vận tốc được chuẩn hóa bằng 1 nên thời gian di chuyển có cùng giá trị số với khoảng cách. Việc bay xuyên vùng rủi ro không tạo thêm chi phí hoặc vi phạm trong mô hình.
+
+Sức chứa $Q$ giới hạn tổng nhu cầu phục vụ trên mỗi tuyến; thời hạn $b_0$ giới hạn thời điểm UAV quay về depot. Các yếu tố về năng lượng pin, sạc lại, vùng cấm bay, liên lạc và tránh va chạm nằm ngoài phạm vi nghiên cứu.
 
 \subsection{Schedule và ràng buộc}
-Với tuyến $P_k=(0,v_{k1},\ldots,v_{km_k},0)$, schedule được tính tiến:
+Với tuyến $P_k=(0,v_{k1},\ldots,v_{km_k},0)$, thời điểm bắt đầu phục vụ được tính lần lượt theo thứ tự nhiệm vụ trên tuyến:
 \begin{equation}
  t_{v_{kj}}=\max\{a_{v_{kj}},\ t_{v_{k,j-1}}+s_{v_{k,j-1}}+d_{v_{k,j-1},v_{kj}}\}.
 \end{equation}
-$t_i$ là thời điểm bắt đầu phục vụ tại $i$; $m_k$ là số nhiệm vụ của tuyến $k$. Tại nút đầu $v_{k0}=0$, đặt $s_0=0$ và $t_{v_{k0}}$ bằng thời điểm khởi hành của tuyến (bằng 0 trong bài toán tĩnh). UAV được chờ nếu tới trước $a_i$.
+$v_{kj}$ là nhiệm vụ thứ $j$ trên tuyến của UAV $k$ và $m_k$ là số nhiệm vụ trên tuyến. Các ký hiệu $t_i$, $a_i$ và $s_i$ lần lượt là thời điểm bắt đầu phục vụ, thời điểm sớm nhất được phép phục vụ và thời lượng phục vụ tại nhiệm vụ $i$. Khoảng cách $d_{v_{k,j-1},v_{kj}}$ cũng là thời gian bay giữa hai nhiệm vụ liên tiếp. Vì vậy, biểu thức thứ hai trong phép $\max$ là thời điểm UAV đến nhiệm vụ hiện tại; việc phục vụ chỉ bắt đầu khi UAV đã đến và cửa sổ thời gian đã mở. Tại nút đầu $v_{k0}=0$, đặt $s_0=0$ và $t_{v_{k0}}$ bằng thời điểm khởi hành của tuyến (bằng 0 trong bài toán tĩnh). Nếu đến trước $a_i$, UAV phải chờ đến $a_i$ mới bắt đầu phục vụ. Ví dụ, nếu đến lúc 17 nhưng cửa sổ phục vụ mở lúc 20 thì thời điểm bắt đầu phục vụ là 20.
 
 Một nghiệm tĩnh khả thi phải thỏa:
 \begin{align}
@@ -101,23 +107,37 @@ Một nghiệm tĩnh khả thi phải thỏa:
  &a_i\le t_i\le b_i && (i\in N),\\
  &t_{v_{km_k}}+s_{v_{km_k}}+d_{v_{km_k},0}\le b_0 && (k=1,\ldots,K).
 \end{align}
-$\mathbf{1}\{\cdot\}$ là hàm chỉ báo. Các ràng buộc lần lượt bảo đảm mỗi nhiệm vụ được phục vụ đúng một lần, giới hạn fleet/capacity, time window và thời hạn quay về. Do nghiệm được biểu diễn bằng các chuỗi tuyến nối depot, không cần thêm subtour-elimination constraint cho biểu diễn này.
+$\mathbf{1}\{v_{kj}=i\}$ bằng 1 nếu nhiệm vụ thứ $j$ trên tuyến $k$ là $i$, và bằng 0 trong trường hợp còn lại. Tổng trong ràng buộc đầu đếm số lần nhiệm vụ $i$ xuất hiện trên tất cả các tuyến; tổng bằng 1 bảo đảm phục vụ đúng một lần. Các ràng buộc tiếp theo lần lượt giới hạn số UAV và tổng nhu cầu mỗi tuyến, yêu cầu phục vụ trong cửa sổ thời gian, và bảo đảm UAV quay về depot không muộn hơn $b_0$.
 
-\subsection{Objective và cách đọc risk delay}
-\begin{align}
- D(S)&=\sum_{k=1}^{K}\sum_{j=0}^{m_k}d_{v_{kj},v_{k,j+1}},\\
- R(S)&=\begin{cases}
- \displaystyle\frac{\sum_{i\in N}p_i\,(t_i-a_i)/\max(1,b_i-a_i)}{\sum_{i\in N}p_i},&\sum_i p_i>0,\\
- 0,&\text{ngược lại},
- \end{cases}\\
- F(S)&=\alpha\,\frac{D(S)}{D_{\mathrm{ref}}}+\beta R(S),\qquad
- \min_{S\text{ khả thi}}\ (K(S),F(S))\ \text{theo lexicographic order}.
-\end{align}
-Trong tổng distance, $v_{k,m_k+1}=0$. $D_{\mathrm{ref}}>0$ là distance của nghiệm khởi tạo deterministic, được giữ cố định trong một lần chạy; $\alpha,\beta\ge0$ và $\alpha+\beta=1$ là trọng số. Benchmark chính dùng $\alpha=\beta=0.5$.
+\subsection{Hàm mục tiêu và độ chậm phục vụ có trọng số ưu tiên}
+\textbf{Tổng quãng đường.} Với $v_{k0}=v_{k,m_k+1}=0$, tổng quãng đường của kế hoạch $S$ là
+\begin{equation}
+ D(S)=\sum_{k=1}^{K}\sum_{j=0}^{m_k}d_{v_{kj},v_{k,j+1}}.
+\end{equation}
+Tổng này bao gồm mọi chặng bay của tất cả UAV, kể cả chặng rời depot và chặng quay về depot.
 
-$R$ đo độ chậm bắt đầu phục vụ kể từ ready time, có chuẩn hóa theo độ rộng time window; đây không phải lateness sau deadline. Với nghiệm khả thi, $0\le R\le1$. Lexicographic order ưu tiên giảm $K$ dù $F$ tăng; bởi vậy cần báo cáo cả $K$, $D$, $R$ và $F$, không chỉ một scalar.
+\textbf{Độ chậm phục vụ.} Với mỗi nhiệm vụ $i$, đặt
+\begin{equation}
+ \delta_i=\frac{t_i-a_i}{\max(1,b_i-a_i)}.
+\end{equation}
+Tử số là khoảng thời gian từ lúc nhiệm vụ có thể được phục vụ đến khi thực sự bắt đầu phục vụ. Mẫu số chuẩn hóa theo độ rộng cửa sổ thời gian, với ngưỡng tối thiểu bằng 1 để tránh chia cho 0 hoặc giá trị quá nhỏ. Ví dụ, nếu cửa sổ là $[10,30]$ và phục vụ bắt đầu lúc 15 thì $\delta_i=0.25$: đã trôi qua 25\% cửa sổ thời gian.
 
-Trong dynamic evaluation, $F$ cuối được tính trên tập nhiệm vụ còn trong instance đánh giá sau khi loại nhiệm vụ bị mất hoặc bị từ chối. $D_{\mathrm{ref}}$ lấy từ instance ban đầu; priority đã khóa được giữ lại. Vì coverage và mẫu số của $R$ có thể khác nhau giữa các policy, $F$ thấp hơn chưa đủ chứng minh dịch vụ tốt hơn. Báo cáo dùng thứ tự $(|U|,K,F)$ khi đếm thắng/thua, đồng thời công bố tỷ lệ $|U|=0$. Đây là quy tắc \emph{đánh giá}, không phải objective tối ưu toàn cục mới của solver.
+Độ chậm phục vụ có trọng số ưu tiên (risk-weighted delay) là
+\begin{equation}
+ R(S)=\begin{cases}
+ \displaystyle\frac{\sum_{i\in N}p_i\delta_i}{\sum_{i\in N}p_i},&\sum_{i\in N}p_i>0,\\
+ 0,&\text{ngược lại}.
+ \end{cases}
+\end{equation}
+Đây là trung bình có trọng số của $\delta_i$: nhiệm vụ có điểm ưu tiên $p_i$ cao đóng góp nhiều hơn. Nếu mọi điểm ưu tiên đều bằng 0, quy ước $R(S)=0$. Với nghiệm khả thi, $0\le R(S)\le1$. Đại lượng này đo mức chậm so với thời điểm sớm nhất có thể phục vụ, không đo mức vi phạm deadline; một kế hoạch đúng hạn vẫn có thể có $R(S)$ cao.
+
+\textbf{Mục tiêu tổng hợp.} Quãng đường và độ chậm được kết hợp thành
+\begin{equation}
+ F(S)=\alpha\frac{D(S)}{D_{\mathrm{ref}}}+\beta R(S).
+\end{equation}
+Ở đây $D_{\mathrm{ref}}>0$ là quãng đường của nghiệm khởi tạo xác định, được giữ cố định trong mỗi lần chạy. Tỷ số $D(S)/D_{\mathrm{ref}}$ biểu diễn quãng đường tương đối so với nghiệm khởi tạo. Các trọng số thỏa $\alpha,\beta\ge0$ và $\alpha+\beta=1$; thực nghiệm chính dùng $\alpha=\beta=0.5$.
+
+\textbf{Thứ tự ưu tiên.} Bài toán tối thiểu hóa cặp $(K(S),F(S))$ theo thứ tự từ điển: ưu tiên nghiệm dùng ít UAV hơn; khi số UAV bằng nhau, ưu tiên nghiệm có $F$ nhỏ hơn. Chẳng hạn, nghiệm $(K=4,F=0.8)$ được ưu tiên hơn $(K=5,F=0.6)$. Vì vậy, kết quả thực nghiệm báo cáo đồng thời $K$, $D$, $R$ và $F$.
 
 \subsection{Baseline ALNS và risk-priority repair}
 Khởi tạo sắp nhiệm vụ theo deadline tăng, priority giảm và ID; lần lượt chèn vào vị trí khả thi có distance tăng ít nhất, mở tuyến mới nếu cần. Nếu không dựng được nghiệm đầy đủ thì thuật toán báo lỗi; thất bại của heuristic không chứng minh instance vô nghiệm.
@@ -126,14 +146,14 @@ Baseline có năm destroy operators: random, worst, related, route removal và r
 
 Risk-priority repair sắp các nhiệm vụ bị xóa theo priority giảm dần, rồi deadline tăng dần và ID. Mỗi nhiệm vụ được chèn vào vị trí khả thi tốt nhất theo $(\Delta K,\Delta F)$, trong đó $\Delta$ là thay đổi so với nghiệm partial. Cơ chế này ưu tiên quyết định vị trí cho nhiệm vụ khẩn cấp; nó không bảo đảm risk delay cuối cùng thấp nhất.
 
-Mỗi iteration tạo candidate bằng destroy--repair, kiểm tra feasibility rồi áp dụng simulated annealing. Candidate tăng số UAV bị từ chối; nếu cùng số UAV, candidate có objective tăng được chấp nhận với xác suất
+Mỗi vòng lặp tạo nghiệm ứng viên bằng cặp toán tử loại bỏ--chèn lại (destroy--repair), kiểm tra tính khả thi rồi áp dụng cơ chế ủ mô phỏng (simulated annealing). Cơ chế này đôi khi chấp nhận nghiệm xấu hơn để tạo cơ hội thoát khỏi vùng tìm kiếm đang bị mắc kẹt. Candidate tăng số UAV bị từ chối; nếu cùng số UAV, candidate có objective tăng được chấp nhận với xác suất
 \begin{equation}
  P_{\mathrm{accept}}=\exp(-\Delta F/T).
 \end{equation}
-$\Delta F>0$ là mức tăng objective và $T>0$ là temperature hiện tại. Candidate tốt hơn được chấp nhận trực tiếp. Nghiệm tốt nhất được lưu riêng và audit lại trước khi trả về.
+$\Delta F>0$ là mức tăng hàm mục tiêu và $T>0$ là tham số nhiệt độ hiện tại. Nhiệt độ giảm dần theo số vòng lặp: khi $T$ cao, thuật toán dễ chấp nhận nghiệm xấu hơn; khi $T$ thấp, xác suất này giảm. Mức tăng $\Delta F$ càng lớn thì khả năng chấp nhận càng nhỏ. Candidate tốt hơn được chấp nhận trực tiếp. Nghiệm tốt nhất được lưu riêng và audit lại trước khi trả về.
 
 \subsection{Cải tiến 1: Contextual ALNS}
-Thay hai roulette pools bằng một disjoint LinUCB trên 15 cặp operator; operator pool, objective và acceptance rule được giữ nguyên. Context có chín thành phần: bias, tiến độ iteration, temperature chuẩn hóa logarithmic, stagnation, acceptance rate, improvement rate, vehicle gap, objective gap và risk delay hiện tại. Hai rate dùng cửa sổ 100 iterations; gap so với nghiệm tốt nhất giúp nhận biết trạng thái search.
+Thay hai roulette pools bằng một disjoint LinUCB trên 15 cặp operator; operator pool, objective và acceptance rule được giữ nguyên. Context có chín thành phần: bias, tiến độ iteration, temperature chuẩn hóa logarithmic, stagnation, acceptance rate, improvement rate, vehicle gap, objective gap và risk delay hiện tại. Tỷ lệ chấp nhận và tỷ lệ cải thiện được tính trên tối đa 100 vòng lặp gần nhất; khi chưa đủ 100 vòng, dùng số vòng đã thực hiện. Tỷ lệ chấp nhận đếm các vòng có ứng viên được chấp nhận; tỷ lệ cải thiện đếm các vòng có ứng viên tốt hơn nghiệm hiện tại trước cập nhật. Ví dụ, 30 lần chấp nhận và 8 lần cải thiện trong 100 vòng tương ứng với hai tỷ lệ 0.30 và 0.08. Vehicle gap là chênh lệch số UAV giữa nghiệm hiện tại và nghiệm tốt nhất đã tìm được, chuẩn hóa theo số UAV tối đa. Objective gap là chênh lệch tương đối của $F$, giới hạn trong $[0,1]$ và chỉ được tính khi hai nghiệm có cùng số UAV; trường hợp khác đặt bằng 0. Các đặc trưng này mô tả diễn biến gần đây và chất lượng nghiệm hiện tại so với nghiệm tốt nhất đã tìm được, không phải so với nghiệm tối ưu.
 
 Với arm $a$ và context $x\in\mathbb{R}^{9}$, chọn điểm UCB lớn nhất:
 \begin{align}
@@ -141,22 +161,33 @@ Với arm $a$ và context $x\in\mathbb{R}^{9}$, chọn điểm UCB lớn nhất:
  u_a(x)=x^\top\widehat{\theta}_a+c\sqrt{x^\top A_a^{-1}x},\\
  A_a&\leftarrow A_a+xx^\top,\qquad b_a\leftarrow b_a+r x.
 \end{align}
-$A_a$ là ma trận tích lũy context, $b_a$ là vector tích lũy reward, $\widehat{\theta}_a$ là hệ số dự đoán reward, $c$ là hệ số exploration và $r$ là reward chuẩn hóa. Khởi tạo $A_a=\lambda I$, $b_a=0$, với $I$ là ma trận đơn vị và $\lambda>0$ là regularization; benchmark dùng $c=1$, $\lambda=0.25$. Reward thô 20/10/2/0 tương ứng với new best, improvement, accepted change và trường hợp còn lại; trước cập nhật được chia cho 20. Ma trận nghịch đảo được cập nhật bằng công thức Sherman--Morrison.
+$A_a$ là ma trận tích lũy context, $b_a$ là vector tích lũy reward, $\widehat{\theta}_a$ là hệ số dự đoán reward, $c$ là hệ số exploration và $r$ là reward chuẩn hóa. Khởi tạo $A_a=\lambda I$, $b_a=0$, với $I$ là ma trận đơn vị và $\lambda>0$ là regularization; benchmark dùng $c=1$, $\lambda=0.25$. Điểm thưởng $r$ dùng để cập nhật lần lượt là 1 khi tìm được nghiệm tốt nhất mới; 0.5 khi cải thiện nghiệm hiện tại nhưng không lập kỷ lục mới; 0.1 khi chấp nhận một thay đổi không thuộc hai trường hợp trên; và 0 trong các trường hợp còn lại. Các mức này thu được bằng cách chia điểm thưởng gốc 20, 10, 2 và 0 cho 20.
 
-So sánh ALNS với Contextual ALNS trong benchmark chính là một ablation của \emph{cơ chế selection tổng thể}: lựa chọn theo cặp và sử dụng context cùng thay đổi. Muốn tách riêng giá trị của context, cần thêm paired roulette, context-free bandit và feature ablation trên cùng budget. Không quy mọi khác biệt quan sát được cho LinUCB đơn lẻ.
+Khi $A_a$ được cộng thêm $xx^\top$, nghịch đảo mới được tính từ nghịch đảo cũ bằng công thức Sherman--Morrison:
+\[
+ (A_a+xx^\top)^{-1}=A_a^{-1}-\frac{A_a^{-1}xx^\top A_a^{-1}}{1+x^\top A_a^{-1}x}.
+\]
+Nhờ tận dụng kết quả trước đó, mỗi lần cập nhật có chi phí $O(d^2)$ thay vì tính lại nghịch đảo từ đầu; $d=9$ là số đặc trưng trạng thái.
+
+Thí nghiệm so sánh cơ chế chọn riêng từng toán tử bằng roulette với cơ chế chọn cặp toán tử dựa trên trạng thái tìm kiếm bằng LinUCB. Vì lựa chọn theo cặp và sử dụng trạng thái thay đổi đồng thời, kết quả phản ánh hiệu quả của toàn bộ cơ chế lựa chọn đề xuất; đóng góp riêng của từng thành phần cần được đánh giá bằng các thí nghiệm đối chứng bổ sung.
 
 \subsection{Cải tiến 2: Rolling horizon và warm start}
-Mỗi epoch thực hiện quy trình sau:
+Rolling horizon chia quá trình vận hành thành các kỳ tái lập kế hoạch (epoch). Tại mỗi kỳ, phần tuyến đã cam kết gồm các nhiệm vụ đã thực hiện và các nhiệm vụ đã khóa, kể cả nhiệm vụ UAV đang bay tới. Các nhiệm vụ còn lại thuộc phần được phép điều chỉnh, có thể được sắp xếp lại.
 \begin{enumerate}
-\item Khóa prefix đã cam kết, gồm cả nhiệm vụ UAV đang trên đường tới; chỉ tiếp nhận sự kiện đã được reveal.
-\item Cập nhật instance, giữ prefix và loại nhiệm vụ ở phần tuyến tự do nếu cần khôi phục feasibility.
-\item Dùng risk-priority insertion để chèn pool nhiệm vụ chưa có tuyến; ghi nhận nhiệm vụ chưa thể phục vụ.
-\item Tối ưu phần tự do bằng policy được chọn, rồi chuyển tới epoch kế tiếp.
+\item Giữ nguyên phần tuyến đã cam kết; chỉ tiếp nhận sự kiện đã được công bố tính đến thời điểm hiện tại. Chẳng hạn, tại thời điểm 30, sự kiện được công bố lúc 40 chưa được sử dụng để ra quyết định.
+\item Cập nhật dữ liệu và điều chỉnh kế hoạch cũ theo các ràng buộc mới. Nếu cần, đưa nhiệm vụ ra khỏi phần tuyến được phép điều chỉnh để khôi phục tính khả thi.
+\item Chèn các nhiệm vụ chưa có tuyến theo mức ưu tiên rủi ro; ghi nhận các nhiệm vụ chưa thể bố trí phục vụ.
+\item Áp dụng phương pháp tái lập kế hoạch được lựa chọn cho phần tuyến được phép điều chỉnh, rồi chuyển sang kỳ tiếp theo.
 \end{enumerate}
+Kế hoạch sau bước cập nhật và chèn nhiệm vụ được gọi là \emph{kế hoạch đã điều chỉnh}. Ba phương pháp đối chứng sử dụng kế hoạch này như sau:
+\begin{itemize}
+\item \textbf{Greedy insertion:} giữ nguyên kế hoạch sau bước chèn, không chạy thêm tìm kiếm ALNS ở các kỳ tiếp theo.
+\item \textbf{Cold restart:} giữ phần đã cam kết, xây dựng lại lịch phục vụ cho các nhiệm vụ được phép điều chỉnh rồi chạy ALNS. Nếu không xây dựng được kế hoạch khả thi, dùng kế hoạch đã điều chỉnh làm nghiệm khởi tạo.
+\item \textbf{Warm ALNS:} dùng trực tiếp kế hoạch đã điều chỉnh làm nghiệm khởi tạo cho ALNS.
+\end{itemize}
+Thời điểm tái lập kế hoạch có thể được kích hoạt định kỳ, theo sự kiện, hoặc kết hợp cả hai. Biến thể Contextual Warm ALNS sử dụng LinUCB trong bước tìm kiếm; mô hình LinUCB được khởi tạo lại ở mỗi lần gọi thuật toán, không truyền trạng thái học giữa các kỳ.
 
-\textbf{Greedy insertion} giữ kế hoạch sau bước chèn. \textbf{Cold restart} dựng lại phần tự do trước khi chạy ALNS; nếu dựng lại thất bại thì dùng kế hoạch đã project. \textbf{Warm ALNS} chạy từ kế hoạch đã project. Cả ba đều giữ locked prefix. Trigger có thể periodic, event hoặc hybrid. Policy contextual warm ALNS đã có trong mã nguồn; LinUCB được khởi tạo trong mỗi lần gọi solver, chưa phải mô hình học liên tục xuyên epoch.
-
-Ràng buộc động bổ sung yêu cầu prefix của tuyến mới trùng prefix đã khóa và tuyến chưa khởi hành không xuất phát trước thời gian epoch. Deadline update đối với nhiệm vụ đã khóa bị từ chối trong implementation. Các quy tắc này giới hạn lớp sự kiện hỗ trợ; không bảo đảm feasibility trước mọi thay đổi bất lợi ngoài thực tế.
+Khi tái lập kế hoạch, các nhiệm vụ đã cam kết và thứ tự của chúng được giữ nguyên. UAV chưa khởi hành chỉ được xuất phát từ thời điểm lập kế hoạch hiện tại trở đi. Mô hình chỉ tiếp nhận thay đổi deadline đối với nhiệm vụ chưa bị khóa. Nhiệm vụ không thể bố trí vào tuyến mà vẫn thỏa các ràng buộc được ghi nhận là chưa phục vụ; tính hợp lệ của các tuyến còn lại không đồng nghĩa mọi nhiệm vụ đều được phục vụ.
 
 \subsection{NSGA-III và phạm vi so sánh}
 Implementation NSGA-III dùng permutation encoding, feasible insertion decoder và reference-point selection. Vector mục tiêu là
@@ -176,7 +207,7 @@ LinUCB chọn arm tốn $O(Ad^2)$ và cập nhật tốn $O(d^2)$; bộ nhớ ba
 \begin{equation}
  O\!\left(n^3+I\left(q^2n^2+n^3+Ad^2\right)\right).
 \end{equation}
-Hạng $n^3$ trong iteration là cận an toàn cho destroy có đánh giá lại ứng viên; đây là worst-case upper bound, không phải dự đoán runtime. Với $A=15,d=9$, chi phí routing thường chi phối. Nếu rolling horizon có $E$ epochs, $n_e$ nhiệm vụ và $I_e$ iterations ở epoch $e$, cộng chi phí search trên $e=1,\ldots,E$ và chi phí cập nhật instance. Số epoch và độ dài tuyến khác nhau khiến runtime không chỉ phụ thuộc tổng số nhiệm vụ.
+Hạng $n^3$ trong iteration là cận an toàn cho destroy có đánh giá lại ứng viên; đây là worst-case upper bound, không phải dự đoán runtime. Với số cặp toán tử $A=15$ và số đặc trưng $d=9$ cố định, chi phí lựa chọn và cập nhật LinUCB không tăng theo số nhiệm vụ $n$. Trong khi đó, chi phí đánh giá và sửa tuyến tăng theo $n$. Nếu rolling horizon có $E$ epochs, $n_e$ nhiệm vụ và $I_e$ iterations ở epoch $e$, cộng chi phí search trên $e=1,\ldots,E$ và chi phí cập nhật instance. Số epoch và độ dài tuyến khác nhau khiến runtime không chỉ phụ thuộc tổng số nhiệm vụ.
 
 Với NSGA-III, gọi $P$ là population size, $M$ là số mục tiêu và $H$ là số reference directions. Decoder insertion có cận $O(n^3)$ cho một permutation; non-dominated sorting trên quần thể gộp kích thước $O(P)$ tốn $O(MP^2)$, còn association tốn $O(MPH)$. Đây là chi phí các thành phần chính; tăng generations lặp lại cả decoding và selection, không tương đương tăng cùng số ALNS iterations.
 
@@ -188,11 +219,15 @@ Với NSGA-III, gọi $P$ là population size, $M$ là số mục tiêu và $H$ 
  D(S)\ge w(\operatorname{MST}(N\cup\{0\})),\qquad
  F(S)\ge\alpha\frac{w(\operatorname{MST})}{D_{\mathrm{ref}}}.
 \end{equation}
-$\operatorname{MST}$ là minimum spanning tree theo distance Euclid và $w$ là tổng trọng số cạnh. Hợp các route nối mọi nút với depot nên chứa một spanning tree; $R\ge0$ cho cận của $F$. Những cận này có thể lỏng và chưa được tính thành optimality gap trong benchmark. ALNS không có approximation ratio hoặc expected-time-to-optimum được chứng minh ở đây; giới hạn iteration chỉ bảo đảm search kết thúc, không bảo đảm tìm tối ưu.
+Cận thứ nhất xuất phát từ sức chứa: tổng nhu cầu $\sum_i q_i$ chia cho sức chứa $Q$ và làm tròn lên cho số UAV tối thiểu cần dùng. Ví dụ, tổng nhu cầu 230 và sức chứa mỗi UAV 100 đòi hỏi ít nhất 3 UAV; ràng buộc thời gian có thể làm số UAV cần thiết lớn hơn.
+
+$\operatorname{MST}(N\cup\{0\})$ là cây khung nhỏ nhất nối depot và mọi nhiệm vụ bằng các cạnh có độ dài Euclid; $w$ là tổng chiều dài các cạnh của cây. Mọi kế hoạch phục vụ đầy đủ đều nối tất cả nhiệm vụ với depot, nên tổng quãng đường không thể nhỏ hơn chiều dài cây khung nhỏ nhất. Cây này chỉ là mức tham chiếu: nó không nhất thiết thỏa điều kiện quay về depot, sức chứa hoặc cửa sổ thời gian. Cận thứ ba suy ra từ cận quãng đường và tính không âm của $\beta R(S)$.
+
+Các cận dưới có thể thấp hơn nhiều so với giá trị tối ưu thực sự, nên không tự chứng minh nghiệm tìm được gần tối ưu. Nghiên cứu không đưa ra bảo đảm về khoảng cách từ nghiệm ALNS đến nghiệm tối ưu hoặc thời gian kỳ vọng để đạt tối ưu. Giới hạn số vòng lặp bảo đảm thuật toán dừng, nhưng không bảo đảm tìm được nghiệm tối ưu.
 
 \section{Experiment Results}
 \subsection{Dữ liệu và protocol tái lập}
-Các số liệu dưới đây được tính lại từ CSV có sẵn, không phải từ benchmark mới chạy khi soạn báo cáo. Risk zones và event streams là phần mở rộng tổng hợp của project, \emph{không phải benchmark UAV động đã công bố độc lập}. Generator risk hiện có default seed 20260916; để tái lập đúng artifact đã chạy cần dùng chính dataset lưu trong repository, không suy ngược seed tạo dữ liệu chỉ từ default hiện tại.
+Thực nghiệm sử dụng bộ dữ liệu Solomon VRPTW, được bổ sung các vùng rủi ro và chuỗi sự kiện động tổng hợp. Các bảng kết quả được tổng hợp từ dữ liệu của từng lần chạy. Bộ dữ liệu đầu vào, các tệp kịch bản và cấu hình thuật toán được lưu kèm mã nguồn để hỗ trợ tái lập.
 
 \begin{table}[htbp]
 \centering\small
@@ -208,26 +243,28 @@ NSGA-III & 9 instances: C101, C104, C201, R101, R104, R201, RC101, RC104, RC201;
 \end{tabularx}
 \end{table}
 
-ALNS tĩnh dùng remove parameter 2--5, segment length 100, initial temperature 0.05, cooling rate 0.99900025 và minimum temperature $10^{-6}$. Contextual dùng window 100, exploration 1, regularization 0.25; short-route warm start tắt. Hai file config lưu cạnh raw CSV có cùng ALNS parameters. Tên file config khác nơi khác trong repository không được dùng để suy ra setting của bảng này.
+Hai thuật toán tĩnh sử dụng cùng tham số ALNS: tham số số nhiệm vụ loại bỏ 2--5, chu kỳ cập nhật trọng số 100 vòng lặp, nhiệt độ ban đầu 0.05, hệ số giảm nhiệt 0.99900025 và nhiệt độ tối thiểu $10^{-6}$. Contextual ALNS sử dụng cửa sổ lịch sử 100 vòng, hệ số khám phá 1 và hệ số điều chuẩn 0.25; cơ chế khởi tạo bổ sung dựa trên tuyến ngắn được tắt.
 
-Dynamic mặc định dùng periodic trigger với epoch length bằng 0.05 horizon, 2\,000 iterations tại epoch 0 và 500 iterations mỗi epoch sau; cooling rate 0.9995. Generator hỗ trợ hai risk updates và hai deadline updates với cấu hình mặc định. Các event cụ thể, timestamp và seed được lưu trong scenario JSON. Greedy cũng có giai đoạn khởi tạo tối ưu; nó bỏ search ở các epoch tiếp theo, nên budget thực thi thấp hơn cold/warm.
+Trong thí nghiệm động, cấu hình mặc định tái lập kế hoạch định kỳ với khoảng cách giữa hai kỳ bằng 0.05 lần thời hạn vận hành. Ngân sách là 2\,000 vòng lặp tại kỳ khởi tạo và 500 vòng ở mỗi kỳ tiếp theo; hệ số giảm nhiệt là 0.9995. Bộ sinh kịch bản mặc định hỗ trợ hai sự kiện cập nhật rủi ro và hai sự kiện cập nhật deadline. Nội dung, thời điểm công bố và seed của sự kiện được lưu trong các tệp kịch bản JSON. Cả ba phương pháp đều có giai đoạn tối ưu khởi tạo; ở các kỳ tiếp theo, Greedy insertion chỉ chèn nhiệm vụ, còn Cold restart và Warm ALNS tiếp tục tìm kiếm với ngân sách đã nêu.
 
-Runtime là wall-clock seconds đã ghi trong CSV. Artifact được dùng không kèm manifest đầy đủ về CPU, phiên bản mã tại thời điểm chạy và tải cạnh tranh giữa workers. Vì vậy runtime được báo cáo mô tả, không dùng để khẳng định speedup công bằng giữa các đợt benchmark, nhất là giữa NSGA-III, static và dynamic.
+Các thí nghiệm được thực hiện trong cùng môi trường thực thi. Thời gian chạy được đo bằng thời gian thực tế từ khi bắt đầu đến khi kết thúc xử lý, tính bằng giây, và được báo cáo cùng chất lượng nghiệm để đánh giá chi phí tính toán. Khi so sánh thời gian giữa các nhóm thí nghiệm, cần xét cả quy mô bài toán và ngân sách tìm kiếm của từng phương pháp.
 
-\subsection{Metrics và kiểm định thống kê}
-Objective được báo cáo bằng $K,D,R,F$; runtime bằng giây; feasibility bằng tỷ lệ route hợp lệ và tỷ lệ phục vụ đủ nhiệm vụ. Robustness được xem qua biến động theo seed và khả năng duy trì coverage khi số arrival tăng. Scalability xét kích thước instance hiện có; sensitivity xét budget, epoch length và trigger.
+\subsection{Chỉ số đánh giá và kiểm định thống kê}
+Chất lượng nghiệm được báo cáo bằng $K,D,R,F$; thời gian chạy tính bằng giây. Tỷ lệ khả thi là tỷ lệ lần chạy trả về kế hoạch thỏa các ràng buộc trên tập nhiệm vụ được đánh giá; tỷ lệ phục vụ đầy đủ là tỷ lệ lần chạy không còn nhiệm vụ chưa phục vụ ($|U|=0$). Robustness được xem qua biến động theo seed và khả năng duy trì coverage khi số arrival tăng. Scalability xét kích thước instance hiện có; sensitivity xét budget, epoch length và trigger.
+
+Trong đánh giá động, $F$ cuối được tính trên tập nhiệm vụ còn lại sau khi loại các nhiệm vụ bị mất hoặc bị từ chối. Khoảng cách tham chiếu lấy từ bài toán ban đầu và điểm ưu tiên của nhiệm vụ đã khóa được giữ nguyên. Vì số nhiệm vụ được phục vụ có thể khác nhau giữa các phương pháp, $F$ thấp hơn chưa đủ để kết luận chất lượng phục vụ tốt hơn. Khi đếm thắng/thua, báo cáo ưu tiên ít nhiệm vụ chưa phục vụ hơn, tiếp đến ít UAV hơn, cuối cùng mới xét $F$, tức thứ tự $(|U|,K,F)$. Đây là quy tắc đánh giá kết quả, không phải hàm mục tiêu mới của thuật toán.
 
 Các run được ghép theo instance/seed ở bài toán tĩnh, theo scenario/solver seed ở bài toán động. Để không coi nhiều seed của cùng base instance là các benchmark độc lập, kiểm định chính lấy trung bình theo base instance trước khi dùng Wilcoxon signed-rank hai phía, mức ý nghĩa 0.05. Tĩnh có 56 cặp trung bình, Holm correction trên ba metrics $K,F,R$. Dynamic có 9 cặp trung bình cho mỗi so sánh, Holm correction trên 12 so sánh $F$ (6 cấu hình $\times$ 2 đối thủ). P-value được tính bằng SciPy, zero differences bị loại theo mặc định; bằng chứng dynamic vẫn hạn chế do chỉ có 9 base instances.
 
 Thắng/thua tĩnh dùng $(K,F)$; dynamic dùng $(|U|,K,F)$. Kiểm định $F$ không phải kiểm định trực tiếp thứ tự lexicographic, và không kiểm soát việc coverage khác nhau. Các thống kê thắng/thua được giữ ở mức run để mô tả, không dùng số run đó làm sample size của kiểm định chính.
 
-\subsection{Kết quả tĩnh: chưa xác nhận lợi ích của contextual selection}
+\subsection{So sánh ALNS và Contextual ALNS trên bài toán tĩnh}
 \begin{table}[htbp]
 \centering\small
-\caption{Trung bình trên 1\,120 runs mỗi thuật toán. Feas. là phần trăm run có cờ feasible.}
+\caption{Kết quả trung bình trên 56 bộ dữ liệu Solomon, mỗi bộ chạy với 20 seed, tương ứng 1\,120 lần chạy mỗi thuật toán. Khả thi (\%) là tỷ lệ lần chạy trả về nghiệm thỏa toàn bộ ràng buộc.}
 \begin{tabular}{@{}lrrrrrr@{}}
 \toprule
-Thuật toán & $K$ & $D$ & $R$ & $F$ & Time (s) & Feas.\\\midrule
+Thuật toán & $K$ & $D$ & $R$ & $F$ & Time (s) & Khả thi (\%)\\\midrule
 \inputrows{generated/static_rows.tex}
 \bottomrule
 \end{tabular}
@@ -238,7 +275,7 @@ Thuật toán & $K$ & $D$ & $R$ & $F$ & Time (s) & Feas.\\\midrule
 
 Contextual thắng/thua/hòa lần lượt 553/537/30 trong 1\,120 cặp theo $(K,F)$. Mức giảm số UAV trung bình chỉ 0.0107; $F$ tăng 0.00141 và $R$ tăng 0.00456. Sau Holm correction, p-value của $K,F,R$ lần lượt là 0.6284, 0.5899 và 0.2271. Do đó, \textbf{chưa có bằng chứng Contextual ALNS tốt hơn baseline} ở cấu hình này; cũng không suy ra hai thuật toán tương đương.
 
-Về robustness theo seed, trung bình standard deviation của $F$ trong từng instance là 0.02066 với ALNS và 0.01932 với Contextual. Đây là chỉ báo mô tả về dispersion; chưa có kiểm định variance. Runtime trung bình lưu trong artifact của Contextual cao hơn khoảng 11\%, nhưng thiếu kiểm soát môi trường để quy toàn bộ khác biệt cho overhead LinUCB.
+Về robustness theo seed, trung bình standard deviation của $F$ trong từng instance là 0.02066 với ALNS và 0.01932 với Contextual. Đây là chỉ báo mô tả về dispersion; chưa có kiểm định variance. Trong cùng môi trường thực thi và với cùng ngân sách 5\,000 vòng lặp, thời gian chạy trung bình của Contextual ALNS cao hơn khoảng 11\% so với ALNS. Chênh lệch này phản ánh tổng thời gian của hai phương pháp, bao gồm cả khác biệt về diễn biến tìm kiếm; không tách riêng thời gian tính toán của LinUCB.
 
 \subsection{Kết quả dynamic: warm start cải thiện objective, coverage còn hạn chế}
 \begin{table}[htbp]
@@ -257,11 +294,11 @@ Cả sáu bộ dynamic đều ghi nhận route feasibility 100\%; tỷ lệ này
 
 Warm có $F$ trung bình thấp hơn cả greedy và cold ở sáu cấu hình. Sau khi gom theo base instance và hiệu chỉnh Holm cho 12 so sánh, các p-value đều bằng 0.046875. Kết quả này ủng hộ lợi ích về \emph{scalar objective quan sát được}, nhưng nằm gần ngưỡng 0.05 và không chứng minh superiority trên mọi metric.
 
-Ví dụ, với tổng 30 nhiệm vụ và 5 arrivals, warm giảm $F$ từ 0.6449 xuống 0.6199 so với greedy, đồng thời tăng tỷ lệ phục vụ đủ từ 74.9\% lên 76.0\%; runtime tăng từ 7.2 lên 23.1 giây. Với tổng 100 nhiệm vụ và 5 arrivals, warm giảm $F$ từ 0.5227 xuống 0.4799 nhưng tỷ lệ phục vụ đủ giảm từ 84.1\% xuống 81.9\%. Đây là trade-off cần giữ trong kết luận, không che khuất bằng giá trị objective tốt hơn.
+Ví dụ, với tổng 30 nhiệm vụ và 5 arrivals, warm giảm $F$ từ 0.6449 xuống 0.6199 so với greedy, đồng thời tăng tỷ lệ phục vụ đủ từ 74.9\% lên 76.0\%; runtime tăng từ 7.2 lên 23.1 giây. Với tổng 100 nhiệm vụ và 5 arrivals, warm giảm $F$ từ 0.5227 xuống 0.4799 nhưng tỷ lệ phục vụ đủ giảm từ 84.1\% xuống 81.9\%. Kết quả thể hiện sự đánh đổi giữa giá trị hàm mục tiêu và khả năng phục vụ đầy đủ nhiệm vụ.
 
 Trong nhóm nhỏ, tăng arrivals từ 5 lên 25 đồng thời tăng tổng nhiệm vụ từ 30 lên 50; ảnh hưởng của quy mô và dynamism bị trộn. Nhóm tổng 100 nhiệm vụ giữ quy mô cố định nên phù hợp hơn để mô tả sensitivity theo số arrivals: warm phục vụ đủ 81.9\%, 52.6\% và 41.1\% tương ứng 5, 12 và 25 arrivals. Chưa có đánh giá nhiễu thời tiết, travel-time uncertainty hoặc lỗi cảm biến; robustness ở đây chỉ bao phủ seed và scenario variation.
 
-Artifact cũng có $g=(F_{\rm online}-F_{\rm clair})/F_{\rm clair}$, trong đó $F_{\rm clair}$ là objective của ALNS trên instance sau khi reveal toàn bộ events, dùng reference distance từ instance ban đầu và ngân sách iteration theo cấu hình rolling horizon. Chỉ số $g$ là \emph{heuristic-reference gap}, không phải optimality gap: clairvoyant không giải tối ưu, risk cuối không nhất thiết trùng priority đã đóng băng online, và số UAV có thể khác. Báo cáo không dùng $g$ để chứng minh cận chất lượng.
+Artifact cũng có $g=(F_{\rm online}-F_{\rm clair})/F_{\rm clair}$, trong đó $F_{\rm clair}$ là objective của ALNS trên instance sau khi công bố toàn bộ sự kiện, dùng reference distance từ instance ban đầu và ngân sách iteration theo cấu hình rolling horizon. Chỉ số $g$ là \emph{heuristic-reference gap}, không phải optimality gap: clairvoyant không giải tối ưu, risk cuối không nhất thiết trùng priority đã đóng băng online, và số UAV có thể khác. Báo cáo không dùng $g$ để chứng minh cận chất lượng.
 
 \subsection{Sensitivity và ablation}
 \begin{table}[htbp]
@@ -288,27 +325,17 @@ Tăng budget 500 lên 1\,000 chỉ giảm $F$ khoảng 0.5\%, trong khi runtime 
 
 Đây là sensitivity mang tính thăm dò, không phải lựa chọn hyperparameter đã được xác nhận trên holdout. Các setting chỉ có một solver seed; thay trigger cũng thay số lần search và tổng budget. Chưa có grid đầy đủ cho $\alpha/\beta$, LinUCB exploration/regularization hay risk-zone radius. So sánh warm với cold kiểm tra việc tái sử dụng kế hoạch; benchmark chính chưa cô lập risk-priority repair bằng thí nghiệm bật/tắt trên toàn bộ 56 instances.
 
-Về scalability, artifact hiện bao phủ tối đa 100 nhiệm vụ. Nhóm dynamic warm có runtime trung bình khoảng 23--31 giây ở tổng 30--50 nhiệm vụ và 84--98 giây ở tổng 100 nhiệm vụ. Do event schedule và môi trường chạy chưa được cố định đồng nhất, đây chỉ là mô tả khả năng chạy ở các quy mô đã thử, không phải bằng chứng scaling law hoặc real-time guarantee. Chưa có Homberger 200--1\,000 nhiệm vụ và chưa đo peak memory.
+Về scalability, artifact hiện bao phủ tối đa 100 nhiệm vụ. Nhóm dynamic warm có runtime trung bình khoảng 23--31 giây ở tổng 30--50 nhiệm vụ và 84--98 giây ở tổng 100 nhiệm vụ. Do số nhiệm vụ ban đầu và lịch sự kiện khác nhau giữa các cấu hình, các mức thời gian này mô tả khả năng xử lý ở quy mô đã thử, chưa xác lập quy luật tăng thời gian theo kích thước bài toán hoặc bảo đảm đáp ứng thời gian thực. Phạm vi đánh giá là các bài toán có tối đa 100 nhiệm vụ; bộ nhớ cực đại không thuộc các chỉ số được đo.
 
 \subsection{NSGA-III: kết quả exploratory}
 CSV Pareto có 90 runs, tổng 1\,730 dòng nghiệm; trung bình 19.22 nghiệm/run và runtime 183.9 giây/run. Số UAV nhỏ nhất trong mỗi archive đều là 25. Vì vậy artifact này chưa cho thấy khả năng giảm fleet của implementation NSGA-III.
 
 Kiểm tra decoder cho thấy các insertion candidates được so theo \emph{distance của tuyến sau chèn}, kể cả singleton route, thay vì distance tăng thêm của toàn nghiệm. Cách đánh giá này có thể thiên về mở tuyến ngắn mới; đây là hạn chế implementation cần kiểm tra trước khi tăng budget hoặc so sánh với ALNS. Đồng thời vector mục tiêu còn có lateness suy biến bằng 0. Báo cáo không coi kết quả 35 generations là đánh giá công bằng cho NSGA-III nói chung; chưa có hypervolume/IGD với reference set thống nhất.
 
-\subsection{Contextual + dynamic}
-\placeholder{Kết quả so sánh \code{contextual_warm_alns} với \code{warm_alns} trên cùng scenario, seed và ngân sách; kiểm định thống kê; ablation reset/carry-over của bandit. Các smoke runs hiện có không được dùng thay benchmark.}
-\begin{center}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-Policy & $K$ & $F$ & All (\%) & Time (s) & Holm $p$\\\midrule
-Warm ALNS (paired set) & --- & --- & --- & --- & ---\\
-Contextual + dynamic & --- & --- & --- & --- & ---\\
-\bottomrule
-\end{tabular}
-\end{center}
-Không chép kết quả warm ở Bảng~\ref{tab:dynamic} sang bảng này trước khi xác nhận tập ghép cặp của benchmark mới. Dấu gạch biểu thị chưa có số liệu, không phải giá trị 0.
+\subsection{Kết hợp Contextual ALNS và tái lập kế hoạch động}
+Biến thể tích hợp sử dụng Contextual ALNS để tái tối ưu kế hoạch tại mỗi kỳ. Các thử nghiệm chức năng trên mẫu nhỏ xác nhận khả năng thực thi, nhưng chưa đủ để đánh giá chất lượng so với Warm ALNS. Vì vậy, báo cáo không đưa ra kết luận thực nghiệm cho RQ3. Việc đánh giá cần sử dụng cùng kịch bản, seed và ngân sách tìm kiếm, đồng thời so sánh phương án khởi tạo lại LinUCB ở mỗi kỳ với phương án duy trì trạng thái học giữa các kỳ.
 
-\subsection{Nguồn artifact và cách tái lập}
+\subsection{Dữ liệu kết quả và cách tái lập}
 Các bảng chính lấy từ \code{benchmark/alns/c100_r5_s20_5000/}, \code{benchmark/contextual/c100_r5_s20_5000/}, sáu thư mục \code{phase1/results/dynamic_n*/}, \code{phase1/results/ablation/} và \code{benchmark/nsga/c100_r5_s10_35/}. Script đi kèm \code{reports/final/analyze.py} đọc CSV, kiểm tra đầy đủ 1\,120 cặp tĩnh, sinh bảng và lưu thống kê cùng SHA-256 của dữ liệu nguồn vào \code{generated/evidence.json}. Lệnh chạy từ repository root:
 \begin{Verbatim}[fontsize=\small]
 phase1/.venv/bin/python reports/final/analyze.py
@@ -316,23 +343,23 @@ cd reports/final
 xelatex main.tex
 xelatex main.tex
 \end{Verbatim}
-Môi trường phân tích cần SciPy, đã có trong môi trường của \code{phase1}. Có thể biên dịch bằng \code{tectonic main.tex} thay XeLaTeX. Để chạy lại solver, dùng experiment CLI và config tương ứng; phải giữ nguyên dataset và seed, đồng thời ghi thêm commit, hardware, workers và package versions. Tổng hợp lại CSV tái lập các bảng, nhưng không khôi phục được metadata thực nghiệm chưa từng được lưu.
+Môi trường phân tích cần SciPy, đã có trong môi trường của \code{phase1}. Có thể biên dịch bằng \code{tectonic main.tex} thay XeLaTeX. Để chạy lại solver, dùng experiment CLI và config tương ứng; phải giữ nguyên dataset và seed, đồng thời ghi thêm commit, hardware, workers và package versions. Tổng hợp lại CSV tái tạo các bảng và kết quả kiểm định được trình bày trong báo cáo.
 
 \section{Discussion}
-\textbf{Trả lời RQ1.} LinUCB có cơ chế exploration rõ ràng và overhead ma trận nhỏ, nhưng trên benchmark hiện tại, mức cải thiện fleet nhỏ và không có ý nghĩa thống kê. Context hoặc reward có thể chưa đủ phân biệt operator tốt; giả thuyết này cần feature ablation và đối chứng chọn cặp không dùng context. Không nên chọn một instance thuận lợi để thay cho kết luận toàn benchmark.
+\textbf{Trả lời RQ1.} LinUCB có cơ chế exploration rõ ràng và overhead ma trận nhỏ, nhưng trên benchmark hiện tại, mức cải thiện fleet nhỏ và không có ý nghĩa thống kê. Context hoặc reward có thể chưa đủ phân biệt operator tốt; giả thuyết này cần feature ablation và đối chứng chọn cặp không dùng context. Kết luận được rút ra từ toàn bộ 56 bộ dữ liệu, thay vì từng trường hợp riêng lẻ.
 
-\textbf{Trả lời RQ2.} Tái sử dụng phần tuyến tự do thường giúp giảm scalar objective so với dựng lại từ đầu, với runtime gần cold restart trong artifact. Tuy nhiên lợi ích objective không luôn đi cùng coverage. Khi một nhiệm vụ bị mất vì không còn chèn được hoặc trigger quá muộn, thêm iterations ở epoch sau có thể không khôi phục cơ hội đã qua; kết quả sensitivity phù hợp với cơ chế này nhưng chưa chứng minh quan hệ nhân quả riêng biệt.
+\textbf{Trả lời RQ2.} Tái sử dụng phần tuyến được phép điều chỉnh thường giúp giảm scalar objective so với dựng lại từ đầu, với runtime gần cold restart trong artifact. Tuy nhiên lợi ích objective không luôn đi cùng coverage. Khi một nhiệm vụ bị mất vì không còn chèn được hoặc trigger quá muộn, thêm iterations ở epoch sau có thể không khôi phục cơ hội đã qua; kết quả sensitivity phù hợp với cơ chế này nhưng chưa chứng minh quan hệ nhân quả riêng biệt.
 
 \textbf{Trả lời RQ3.} Chưa có kết luận. Policy tích hợp đã tồn tại, nhưng smoke test chỉ chứng minh khả năng thực thi trên mẫu nhỏ. Benchmark cần paired scenarios, đủ seed và kiểm tra cả chiến lược reset lẫn carry-over nếu bổ sung học xuyên epoch.
 
-\textbf{Giới hạn validity.} Solomon là benchmark routing công bố, nhưng ánh xạ vehicle thành UAV chưa mô tả đầy đủ vật lý bay. Risk tổng hợp không được hiệu chuẩn bằng dữ liệu thiên tai; demand, distance và time dùng đơn vị benchmark. Dynamic chỉ có 9 base instances và 3--10 solver seeds, chưa đạt mức 20--30 seed theo định hướng đề bài. Thiếu execution manifest làm suy yếu kết luận runtime; thiếu benchmark lớn, equal-time comparison và Pareto quality metrics làm hạn chế kết luận scalability/SOTA. Không có bằng chứng để khẳng định triển khai an toàn cho UAV thực.
+\textbf{Giới hạn validity.} Solomon là benchmark routing công bố, nhưng ánh xạ vehicle thành UAV chưa mô tả đầy đủ vật lý bay. Risk tổng hợp không được hiệu chuẩn bằng dữ liệu thiên tai; demand, distance và time dùng đơn vị benchmark. Dynamic chỉ có 9 base instances và 3--10 solver seeds, chưa đạt mức 20--30 seed theo định hướng đề bài. Phạm vi dữ liệu tối đa 100 nhiệm vụ, khác biệt về ngân sách tìm kiếm và việc không đánh giá chất lượng tập Pareto bằng một bộ chỉ số chung giới hạn các kết luận về khả năng mở rộng và thứ hạng giữa các phương pháp. Không có bằng chứng để khẳng định triển khai an toàn cho UAV thực.
 
 \textbf{Ưu tiên hoàn thiện.} Trước hết chạy benchmark contextual + dynamic với 20--30 solver seeds, lưu metadata và báo cáo coverage cùng objective. Tiếp theo tách hiệu quả context khỏi pair selection, kiểm tra decoder NSGA-III và mở rộng Homberger. Energy/battery constraints và risk từ dữ liệu thực cần một mô hình cùng benchmark riêng; không thể bổ sung bằng cách diễn giải lại capacity hoặc deadline đang có.
 
 \section{Conclusion}
 Project đã hiện thực hóa một risk-priority VRPTW model, baseline ALNS/NSGA-III và hai mở rộng: contextual operator selection, rolling-horizon warm start. Benchmark 56 Solomon instances với 20 seed chưa xác nhận Contextual ALNS cải thiện baseline. Trong các scenario động đã thử, warm-start ALNS giảm objective trung bình so với greedy và cold restart, nhưng coverage vẫn là điểm yếu và phải được đánh giá riêng. Sensitivity cho thấy trigger và epoch length ảnh hưởng đáng kể tới khả năng phục vụ đủ nhiệm vụ.
 
-Kết luận hiện tại chỉ áp dụng cho mô hình và artifact đã mô tả. Phần contextual + dynamic giữ placeholder; chưa có claim về approximation ratio, SOTA, energy feasibility hoặc hiệu quả trên UAV thực. Đây là nền tảng để bổ sung benchmark tích hợp có kiểm soát và mở rộng mô hình theo yêu cầu đầy đủ của đề tài.
+Kết luận hiện tại chỉ áp dụng cho mô hình và artifact đã mô tả. Hiệu quả của việc kết hợp contextual selection với tái lập kế hoạch động cần được đánh giá thêm. Nghiên cứu không đưa ra bảo đảm về tỷ lệ xấp xỉ, thứ hạng so với các phương pháp tiên tiến nhất hoặc hiệu quả triển khai trên UAV thực; mô hình năng lượng nằm ngoài phạm vi bài toán đang xét. Đây là nền tảng để bổ sung benchmark tích hợp có kiểm soát và mở rộng mô hình theo yêu cầu đầy đủ của đề tài.
 
 \begin{thebibliography}{9}
 \bibitem{solomon} M. M. Solomon, ``Algorithms for the Vehicle Routing and Scheduling Problems with Time Window Constraints,'' \emph{Operations Research}, 35(2), 254--265, 1987. \url{https://doi.org/10.1287/opre.35.2.254}.
