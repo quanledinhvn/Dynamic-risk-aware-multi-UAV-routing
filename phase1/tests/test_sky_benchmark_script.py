@@ -25,6 +25,7 @@ def fake_tools(tmp_path: Path) -> tuple[dict[str, str], Path]:
     (isolated_root / "scripts").mkdir(parents=True)
     (isolated_root / "infra/skypilot").mkdir(parents=True)
     (isolated_root / "phase1/configs").mkdir(parents=True)
+    (isolated_root / "phase1_NSGA/configs").mkdir(parents=True)
 
     shutil.copy2(SCRIPT, isolated_root / "scripts/sky_benchmark.sh")
     shutil.copy2(
@@ -32,8 +33,16 @@ def fake_tools(tmp_path: Path) -> tuple[dict[str, str], Path]:
         isolated_root / "infra/skypilot/benchmark.yaml",
     )
     shutil.copy2(
+        ROOT / "infra/skypilot/nsga_benchmark.yaml",
+        isolated_root / "infra/skypilot/nsga_benchmark.yaml",
+    )
+    shutil.copy2(
         DEFAULT_CONFIG,
         isolated_root / "phase1/configs/benchmark_p1_c25_r1.json",
+    )
+    shutil.copy2(
+        ROOT / "phase1_NSGA/configs/benchmark_c100_r5_s20_g100.json",
+        isolated_root / "phase1_NSGA/configs/benchmark_c100_r5_s20_g100.json",
     )
 
     bin_dir = tmp_path / "bin"
@@ -229,6 +238,18 @@ def test_task_declares_s3_mount_and_exit_upload(fake_tools) -> None:
     assert 'touch "$s3_run_dir/$marker"' in yaml
 
 
+def test_nsga_task_runs_smoke_and_configured_benchmark(fake_tools) -> None:
+    env, _ = fake_tools
+    yaml = (_repo(env) / "infra/skypilot/nsga_benchmark.yaml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "cd phase1_NSGA" in yaml
+    assert "uv run uav-routing-nsga-benchmark" in yaml
+    assert 'trap archive_artifacts EXIT' in yaml
+    assert 'touch "$s3_run_dir/$marker"' in yaml
+
+
 def test_archive_marks_success_only_after_copy_succeeds(tmp_path: Path) -> None:
     result, mounted = _run_archive_probe(tmp_path, benchmark_status=0)
 
@@ -405,6 +426,36 @@ def test_launch_passes_s3_identity_and_records_it_in_state(
         "remote_output=phase1/results/sky/20260922T120000Z\n"
         "s3_bucket=sky-uav-benchmark-123456789012-ap-southeast-1\n"
         "s3_prefix=runs/20260922T120000Z\n"
+    )
+
+
+def test_launch_selects_nsga_task_and_output_directory(fake_tools) -> None:
+    env, log_path = fake_tools
+    config = "phase1_NSGA/configs/benchmark_c100_r5_s20_g100.json"
+
+    result = _run(
+        "launch",
+        "--config",
+        config,
+        "--cluster",
+        "uav-nsga",
+        env=env,
+    )
+
+    assert result.returncode == 0
+    launch = next(
+        command
+        for command in _commands(log_path)
+        if command[0:2] == ["sky", "launch"]
+    )
+
+    assert f"BENCHMARK_CONFIG={config}" in launch
+    assert (
+        "BENCHMARK_OUTPUT_DIR=phase1_NSGA/results/sky/20260922T120000Z"
+        in launch
+    )
+    assert launch[-1] == str(
+        _repo(env) / "infra/skypilot/nsga_benchmark.yaml"
     )
 
 

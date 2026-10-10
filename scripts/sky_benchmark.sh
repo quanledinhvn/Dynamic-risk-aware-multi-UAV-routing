@@ -21,6 +21,8 @@ action=""
 config_path=""
 cleanup_armed="false"
 cleanup_started="false"
+benchmark_project="phase1"
+task_file="$repo_root/infra/skypilot/benchmark.yaml"
 
 usage() {
   cat <<'EOF'
@@ -157,6 +159,17 @@ validate_inputs() {
       die "Config phải nằm trong repository: $config_path"
       ;;
   esac
+
+  case "$config" in
+    phase1_NSGA/configs/*)
+      benchmark_project="phase1_NSGA"
+      task_file="$repo_root/infra/skypilot/nsga_benchmark.yaml"
+      ;;
+    *)
+      benchmark_project="phase1"
+      task_file="$repo_root/infra/skypilot/benchmark.yaml"
+      ;;
+  esac
 }
 
 require_command() {
@@ -188,7 +201,7 @@ check_preflight() {
   require_command aws "AWS CLI" || return $?
   require_command rsync rsync || return $?
 
-  if [[ ! -f "$repo_root/infra/skypilot/benchmark.yaml" ]]; then
+  if [[ ! -f "$task_file" ]]; then
     die "Không tìm thấy SkyPilot task YAML."
     return 1
   fi
@@ -208,8 +221,7 @@ launch_benchmark() {
   run_id="$(date -u +%Y%m%dT%H%M%SZ)" || return $?
   s3_prefix="runs/$run_id"
 
-  local remote_output="phase1/results/sky/$run_id"
-  local task_file="$repo_root/infra/skypilot/benchmark.yaml"
+  local remote_output="$benchmark_project/results/sky/$run_id"
   local launch_args=(
     launch --yes --detach-run --cluster "$cluster"
     --region "$region"
@@ -328,10 +340,14 @@ read_state() {
     return 1
   fi
 
-  if [[ "$remote_output" != "phase1/results/sky/$run_id" ]]; then
-    die "Tệp state có remote output không hợp lệ."
-    return 1
-  fi
+  case "$remote_output" in
+    "phase1/results/sky/$run_id"|"phase1_NSGA/results/sky/$run_id")
+      ;;
+    *)
+      die "Tệp state có remote output không hợp lệ."
+      return 1
+      ;;
+  esac
 
   if [[ "$s3_bucket_seen" != "$s3_prefix_seen" ]]; then
     die "Metadata S3 trong state không đầy đủ."

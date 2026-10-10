@@ -89,6 +89,30 @@ scripts/sky_benchmark.sh run \
   --cluster uav-benchmark
 ```
 
+### Chạy NSGA-III
+
+Wrapper tự nhận diện config nằm trong `phase1_NSGA/configs/` và chuyển sang
+SkyPilot task dành cho NSGA-III:
+
+```bash
+scripts/sky_benchmark.sh run \
+  --config phase1_NSGA/configs/benchmark_c100_r5_s20_g100.json \
+  --workers 8 \
+  --region ap-southeast-1 \
+  --instance-type c7i.2xlarge \
+  --cluster uav-nsga-c100
+```
+
+Task chạy một smoke benchmark với một generation và một seed trước. Nếu smoke
+benchmark thành công, task mới chạy toàn bộ config. Artifact NSGA-III được tải
+về `phase1_NSGA/results/sky/<run-id>/`.
+
+Trong khi NSGA-III đang chạy, mỗi case hoàn thành được checkpoint tại
+`phase1_NSGA/results/sky/<run-id>/.tmp/run-<id>/<index>.json`. Có thể dùng
+`rsync` trực tiếp từ cluster để sao lưu các checkpoint này trước khi job kết
+thúc. Thư mục `.tmp` được giữ lại nếu benchmark lỗi và chỉ bị xóa sau khi hai
+CSV cuối đã được ghi thành công.
+
 `run` thực hiện preflight, launch, theo dõi job, tải artifact từ S3 rồi hủy cluster. Nếu launch, log-follow hoặc download thất bại, wrapper cố lấy log hiện có và hủy cluster để giới hạn chi phí.
 
 Với luồng tách rời, `launch` trả về ngay sau khi gửi job. EC2 có thể autodown sau khi job kết thúc, nhưng bucket S3 vẫn được giữ lại.
@@ -153,6 +177,14 @@ Mỗi lượt dùng run ID UTC dạng `YYYYMMDDTHHMMSSZ`. Artifact được tả
 phase1/results/sky/<run-id>/raw.csv
 phase1/results/sky/<run-id>/aggregate.csv
 phase1/results/sky/<run-id>/benchmark.log
+```
+
+Với NSGA-III, kết quả tương ứng nằm tại:
+
+```text
+phase1_NSGA/results/sky/<run-id>/nsga3_pareto_raw.csv
+phase1_NSGA/results/sky/<run-id>/aggregate.csv
+phase1_NSGA/results/sky/<run-id>/benchmark.log
 ```
 
 Wrapper chỉ báo thành công sau khi download hoàn tất. Lệnh `down` không xóa kết quả local.
