@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sensitivity Test Report</title>
+<meta name="description" content="Báo cáo test sensitivity cho Dynamic Risk-Aware Multi-UAV Routing: dữ liệu và file sử dụng, thuật toán, tham số, số lần chạy, kết quả và kết luận.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --surface: #ffffff;
+    --surface-2: #f0f0ec;
+    --text: #1d1d1b;
+    --muted: #5f5f5a;
+    --border: #dcdcd6;
+    --accent: #2f5fb3;
+    --accent-soft: #e5ecf8;
+    --l1: #2f5fb3;
+    --l1-soft: #e5ecf8;
+    --l2: #1f7a5a;
+    --l2-soft: #e2f2ea;
+    --l3: #a25a12;
+    --l3-soft: #f8ecdf;
+    --warn: #a3361f;
+    --warn-soft: #f8e4df;
+    --code-bg: #f0f0ec;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141413;
+      --surface: #1d1d1b;
+      --surface-2: #262624;
+      --text: #ecebe6;
+      --muted: #a6a59e;
+      --border: #3a3a36;
+      --accent: #8fb1ee;
+      --accent-soft: #1f2a3d;
+      --l1: #8fb1ee;
+      --l1-soft: #1f2a3d;
+      --l2: #6fcfa6;
+      --l2-soft: #18302a;
+      --l3: #e8a868;
+      --l3-soft: #352818;
+      --warn: #ef8f78;
+      --warn-soft: #3a211b;
+      --code-bg: #262624;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #141413;
+    --surface: #1d1d1b;
+    --surface-2: #262624;
+    --text: #ecebe6;
+    --muted: #a6a59e;
+    --border: #3a3a36;
+    --accent: #8fb1ee;
+    --accent-soft: #1f2a3d;
+    --l1: #8fb1ee;
+    --l1-soft: #1f2a3d;
+    --l2: #6fcfa6;
+    --l2-soft: #18302a;
+    --l3: #e8a868;
+    --l3-soft: #352818;
+    --warn: #ef8f78;
+    --warn-soft: #3a211b;
+    --code-bg: #262624;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 16px 80px; }
+
+  header h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 6px; }
+  header .sub { color: var(--muted); margin: 0; }
+  .meta { color: var(--muted); font-size: .88rem; margin-top: 10px; }
+
+  nav.toc {
+    margin: 24px 0 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  nav.toc a {
+    text-decoration: none;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: .88rem;
+  }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 20px;
+  }
+  h2 { font-size: 1.35rem; margin: 0 0 14px; }
+  h2 .num { color: var(--accent); margin-right: 6px; }
+  h3 { font-size: 1.05rem; margin: 24px 0 10px; }
+  p { margin: 8px 0; }
+
+  code {
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: .88em;
+  }
+
+  .table-wrap { overflow-x: auto; margin: 10px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+  td.num, th.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tr.total td { font-weight: 600; background: var(--surface-2); }
+
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 12px 0;
+  }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 12px 0 4px;
+  }
+  .tile {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: var(--surface-2);
+  }
+  .tile .v { font-size: 1.8rem; font-weight: 700; line-height: 1.1; }
+  .tile .k { color: var(--muted); font-size: .88rem; margin-top: 4px; }
+
+  .badge {
+    display: inline-block;
+    font-size: .78rem;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 1px 9px;
+    white-space: nowrap;
+  }
+  .badge.hi { background: var(--warn-soft); color: var(--warn); }
+  .badge.mid { background: var(--l3-soft); color: var(--l3); }
+  .badge.lo { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+  .badge.main { background: var(--accent-soft); color: var(--accent); }
+
+  /* ---------- Diagrams ---------- */
+  .diagram {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 12px 0;
+    background: var(--bg);
+  }
+
+  .layer {
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 2px solid;
+  }
+  .layer + .layer { margin-top: 0; }
+  .layer .lt { font-weight: 700; }
+  .layer .ld { color: var(--muted); font-size: .9rem; }
+  .layer.l1 { border-color: var(--l1); background: var(--l1-soft); }
+  .layer.l2 { border-color: var(--l2); background: var(--l2-soft); margin: 10px 0 0 18px; }
+  .layer.l3 { border-color: var(--l3); background: var(--l3-soft); margin: 10px 0 0 18px; }
+  .layer .tag {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-right: 6px;
+  }
+  .l1 .tag { color: var(--l1); }
+  .l2 .tag { color: var(--l2); }
+  .l3 .tag { color: var(--l3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: .85rem;
+  }
+
+  .data-flow {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: .9rem;
+  }
+  .box b { display: block; }
+  .box .s { color: var(--muted); font-size: .82rem; }
+  .arrow { color: var(--muted); font-size: 1.3rem; text-align: center; }
+
+  .branches {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .steps { counter-reset: step; display: grid; gap: 0; }
+  .step {
+    position: relative;
+    padding: 10px 14px 10px 52px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 10px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--surface);
+    font-weight: 700;
+    font-size: .85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step .st { font-weight: 600; }
+  .step .sd { color: var(--muted); font-size: .9rem; }
+  .step.l2s { border-color: var(--l2); background: var(--l2-soft); }
+  .step.l2s::before { background: var(--l2); }
+  .step.l3s { border-color: var(--l3); background: var(--l3-soft); }
+  .step.l3s::before { background: var(--l3); }
+  .down { text-align: center; color: var(--muted); line-height: 1.4; font-size: 1.1rem; }
+  .loopback {
+    margin-top: 8px;
+    text-align: center;
+    color: var(--muted);
+    font-size: .88rem;
+    border-top: 2px dashed var(--border);
+    padding-top: 6px;
+  }
+
+  .svg-wrap { overflow-x: auto; }
+  svg.timeline { width: 100%; min-width: 640px; height: auto; display: block; }
+  svg .axis { stroke: var(--muted); stroke-width: 2; }
+  svg .tick { stroke: var(--muted); stroke-width: 1.5; }
+  svg .lbl { fill: var(--text); font-size: 13px; }
+  svg .mut { fill: var(--muted); font-size: 12px; }
+  svg .ep0 { fill: var(--l2); opacity: .9; }
+  svg .ep { fill: var(--l2); opacity: .55; }
+  svg .locked { fill: var(--muted); opacity: .35; }
+  svg .ev-new { fill: var(--l1); }
+  svg .ev-risk { fill: var(--warn); }
+  svg .ev-dl { fill: var(--l3); }
+  svg .eplbl { fill: var(--surface); font-size: 12px; font-weight: 600; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: .85rem; color: var(--muted); margin-top: 8px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  .example {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 14px;
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: .88rem;
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .example .k { color: var(--muted); }
+  .example .hl { color: var(--warn); font-weight: 700; }
+
+  .formula { overflow-x: auto; padding: 4px 0; }
+
+  .good { color: var(--l2); font-weight: 600; }
+  .bad { color: var(--warn); font-weight: 600; }
+  td .def { font-weight: 700; text-decoration: underline; }
+  .case-tag {
+    display: inline-block;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 0 7px;
+    margin-right: 4px;
+  }
+  .case-tag.a { background: var(--l1-soft); color: var(--l1); }
+  .case-tag.b { background: var(--l2-soft); color: var(--l2); }
+  .case-tag.c { background: var(--l3-soft); color: var(--l3); }
+  ol.concl { padding-left: 22px; }
+  ol.concl li { margin: 8px 0; }
+
+  footer { color: var(--muted); font-size: .85rem; margin-top: 28px; text-align: center; }
+
+  @media (max-width: 720px) {
+    section { padding: 18px 14px; }
+    header h1 { font-size: 1.5rem; }
+    .data-flow { grid-template-columns: 1fr; }
+    .data-flow .arrow { transform: rotate(90deg); }
+    .branches { grid-template-columns: 1fr; }
+    .layer.l2, .layer.l3 { margin-left: 8px; }
+  }
+
+  pre.code {
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font-family: Consolas, "Cascadia Mono", Menlo, monospace;
+    font-size: .84rem;
+    line-height: 1.45;
+  }
+  section ul { padding-left: 22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Báo cáo test sensitivity</h1>
+  <p class="sub">Dynamic Risk-Aware Multi-UAV Routing: 3 case thuật toán, 11 tham số, 2,430 lần chạy.</p>
+  <p class="meta">Code: nhánh <code>master</code>, commit <code>1d15fce</code> · Chạy từ 07/10/2026 22:42 đến 09/10/2026 17:57 · Báo cáo lập ngày 10/10/2026 · Tổng quan đề tài xem ở <a href="overview.html">overview.html</a>.</p>
+</header>
+
+<nav class="toc">
+  <a href="#r1">1. Tóm tắt</a>
+  <a href="#r2">2. Dữ liệu</a>
+  <a href="#r3">3. Thuật toán</a>
+  <a href="#r4">4. Cách test</a>
+  <a href="#r5">5. Tham số</a>
+  <a href="#r6">6. Số lần chạy</a>
+  <a href="#r7">7. Kết quả</a>
+  <a href="#r8">8. Kết luận</a>
+  <a href="#r9">9. File và tái lập</a>
+</nav>
+
+<!-- ============ 1 ============ -->
+<section id="r1">
+  <h2><span class="num">1</span>Tóm tắt</h2>
+  <div class="tiles">
+    <div class="tile"><div class="v">54</div><div class="k">file dữ liệu: 45 kịch bản động + 9 instance tĩnh</div></div>
+    <div class="tile"><div class="v">3</div><div class="k">case thuật toán: RH, Contextual, RH + Contextual</div></div>
+    <div class="tile"><div class="v">11</div><div class="k">tham số khác nhau, 19 lượt test theo case</div></div>
+    <div class="tile"><div class="v">2,430</div><div class="k">lần chạy, 0 lỗi, 0 nghiệm vi phạm ràng buộc</div></div>
+    <div class="tile"><div class="v">≈ 406 h</div><div class="k">CPU-giờ, tương đương ≈ 43 h chạy thực</div></div>
+  </div>
+  <ul>
+    <li><b>12/16 lượt test</b> (không tính \(\beta\)) cho thấy tham số <b>nhạy</b>. Bốn lượt không nhạy đều thuộc LinUCB: <code>context_window</code>, <code>linucb_regularization</code>, <code>include_temperature</code>.</li>
+    <li><b>Hầu hết mức tốt hơn mặc định đều chạy lâu hơn 25–500%.</b> Riêng <code>linucb_exploration</code> = 1–2 vừa tốt hơn vừa không chậm hơn.</li>
+    <li><b>Ở bài toán động, tối ưu lại thường xuyên là quan trọng nhất.</b> <code>trigger = event</code> giảm số khách bị mất từ 0.56 xuống 0.13 mỗi kịch bản. Ngược lại, epoch dài làm mất thêm tới 1.4 khách.</li>
+    <li><b>Mức destroy mặc định (2–5 khách) quá nhỏ với 100 khách.</b> Mức (5,10) giảm objective 2–5% ở cả 3 case.</li>
+    <li><b>\(\beta = 0.75\) cân bằng tốt.</b> Risk delay giảm khoảng 30%, quãng đường chỉ tăng 3–4%.</li>
+  </ul>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="r2">
+  <h2><span class="num">2</span>Dữ liệu sử dụng</h2>
+
+  <h3>2.1 Các file được dùng</h3>
+  <p>Mọi đường dẫn tính từ thư mục gốc repo. Runner đọc dữ liệu ở <code>sensitivity_test/code/runner.py</code> (hàm <code>_solve_static</code> và <code>_solve_dynamic</code>).</p>
+  <div class="table-wrap"><table>
+    <tr><th>Case</th><th>Thư mục</th><th>Mẫu tên file</th><th class="num">Số file</th><th>Hàm đọc</th></tr>
+    <tr>
+      <td><span class="case-tag a">A</span><span class="case-tag c">C</span></td>
+      <td><code>dataset/solomon_dynamic/</code></td>
+      <td><code>{instance}-n88-d12-s{seed}.json</code><br>với instance ∈ {c101, c102, c103, r101, r102, r103, rc101, rc102, rc103} và seed ∈ {0, 1, 2, 3, 4}.<br>Ví dụ: <code>c101-n88-d12-s0.json</code>, …, <code>rc103-n88-d12-s4.json</code></td>
+      <td class="num">45</td>
+      <td><code>uav_routing.dynamic.scenario.load_scenario(path)</code></td>
+    </tr>
+    <tr>
+      <td><span class="case-tag a">A</span><span class="case-tag c">C</span> (gián tiếp)</td>
+      <td><code>dataset/solomon_risk/</code></td>
+      <td>Mỗi file JSON trỏ tới instance gốc qua trường <code>"instance": "../solomon_risk/c101.txt"</code></td>
+      <td class="num">9</td>
+      <td>Gọi bên trong <code>load_scenario</code></td>
+    </tr>
+    <tr>
+      <td><span class="case-tag b">B</span></td>
+      <td><code>dataset/solomon_risk/</code></td>
+      <td><code>{instance}.txt</code>, 9 instance như trên.<br>Ví dụ: <code>c101.txt</code>, <code>r101.txt</code>, <code>rc101.txt</code></td>
+      <td class="num">9</td>
+      <td><code>uav_routing.parser.parse_instance(path, 100, 5)</code>: lấy 100 khách và 5 vùng rủi ro đầu tiên</td>
+    </tr>
+    <tr class="total"><td colspan="3">Tổng số file dữ liệu khác nhau</td><td class="num">54</td><td>45 JSON + 9 TXT</td></tr>
+  </table></div>
+
+  <div class="callout"><b>Không dùng trong test này:</b>
+    <ul>
+      <li><code>dataset/solomon/</code>: 56 file Solomon gốc. Đây là nguồn để sinh <code>solomon_risk</code>.</li>
+      <li>47 instance Solomon-RISK còn lại: các instance loại 1 khác (C104–C109, R104–R112, RC104–RC108) và toàn bộ loại 2.</li>
+      <li>5 cấu hình động khác trong <code>solomon_dynamic</code>: <code>n25-d5</code>, <code>n25-d12</code>, <code>n25-d25</code>, <code>n95-d5</code>, <code>n75-d25</code>.</li>
+      <li>Seed kịch bản 5–9.</li>
+      <li><code>dataset/solomon_visualize/</code>: các trang HTML để xem trực quan.</li>
+    </ul>
+  </div>
+
+  <h3>2.2 File Solomon-RISK (<code>.txt</code>)</h3>
+  <p>Đây là file Solomon VRPTW gốc, thêm một khối <code>RISK</code> ở cuối. File được sinh bằng <code>dataset/scripts/generate_solomon_risk.py</code> với seed cố định 20260916, và có 3 khối:</p>
+  <div class="table-wrap"><table>
+    <tr><th>Khối</th><th>Cột</th><th>Ý nghĩa</th></tr>
+    <tr><td><code>VEHICLE</code></td><td>NUMBER, CAPACITY</td><td>Số xe tối đa và tải trọng mỗi xe. Cả 9 instance đều là 25 xe, tải 200.</td></tr>
+    <tr><td><code>CUSTOMER</code></td><td>CUST NO., XCOORD., YCOORD., DEMAND, READY TIME, DUE DATE, SERVICE TIME</td><td>Dòng 0 là depot. Dòng 1–100 là khách. Khung giờ phục vụ của mỗi khách là [READY TIME, DUE DATE].</td></tr>
+    <tr><td><code>RISK</code></td><td>RISK NO., XCOORD., YCOORD., RADIUS</td><td>5 vùng rủi ro hình tròn. Bán kính là 5 số nguyên khác nhau trong [2, 10], và tâm vùng không phủ depot.</td></tr>
+  </table></div>
+  <pre class="code">C101
+
+VEHICLE
+NUMBER     CAPACITY
+  25         200
+
+CUSTOMER
+CUST NO.  XCOORD.   YCOORD.    DEMAND   READY TIME  DUE DATE   SERVICE   TIME
+    0      40         50          0          0       1236          0
+    1      45         68         10        912        967         90
+    …
+  100      55         85         20        647        726         90
+
+RISK
+RISK NO.   XCOORD.   YCOORD. RADIUS
+    1      23         84      6
+    …
+    5      56         58      10</pre>
+  <p>Khách \(i\) nằm trong vùng rủi ro \(z\) thì có độ ưu tiên rủi ro \(p_i = \max_z \max(0,\ 1 - d(i,z)/r_z)\). Khách nằm sát tâm vùng có \(p_i\) gần 1. Khách nằm ngoài mọi vùng có \(p_i = 0\).</p>
+
+  <h3>2.3 Chín instance được dùng</h3>
+  <p>Các instance đều thuộc loại 1 của Solomon: horizon ngắn, khung giờ hẹp, cần nhiều xe. Trong mỗi nhóm, khung giờ rộng dần từ instance 01 đến 03, nên bài toán dễ dần.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Instance</th><th>Phân bố khách</th><th class="num">Horizon</th><th class="num">Tổng demand</th><th class="num">Độ rộng khung giờ TB</th><th class="num">Khách trong vùng rủi ro</th><th>5 vùng rủi ro (x, y, bán kính)</th></tr>
+    <tr><td><code>c101</code></td><td rowspan="3">Phân cụm (C)</td><td class="num" rowspan="3">1236</td><td class="num" rowspan="3">1810</td><td class="num">60.8</td><td class="num">15</td><td>(23,84,6) (98,27,8) (35,6,2) (−4,41,9) (56,58,10)</td></tr>
+    <tr><td><code>c102</code></td><td class="num">325.7</td><td class="num">28</td><td>(24,55,10) (92,31,6) (42,6,4) (69,81,9) (52,33,5)</td></tr>
+    <tr><td><code>c103</code></td><td class="num">588.5</td><td class="num">20</td><td>(29,59,9) (93,26,10) (39,3,5) (67,89,8) (−2,39,4)</td></tr>
+    <tr><td><code>r101</code></td><td rowspan="3">Ngẫu nhiên (R)</td><td class="num" rowspan="3">230</td><td class="num" rowspan="3">1458</td><td class="num">10.0</td><td class="num">10</td><td>(50,21,10) (11,77,9) (63,76,4) (3,8,8) (20,41,2)</td></tr>
+    <tr><td><code>r102</code></td><td class="num">57.4</td><td class="num">11</td><td>(5,20,10) (59,81,9) (70,6,7) (9,65,8) (50,44,5)</td></tr>
+    <tr><td><code>r103</code></td><td class="num">103.0</td><td class="num">9</td><td>(8,32,8) (58,80,9) (69,7,6) (17,77,4) (49,43,3)</td></tr>
+    <tr><td><code>rc101</code></td><td rowspan="3">Trộn (RC)</td><td class="num" rowspan="3">240</td><td class="num" rowspan="3">1724</td><td class="num">30.0</td><td class="num">20</td><td>(1,43,4) (91,32,10) (56,87,5) (43,2,6) (47,46,2)</td></tr>
+    <tr><td><code>rc102</code></td><td class="num">71.5</td><td class="num">19</td><td>(39,11,10) (67,84,3) (7,69,2) (94,32,5) (54,48,6)</td></tr>
+    <tr><td><code>rc103</code></td><td class="num">112.5</td><td class="num">13</td><td>(39,9,6) (68,87,5) (7,69,3) (96,30,2) (60,50,7)</td></tr>
+  </table></div>
+  <p>Mỗi instance có 100 khách, 25 xe, tải 200. Cột "Khách trong vùng rủi ro" đếm số khách có \(p_i &gt; 0\).</p>
+
+  <h3>2.4 Kịch bản động (<code>.json</code>) dùng cho case A và C</h3>
+  <p>Mỗi kịch bản <code>n88-d12</code> lấy 100 khách của một instance Solomon-RISK và chia thành hai nhóm:</p>
+  <ul>
+    <li><b>88 khách đầu</b> (số 1–88): biết trước từ đầu.</li>
+    <li><b>12 khách cuối</b> (số 89–100): chỉ xuất hiện trong lúc chạy.</li>
+  </ul>
+  <p>Ngoài ra, mỗi kịch bản có 4 sự kiện thay đổi dữ liệu. Tổng cộng mỗi file có <b>16 sự kiện</b>, và cả 45 file đều có đúng cấu trúc này.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Trường</th><th>Ví dụ (<code>c101-n88-d12-s0.json</code>)</th><th>Ý nghĩa</th></tr>
+    <tr><td><code>name</code></td><td><code>"c101-n88-d12-s0"</code></td><td>Tên kịch bản: instance, số khách tĩnh (n), số khách động (d), seed (s)</td></tr>
+    <tr><td><code>instance</code></td><td><code>"../solomon_risk/c101.txt"</code></td><td>File instance gốc</td></tr>
+    <tr><td><code>static_customers</code></td><td><code>88</code></td><td>Số khách biết trước</td></tr>
+    <tr><td><code>risks</code></td><td><code>5</code></td><td>Số vùng rủi ro ban đầu</td></tr>
+    <tr><td><code>seed</code></td><td><code>0</code></td><td>Seed dùng khi sinh sự kiện</td></tr>
+    <tr><td><code>horizon</code></td><td><code>1236.0</code></td><td>Thời điểm đóng depot</td></tr>
+    <tr><td><code>events</code></td><td>Danh sách 16 sự kiện, sắp theo thời gian</td><td>Xem bảng dưới</td></tr>
+  </table></div>
+  <div class="table-wrap"><table>
+    <tr><th>Loại sự kiện</th><th class="num">Số lượng</th><th>Cách sinh (<code>uav_routing.dynamic.scenario.generate_scenario</code>)</th><th>Ví dụ trong file</th></tr>
+    <tr><td><code>customer_arrival</code></td><td class="num">12</td><td>Thời điểm khách xuất hiện được rút ngẫu nhiên đều trong \([0,\ 0.6 \cdot \text{due}_i]\). <code>ready_time</code> mới bằng giá trị lớn hơn giữa thời điểm xuất hiện và ready time gốc. Trên 45 file, khách động xuất hiện trung bình ở 19% horizon, muộn nhất ở 54%.</td><td><code>{"time": 1.2, "type": "customer_arrival", "customer": {"id": 100, …}}</code></td></tr>
+    <tr><td><code>risk_update</code></td><td class="num">2</td><td>Xảy ra ở \(H/3\) và \(2H/3\). Mỗi lần có 50% khả năng thay một vùng cũ, còn lại là thêm vùng mới. Tâm vùng nằm ngẫu nhiên trong khu vực khách, bán kính là số nguyên trong [2, 10].</td><td><code>{"time": 412.0, "type": "risk_update", "zone": {"id": 6, "x": 53, "y": 7, "radius": 8}}</code></td></tr>
+    <tr><td><code>deadline_update</code></td><td class="num">2</td><td>Chọn ngẫu nhiên 2 khách biết trước và rút ngắn deadline: \(\text{due}' = \text{ready} + \theta(\text{due} - \text{ready})\), với \(\theta\) ngẫu nhiên trong [0.5, 0.9].</td><td><code>{"time": 78.5, "type": "deadline_update", "customer_id": 48, "due_date": 678.9}</code></td></tr>
+  </table></div>
+  <p>Các file được sinh bằng <code>dataset/scripts/generate_solomon_dynamic.py</code> với tham số mặc định: 5 vùng rủi ro, 2 sự kiện rủi ro, 2 sự kiện deadline, <code>release_fraction</code> = 0.6.</p>
+
+  <h3>2.5 Từ một lần chạy đến file dữ liệu</h3>
+  <p>Mỗi lần chạy (job) có mã dạng <code>{điểm đo}/{instance}-s{seed}</code>:</p>
+  <div class="table-wrap"><table>
+    <tr><th>Job</th><th>File dữ liệu đọc vào</th><th>Seed thuật toán</th><th>File kết quả</th></tr>
+    <tr><td><code>A_trig_event/r102-s3</code></td><td><code>dataset/solomon_dynamic/r102-n88-d12-s3.json</code></td><td class="num">3</td><td><code>results/jobs/A/A_trig_event/r102-s3.json</code></td></tr>
+    <tr><td><code>B_explo_1.0/c101-s0</code></td><td><code>dataset/solomon_risk/c101.txt</code></td><td class="num">0</td><td><code>results/jobs/B/B_explo_1.0/c101-s0.json</code></td></tr>
+    <tr><td><code>C0_base/rc103-s4</code></td><td><code>dataset/solomon_dynamic/rc103-n88-d12-s4.json</code></td><td class="num">4</td><td><code>results/jobs/C/C0_base/rc103-s4.json</code></td></tr>
+  </table></div>
+  <p><b>Vì sao so sánh công bằng:</b> ở case A và C, seed vừa chọn file kịch bản vừa là seed của thuật toán. Mọi mức tham số đều chạy trên đúng cùng 45 file kịch bản với cùng seed. Ở case B, 9 file instance cố định và mỗi file chạy với seed thuật toán 0–4.</p>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="r3">
+  <h2><span class="num">3</span>Thuật toán được test</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Case</th><th>Thuật toán</th><th>Hàm gọi</th><th>Cấu hình gốc tham chiếu</th></tr>
+    <tr><td><span class="case-tag a">A</span>Rolling horizon</td><td>Rolling horizon + warm ALNS. ALNS chọn toán tử destroy/repair bằng <b>roulette</b> có trọng số thích nghi.</td><td><code>run_rolling_horizon(scenario, alns, rolling)</code> với <code>policy = "warm_alns"</code></td><td><code>phase1/configs/dynamic/benchmark_n100_d12.json</code></td></tr>
+    <tr><td><span class="case-tag b">B</span>Contextual</td><td>Contextual ALNS trên bài toán tĩnh. <b>LinUCB</b> chọn 1 trong 15 cặp (destroy, repair) dựa vào 9 đặc trưng của trạng thái tìm kiếm.</td><td><code>run_contextual_alns(instance, alns, bandit)</code></td><td><code>phase1/configs/contextual/benchmark_p1_c100_r5_1000.json</code></td></tr>
+    <tr><td><span class="case-tag c">C</span>RH + Contextual</td><td>Rolling horizon + contextual warm ALNS. Đây là <b>thuật toán chính</b> của đề tài.</td><td><code>run_rolling_horizon(scenario, alns, rolling, bandit=…)</code> với <code>policy = "contextual_warm_alns"</code></td><td><code>phase1/configs/dynamic/benchmark_contextual_horizon_n100_d25.json</code>, chuyển sang kịch bản n88-d12</td></tr>
+  </table></div>
+
+  <h3>Cấu hình mặc định (mức gốc của mọi so sánh)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Nhóm</th><th>Tham số</th><th>Case A, C</th><th>Case B</th></tr>
+    <tr><td rowspan="3">Objective</td><td>\(\alpha\) / \(\beta\)</td><td colspan="2">0.5 / 0.5</td></tr>
+    <tr><td><code>score_policy</code></td><td colspan="2">lexicographic (số UAV trước, objective sau)</td></tr>
+    <tr><td><code>risk_threshold</code></td><td colspan="2">0.2</td></tr>
+    <tr><td rowspan="4">ALNS + SA</td><td><code>iterations</code></td><td>(thay bằng các tham số rolling)</td><td>1000</td></tr>
+    <tr><td><code>q_min</code>, <code>q_max</code></td><td colspan="2">2, 5</td></tr>
+    <tr><td><code>initial_temperature</code>, <code>cooling_rate</code></td><td>0.05, 0.9995</td><td>0.05, 0.9954</td></tr>
+    <tr><td><code>removal_determinism</code>, <code>segment_length</code>, <code>reaction_factor</code></td><td colspan="2">6.0, 100, 0.2</td></tr>
+    <tr><td rowspan="4">Rolling horizon</td><td><code>trigger</code></td><td>periodic</td><td rowspan="4">—</td></tr>
+    <tr><td><code>epoch_fraction</code></td><td>0.05 (khoảng 21 epoch)</td></tr>
+    <tr><td><code>iterations_epoch0</code></td><td>2000</td></tr>
+    <tr><td><code>iterations_per_epoch</code></td><td>500</td></tr>
+    <tr><td rowspan="4">LinUCB</td><td><code>linucb_exploration</code></td><td>0.5 (chỉ case C)</td><td>0.5</td></tr>
+    <tr><td><code>linucb_regularization</code></td><td>1.0 (chỉ case C)</td><td>1.0</td></tr>
+    <tr><td><code>context_window</code></td><td>100 (chỉ case C)</td><td>100</td></tr>
+    <tr><td><code>include_temperature</code></td><td>true (chỉ case C)</td><td>true</td></tr>
+  </table></div>
+  <p>Định nghĩa đầy đủ nằm trong <code>sensitivity_test/code/plan.py</code>, ở các hằng số <code>ALNS_DYNAMIC</code>, <code>ALNS_STATIC</code>, <code>ROLLING</code> và <code>BANDIT</code>.</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="r4">
+  <h2><span class="num">4</span>Cách test và cách đánh giá</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Bước</th><th>Mô tả</th></tr>
+    <tr><td>Thay đổi tham số</td><td><b>One-at-a-time</b>: mỗi điểm đo chỉ đổi một tham số so với cấu hình mặc định của case. Cấu hình mặc định của mỗi case (A0, B0, C0) chỉ chạy một lần và dùng chung cho mọi tham số.</td></tr>
+    <tr><td>Ghép cặp</td><td>Mỗi mức được so với mức mặc định trên <b>cùng file dữ liệu và cùng seed</b>, nên mỗi tham số có 9 × 5 = <b>45 cặp</b>.</td></tr>
+    <tr><td>Chỉ số đo</td><td>Số UAV, quãng đường, risk_delay, objective \(= \alpha \cdot \text{distance}/d_{ref} + \beta \cdot \text{risk\_delay}\), thời gian chạy. Case A và C đo thêm <b>số khách unserved</b>: khách không được phục vụ, bị từ chối hoặc bị mất.</td></tr>
+    <tr><td>Thứ tự so sánh</td><td>Case A và C: xét số khách unserved trước, rồi số UAV, rồi objective. Case B: xét số UAV trước, rồi objective.</td></tr>
+    <tr><td>Kiểm định</td><td>
+      <ul>
+        <li><b>Friedman</b> trên thứ hạng theo thứ tự so sánh ở trên, khi tham số có từ 3 mức trở lên.</li>
+        <li><b>Sign test</b> (kiểm định dấu) khi chỉ có 2 mức.</li>
+        <li><b>Hiệu chỉnh Holm</b> trong từng case, để giảm rủi ro kết luận nhầm do làm nhiều kiểm định cùng lúc.</li>
+      </ul>
+    </td></tr>
+    <tr><td>Kết luận "nhạy"</td><td>Thỏa cả hai điều kiện:
+      <ul>
+        <li>\(p &lt; 0.05\) sau hiệu chỉnh Holm;</li>
+        <li>có ít nhất một mức đạt hiệu ứng thực tế: trung vị objective đổi ≥ 1%, hoặc số UAV đổi ≥ 0.1, hoặc số khách unserved đổi ≥ 0.1.</li>
+      </ul>
+      Riêng \(\beta\) chỉ được mô tả, vì nó thay đổi chính công thức objective.</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="r5">
+  <h2><span class="num">5</span>Tham số và khoảng test</h2>
+  <p>Giá trị <span class="def">gạch chân</span> là mặc định. Mức ưu tiên quyết định thứ tự chạy: tham số ưu tiên Cao chạy trước.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Tham số</th><th>Ý nghĩa</th><th>Mức test</th><th>Case</th></tr>
+    <tr><td><code>epoch_fraction</code></td><td>Độ dài một epoch tính theo tỉ lệ horizon. Giá trị nhỏ nghĩa là tối ưu lại thường xuyên hơn.</td><td>0.025, <span class="def">0.05</span>, 0.1, 0.2</td><td><span class="case-tag a">A</span><span class="case-tag c">C</span> <span class="badge hi">Cao</span></td></tr>
+    <tr><td><code>iterations_per_epoch</code></td><td>Số vòng ALNS ở mỗi epoch sau epoch 0</td><td>100, 250, <span class="def">500</span>, 1000</td><td><span class="case-tag a">A</span><span class="case-tag c">C</span> <span class="badge hi">Cao</span></td></tr>
+    <tr><td><code>trigger</code></td><td>Khi nào tối ưu lại: theo chu kỳ, khi có sự kiện, hoặc cả hai</td><td><span class="def">periodic</span>, event, hybrid</td><td><span class="case-tag a">A</span> <span class="badge hi">Cao</span></td></tr>
+    <tr><td><code>iterations_epoch0</code></td><td>Số vòng ALNS dùng để lập kế hoạch ban đầu</td><td>500, 1000, <span class="def">2000</span>, 4000</td><td><span class="case-tag a">A</span> <span class="badge mid">Trung bình</span></td></tr>
+    <tr><td><code>iterations</code></td><td>Tổng số vòng ALNS ở bài toán tĩnh. <code>cooling_rate</code> đổi theo công thức \(0.9954^{1000/N}\) để nhiệt độ cuối giữ nguyên.</td><td>500, <span class="def">1000</span>, 2000</td><td><span class="case-tag b">B</span> <span class="badge hi">Cao</span></td></tr>
+    <tr><td><code>linucb_exploration</code></td><td>Mức LinUCB thử cặp toán tử mới. Giá trị 0 nghĩa là chỉ khai thác cặp đang tốt.</td><td>B: 0, 0.1, <span class="def">0.5</span>, 1, 2<br>C: 0, <span class="def">0.5</span>, 2</td><td><span class="case-tag b">B</span><span class="case-tag c">C</span> <span class="badge hi">Cao</span></td></tr>
+    <tr><td><code>context_window</code></td><td>Số vòng gần nhất dùng để tính đặc trưng cho LinUCB</td><td>B: 25, 50, <span class="def">100</span>, 200<br>C: 25, <span class="def">100</span>, 200</td><td><span class="case-tag b">B</span> <span class="badge hi">Cao</span><br><span class="case-tag c">C</span> <span class="badge mid">Trung bình</span></td></tr>
+    <tr><td><code>linucb_regularization</code></td><td>Hệ số regularization của mô hình tuyến tính trong LinUCB</td><td>0.1, <span class="def">1</span>, 10</td><td><span class="case-tag b">B</span> <span class="badge mid">Trung bình</span></td></tr>
+    <tr><td><code>include_temperature</code></td><td>Có đưa nhiệt độ SA vào đặc trưng của LinUCB không</td><td><span class="def">true</span>, false</td><td><span class="case-tag b">B</span> <span class="badge mid">Trung bình</span></td></tr>
+    <tr><td><code>q_min</code>–<code>q_max</code></td><td>Số khách bị gỡ ra trong mỗi lần destroy</td><td><span class="def">(2,5)</span>, (5,10), (10,20)</td><td><span class="case-tag a">A</span><span class="case-tag b">B</span><span class="case-tag c">C</span> <span class="badge mid">Trung bình</span></td></tr>
+    <tr><td>\(\beta\) (với \(\alpha = 1-\beta\))</td><td>Trọng số của độ trễ rủi ro so với quãng đường</td><td>0, 0.25, <span class="def">0.5</span>, 0.75, 1</td><td><span class="case-tag a">A</span><span class="case-tag b">B</span><span class="case-tag c">C</span> <span class="badge mid">Trung bình</span></td></tr>
+  </table></div>
+  <div class="callout"><b>Giữ cố định, không test:</b> <code>initial_temperature</code>, <code>cooling_rate</code> (trừ khi đổi <code>iterations</code> ở case B), <code>minimum_temperature</code>, bộ <code>reward_*</code>, <code>removal_determinism</code> và 4 trọng số <code>related_*_weight</code>.</div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="r6">
+  <h2><span class="num">6</span>Số lần chạy và thời gian</h2>
+  <div class="formula">\[\text{Số lần chạy} = \underbrace{54}_{\text{điểm đo}} \times \underbrace{9}_{\text{instance}} \times \underbrace{5}_{\text{seed}} = 2{,}430\]</div>
+  <div class="table-wrap"><table>
+    <tr><th>Case</th><th class="num">Tham số</th><th class="num">Điểm đo<br>(gồm 1 mặc định)</th><th class="num">File dữ liệu</th><th class="num">Lần chạy</th><th class="num">Thời gian 1 lần<br>(mặc định)</th><th class="num">CPU-giờ</th></tr>
+    <tr><td><span class="case-tag a">A</span>Rolling horizon</td><td class="num">6</td><td class="num">18</td><td class="num">45 JSON</td><td class="num">810</td><td class="num">≈ 544 s</td><td class="num">172 h</td></tr>
+    <tr><td><span class="case-tag b">B</span>Contextual tĩnh</td><td class="num">7</td><td class="num">19</td><td class="num">9 TXT</td><td class="num">855</td><td class="num">≈ 137 s</td><td class="num">40 h</td></tr>
+    <tr><td><span class="case-tag c">C</span>RH + Contextual</td><td class="num">6</td><td class="num">17</td><td class="num">45 JSON</td><td class="num">765</td><td class="num">≈ 726 s</td><td class="num">193 h</td></tr>
+    <tr class="total"><td>Tổng</td><td class="num">19 lượt</td><td class="num">54</td><td class="num">54</td><td class="num">2,430</td><td class="num"></td><td class="num">≈ 406 h</td></tr>
+  </table></div>
+  <p><b>Môi trường chạy:</b> laptop 6 nhân thật / 12 luồng, mỗi lúc chạy 7–12 tiến trình song song ở mức ưu tiên thấp. Thời gian thực tổng cộng khoảng 43 giờ.</p>
+  <p><b>Thứ tự chạy:</b> trước hết chạy seed 0–2 cho mọi điểm đo, xếp theo cấu hình gốc, rồi đến tham số ưu tiên Cao, rồi ưu tiên Trung bình. Sau đó mới chạy seed 3–4.</p>
+  <p><b>Lần chạy đắt nhất</b> là <code>q</code> = (10,20) ở case A và C, khoảng 55–65 phút mỗi lần.</p>
+  <div class="callout warn">Thời gian mỗi lần chạy được đo khi nhiều tiến trình chạy chung, và một số lần chạy bị tính thêm khoảng 44 phút máy ngủ. Chỉ nên dùng cột runtime để so sánh <b>tương đối</b> giữa các mức.</div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="r7">
+  <h2><span class="num">7</span>Kết quả theo từng tham số</h2>
+  <p><b>Cách đọc bảng:</b></p>
+  <ul>
+    <li><b>Mức tốt nhất</b> là mức có hiệu số (thắng − thua) so với mặc định lớn nhất.</li>
+    <li><b>Các cột Δ</b> là chênh lệch so với mặc định. Số âm là tốt hơn, trừ cột runtime.
+      <ul>
+        <li>ΔObj là trung vị chênh lệch objective, tính theo %.</li>
+        <li>ΔUAV và ΔUnserved là chênh lệch trung bình.</li>
+      </ul>
+    </li>
+    <li><b>Thắng/Thua</b> là số cặp (trên 45) mà mức đó tốt hơn hoặc kém hơn mặc định.</li>
+  </ul>
+
+  <h3><span class="case-tag a">A</span>Rolling horizon (<code>warm_alns</code>)</h3>
+  <p>Mức mặc định: 14.33 UAV, quãng đường 1425.2, risk delay 0.084, objective 0.4916, 0.56 khách unserved, 544 s mỗi lần chạy.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Tham số</th><th>Kết luận</th><th>Mức tốt nhất</th><th class="num">ΔObj</th><th class="num">ΔUAV</th><th class="num">ΔUnserved</th><th class="num">Thắng/Thua</th><th class="num">ΔRuntime</th><th>Mức kém nhất</th></tr>
+    <tr><td><code>epoch_fraction</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>0.025</td><td class="num">0.0%</td><td class="num">+0.04</td><td class="num good">−0.29</td><td class="num">29/16</td><td class="num">+98%</td><td>0.2: thêm <span class="bad">+1.38</span> khách unserved, thua 42/45</td></tr>
+    <tr><td><code>iterations_per_epoch</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>1000</td><td class="num good">−0.6%</td><td class="num">+0.04</td><td class="num">+0.02</td><td class="num">29/16</td><td class="num">+90%</td><td>100: <span class="bad">+1.1%</span> obj, <span class="bad">+0.29</span> UAV, thua 38/45</td></tr>
+    <tr><td><code>trigger</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>hybrid</td><td class="num good">−0.6%</td><td class="num">+0.02</td><td class="num good">−0.42</td><td class="num">36/9</td><td class="num">+74%</td><td>event cũng tốt: unserved <span class="good">−0.42</span>, thắng 35/45, chỉ +39% runtime</td></tr>
+    <tr><td><code>iterations_epoch0</code></td><td><span class="badge hi">Nhạy</span> p = 0.002</td><td>4000</td><td class="num good">−1.1%</td><td class="num">−0.02</td><td class="num">+0.02</td><td class="num">23/12</td><td class="num">+25%</td><td>500: thua 26/45, +0.13 UAV</td></tr>
+    <tr><td><code>q_min</code>–<code>q_max</code></td><td><span class="badge hi">Nhạy</span> p = 0.001</td><td>(10,20)</td><td class="num good">−3.8%</td><td class="num good">−0.27</td><td class="num">+0.04</td><td class="num">33/12</td><td class="num bad">+493%</td><td>(5,10) đã tốt hơn: <span class="good">−2.3%</span>, +138% runtime</td></tr>
+  </table></div>
+
+  <h3><span class="case-tag b">B</span>Contextual ALNS tĩnh</h3>
+  <p>Mức mặc định: 13.89 UAV, quãng đường 1467.6, risk delay 0.100, objective 0.4841, 137 s mỗi lần chạy.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Tham số</th><th>Kết luận</th><th>Mức tốt nhất</th><th class="num">ΔObj</th><th class="num">ΔUAV</th><th class="num">Thắng/Thua</th><th class="num">ΔRuntime</th><th>Mức kém nhất / ghi chú</th></tr>
+    <tr><td><code>iterations</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>2000</td><td class="num good">−2.2%</td><td class="num">+0.02</td><td class="num">28/17</td><td class="num">+139%</td><td>500: <span class="bad">+1.6%</span> obj, <span class="bad">+0.29</span> UAV, thua 32/45</td></tr>
+    <tr><td><code>linucb_exploration</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>1.0</td><td class="num good">−1.6%</td><td class="num">+0.11</td><td class="num">25/20</td><td class="num">−6%</td><td>0: <span class="bad">+7.7%</span> obj, <span class="bad">+0.38</span> UAV, thua 38/45</td></tr>
+    <tr><td><code>q_min</code>–<code>q_max</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>(10,20)</td><td class="num good">−7.0%</td><td class="num">−0.09</td><td class="num">34/11</td><td class="num bad">+303%</td><td>(5,10): <span class="good">−4.7%</span>, +59% runtime</td></tr>
+    <tr><td><code>context_window</code></td><td><span class="badge lo">Không nhạy</span> p = 1.0</td><td>—</td><td class="num">≤ 1%</td><td class="num">≤ 0.16</td><td class="num">≈ 20/25</td><td class="num">≈ +4%</td><td>Mọi mức gần như như nhau</td></tr>
+    <tr><td><code>linucb_regularization</code></td><td><span class="badge lo">Không nhạy</span> về chất lượng</td><td>—</td><td class="num">≤ 0.8%</td><td class="num">≤ 0.11</td><td class="num">≈ 22/23</td><td class="num">0.1: <span class="good">−22%</span></td><td>Chỉ ảnh hưởng thời gian chạy</td></tr>
+    <tr><td><code>include_temperature</code></td><td><span class="badge lo">Không nhạy</span> p = 1.0</td><td>—</td><td class="num">−0.4%</td><td class="num">+0.13</td><td class="num">20/25</td><td class="num">−15%</td><td>Bỏ nhiệt độ khỏi đặc trưng không làm kết quả kém đi</td></tr>
+  </table></div>
+
+  <h3><span class="case-tag c">C</span>RH + Contextual (<code>contextual_warm_alns</code>)</h3>
+  <p>Mức mặc định: 14.24 UAV, quãng đường 1431.8, risk delay 0.089, objective 0.4952, 0.56 khách unserved, 726 s mỗi lần chạy.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Tham số</th><th>Kết luận</th><th>Mức tốt nhất</th><th class="num">ΔObj</th><th class="num">ΔUAV</th><th class="num">ΔUnserved</th><th class="num">Thắng/Thua</th><th class="num">ΔRuntime</th><th>Mức kém nhất</th></tr>
+    <tr><td><code>epoch_fraction</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>0.025</td><td class="num">−0.3%</td><td class="num">+0.02</td><td class="num good">−0.29</td><td class="num">29/16</td><td class="num">+59%</td><td>0.2: <span class="bad">+1.33</span> khách unserved, <span class="bad">+2.1%</span> obj, thua 43/45</td></tr>
+    <tr><td><code>iterations_per_epoch</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>1000</td><td class="num">−0.3%</td><td class="num">−0.09</td><td class="num">0.00</td><td class="num">27/17</td><td class="num">+57%</td><td>100: <span class="bad">+1.3%</span> obj, <span class="bad">+0.27</span> UAV, thua 33/45</td></tr>
+    <tr><td><code>linucb_exploration</code></td><td><span class="badge hi">Nhạy</span> p &lt; 0.001</td><td>2.0</td><td class="num good">−2.4%</td><td class="num">+0.04</td><td class="num">+0.02</td><td class="num">24/21</td><td class="num good">−17%</td><td>0: <span class="bad">+0.47</span> UAV, thua 36/45</td></tr>
+    <tr><td><code>q_min</code>–<code>q_max</code></td><td><span class="badge hi">Nhạy</span> p = 0.004</td><td>(10,20)</td><td class="num good">−4.0%</td><td class="num good">−0.33</td><td class="num">+0.04</td><td class="num">31/14</td><td class="num bad">+446%</td><td>(5,10): <span class="good">−2.0%</span>, +90% runtime</td></tr>
+    <tr><td><code>context_window</code></td><td><span class="badge lo">Không nhạy</span> p = 0.75</td><td>—</td><td class="num">−1.9%</td><td class="num">+0.13 – +0.24</td><td class="num">+0.02 – +0.04</td><td class="num">≈ 20/25</td><td class="num">≈ −1 – −12%</td><td>Objective giảm nhẹ nhưng tốn thêm UAV, nên không thắng rõ</td></tr>
+  </table></div>
+
+  <h3>Tham số \(\beta\): bảng đánh đổi, không xếp hạng</h3>
+  <p>\(\beta\) thay đổi chính công thức objective. Objective tính với các \(\beta\) khác nhau không so sánh trực tiếp được, nên bảng này chỉ mô tả sự đánh đổi.</p>
+  <div class="table-wrap"><table>
+    <tr><th>\(\beta\)</th><th class="num">Quãng đường<br>A / B / C</th><th class="num">Risk delay<br>A / B / C</th><th class="num">Số UAV<br>A / B / C</th><th>Nhận xét</th></tr>
+    <tr><td>0 (chỉ quãng đường)</td><td class="num">1336 / 1360 / 1328</td><td class="num bad">0.349 / 0.390 / 0.368</td><td class="num">14.02 / 13.82 / 14.02</td><td>Đường ngắn nhất nhưng độ trễ rủi ro gấp khoảng 4 lần</td></tr>
+    <tr><td>0.25</td><td class="num">1366 / 1416 / 1386</td><td class="num">0.122 / 0.145 / 0.120</td><td class="num">14.20 / 13.89 / 14.20</td><td></td></tr>
+    <tr><td><span class="def">0.5</span> (mặc định)</td><td class="num">1425 / 1468 / 1432</td><td class="num">0.084 / 0.100 / 0.089</td><td class="num">14.33 / 13.89 / 14.24</td><td></td></tr>
+    <tr><td>0.75</td><td class="num">1471 / 1522 / 1495</td><td class="num good">0.062 / 0.071 / 0.058</td><td class="num">14.51 / 14.11 / 14.47</td><td>Risk delay giảm khoảng 30%, quãng đường chỉ tăng 3–4%</td></tr>
+    <tr><td>1 (chỉ rủi ro)</td><td class="num bad">2359 / 2178 / 2339</td><td class="num">0.054 / 0.087 / 0.058</td><td class="num bad">15.47 / 14.47 / 15.33</td><td>Quãng đường tăng 50–65%, thêm khoảng 1 UAV, mà risk delay gần như không giảm thêm</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="r8">
+  <h2><span class="num">8</span>Kết luận</h2>
+  <ol class="concl">
+    <li><b>12/16 lượt test nhạy, chưa tính \(\beta\).</b> Bốn lượt không nhạy đều thuộc LinUCB: <code>context_window</code> (case B và C), <code>linucb_regularization</code> và <code>include_temperature</code> (case B). Có thể giữ mặc định cho cả bốn. Riêng <code>linucb_regularization = 0.1</code> giúp chạy nhanh hơn khoảng 20%.</li>
+    <li><b>Hầu hết mức tốt hơn mặc định đều phải trả bằng thời gian chạy.</b> Mức tốt nhất của <code>epoch_fraction</code>, <code>iterations_per_epoch</code>, <code>iterations</code>, <code>trigger</code> và <code>q</code> đều chạy lâu hơn 57–493%. Riêng <code>linucb_exploration</code> = 1–2 vừa tốt hơn vừa không chậm hơn. Vì vậy cần chọn tham số theo ngân sách thời gian, không chỉ theo chất lượng.</li>
+    <li><b>Với bài toán động, tần suất tối ưu lại quan trọng nhất.</b> Epoch dài (<code>epoch_fraction</code> 0.1–0.2) làm mất thêm 0.4–1.4 khách mỗi kịch bản ở cả case A và C. Ngược lại, <code>trigger = event</code> hoặc <code>hybrid</code> giảm số khách bị mất từ 0.56 xuống 0.13. Trong đó <code>event</code> có tỉ lệ lợi ích trên chi phí tốt nhất (+39% runtime).</li>
+    <li><b>Kích thước destroy mặc định (2–5 khách) quá nhỏ với 100 khách.</b> Mức (5,10) giảm objective 2–5% ở cả 3 case. Mức (10,20) giảm 4–7% và bớt khoảng 0.3 UAV ở case A và C, nhưng chạy chậm hơn 3–6 lần.</li>
+    <li><b>Cơ chế khám phá của LinUCB có tác dụng.</b> <code>exploration = 0</code> (chỉ khai thác) làm kết quả kém rõ rệt: case B tệ hơn 7.7%, case C cần thêm khoảng 0.5 UAV. Mặc định 0.5 hơi thấp; 1–2 cho kết quả tốt hơn.</li>
+    <li><b>\(\beta = 0.75\) là điểm cân bằng đáng cân nhắc.</b> Cực trị \(\beta = 1\) không đáng dùng: tăng mạnh quãng đường và số UAV nhưng không giảm thêm rủi ro.</li>
+    <li><b>Contextual chưa cho thấy ưu thế so với roulette ở cấu hình mặc định.</b> So C0 với A0 trên cùng 45 kịch bản: C thắng 25 cặp, thua 20 cặp, sign test cho p = 0.55, nên không khác biệt có ý nghĩa. Trung vị objective của C cao hơn khoảng 1.9%, và C chạy lâu hơn khoảng 33%. Cần thực nghiệm chính để kết luận chắc chắn.</li>
+  </ol>
+
+  <div class="callout"><b>Cấu hình gợi ý để thử tiếp cho thuật toán chính (case C)</b>, nếu chấp nhận thời gian chạy tăng khoảng 2 lần:
+    <ul>
+      <li><code>linucb_exploration</code> = 1–2</li>
+      <li><code>trigger</code> = event (chưa test ở case C)</li>
+      <li><code>q</code> = (5,10)</li>
+      <li><code>iterations_per_epoch</code> = 1000</li>
+    </ul>
+    Kết hợp này suy ra từ các test riêng lẻ. One-at-a-time không đo tương tác giữa các tham số, nên cần chạy kiểm chứng trước khi dùng.</div>
+
+  <div class="callout warn"><b>Giới hạn:</b>
+    <ul>
+      <li><b>Đây là kết quả sàng lọc.</b> Mỗi tham số chỉ có 45 cặp, chạy trên 9 instance loại 1 và một cấu hình kịch bản động (<code>n88-d12</code>).</li>
+      <li><b>Chưa kiểm chứng trên dữ liệu khác:</b> chưa test trên instance loại 2 (horizon dài) hay trên các tỉ lệ khách động khác.</li>
+      <li><b>Không đo tương tác giữa các tham số.</b></li>
+      <li><b>Thời gian chạy chỉ dùng để so sánh tương đối.</b></li>
+      <li><b>Kết quả gắn với code <code>master</code> ở commit <code>1d15fce</code>.</b></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="r9">
+  <h2><span class="num">9</span>File kết quả và cách tái lập</h2>
+  <div class="table-wrap"><table>
+    <tr><th>File (trong <code>sensitivity_test/</code>)</th><th>Nội dung</th></tr>
+    <tr><td><code>code/plan.py</code></td><td>Định nghĩa 3 case, 54 điểm đo, mức test, seed, instance và cấu hình mặc định</td></tr>
+    <tr><td><code>code/runner.py</code></td><td>Chạy, theo dõi và dừng. Hỗ trợ resume ở mức từng job và retry 3 lần</td></tr>
+    <tr><td><code>code/analyze.py</code></td><td>Kiểm định thống kê, sinh <code>results.csv</code> và <code>SENSITIVITY_RESULTS.md</code></td></tr>
+    <tr><td><code>results/jobs/{A,B,C}/{điểm đo}/{instance}-s{seed}.json</code></td><td>2,430 file kết quả, mỗi lần chạy một file: số UAV, quãng đường, risk_delay, objective, unserved, số epoch, số vòng, runtime, các route, commit. Chỉ có ở máy chạy, không commit (11 MB)</td></tr>
+    <tr><td><code>results/results.csv</code></td><td>Gộp 2,430 dòng, không gồm route</td></tr>
+    <tr><td><code>results/SENSITIVITY_RESULTS.md</code></td><td>Bảng chi tiết của mọi mức và mọi tham số</td></tr>
+    <tr><td><code>results/runner.log</code></td><td>Nhật ký chạy (chỉ có ở máy chạy, không commit)</td></tr>
+  </table></div>
+  <p><b>Tái lập</b> (từ thư mục gốc repo, dùng môi trường <code>phase1/.venv</code>):</p>
+  <pre class="code">phase1/.venv/Scripts/python sensitivity_test/code/plan.py              # in số điểm đo, số job
+phase1/.venv/Scripts/python sensitivity_test/code/runner.py run --workers 8 --out sensitivity_test/results_rerun
+phase1/.venv/Scripts/python sensitivity_test/code/runner.py status --out sensitivity_test/results_rerun
+phase1/.venv/Scripts/python sensitivity_test/code/analyze.py --out sensitivity_test/results_rerun</pre>
+  <p>Để chạy thử một phần, thêm <code>--only A0_base</code>, <code>--seeds 0</code> hoặc <code>--instances c101</code>. Lệnh <code>run</code> tự bỏ qua các job đã có kết quả, nên có thể dừng (<code>runner.py stop</code>) và chạy tiếp bất cứ lúc nào.</p>
+</section>
+
+<footer>Dynamic Risk-Aware Multi-UAV Routing · Báo cáo test sensitivity · Phân tích và Thiết kế thuật toán · HUST</footer>
+
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (typeof renderMathInElement !== "function") {
+      return;
+    }
+
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "\\[", right: "\\]", display: true },
+        { left: "\\(", right: "\\)", display: false }
+      ],
+      throwOnError: false
+    });
+  });
+</script>
+</body>
+</html>
