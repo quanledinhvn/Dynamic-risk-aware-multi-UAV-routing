@@ -1,0 +1,754 @@
+{
+  "static": {
+    "ALNS": {
+      "vehicles": 7.982142857142857,
+      "distance": 1167.5351532451398,
+      "risk_delay": 0.08810420626350138,
+      "objective": 0.4001614780655246,
+      "runtime_seconds": 865.430757970368,
+      "runs": 1120,
+      "feasible_percent": 100.0,
+      "objective_std": 0.07997958314940168,
+      "within_instance_objective_sd": 0.02065988095503986
+    },
+    "Contextual": {
+      "vehicles": 7.9714285714285715,
+      "distance": 1165.0155160501554,
+      "risk_delay": 0.09266428062870305,
+      "objective": 0.40157129794424895,
+      "runtime_seconds": 960.2393762535864,
+      "runs": 1120,
+      "feasible_percent": 100.0,
+      "objective_std": 0.07988740304742972,
+      "within_instance_objective_sd": 0.019316925347412937
+    },
+    "tests": [
+      {
+        "field": "vehicles",
+        "pairs": 56,
+        "mean_base_minus_ctx": 0.0107142857142857,
+        "median_base_minus_ctx": 0.0,
+        "p": 0.6284249387176419,
+        "holm_p": 0.6284249387176419
+      },
+      {
+        "field": "objective",
+        "pairs": 56,
+        "mean_base_minus_ctx": -0.001409819878724332,
+        "median_base_minus_ctx": -0.0003231793710083697,
+        "p": 0.29495269400183677,
+        "holm_p": 0.5899053880036735
+      },
+      {
+        "field": "risk_delay",
+        "pairs": 56,
+        "mean_base_minus_ctx": -0.004560074365201666,
+        "median_base_minus_ctx": -0.0008810389869776942,
+        "p": 0.07569135436355338,
+        "holm_p": 0.22707406309066014
+      }
+    ],
+    "wins_losses_ties": [
+      553,
+      537,
+      30
+    ]
+  },
+  "dynamic": {
+    "dynamic_n25_d5": {
+      "greedy_insert": {
+        "vehicles": 5.306666666666667,
+        "distance": 486.47316802925275,
+        "risk_delay": 0.15111055084901007,
+        "objective": 0.6449192528731599,
+        "runtime_seconds": 7.158040222333188,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.1442555667787763,
+        "within_instance_objective_sd": 0.05032829964580304,
+        "unserved": 0.29555555555555557,
+        "served_all_percent": 74.88888888888889,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "cold_restart": {
+        "vehicles": 5.292222222222223,
+        "distance": 475.5287705868148,
+        "risk_delay": 0.18130041569007901,
+        "objective": 0.6361577586843596,
+        "runtime_seconds": 23.313744109791166,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.1466948020026074,
+        "within_instance_objective_sd": 0.0485901419797333,
+        "unserved": 0.3011111111111111,
+        "served_all_percent": 74.55555555555556,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "warm_alns": {
+        "vehicles": 5.174444444444444,
+        "distance": 461.2458329295656,
+        "risk_delay": 0.1774778150277091,
+        "objective": 0.6199010115773012,
+        "runtime_seconds": 23.07690076023667,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.15235799156925814,
+        "within_instance_objective_sd": 0.03926952911577324,
+        "unserved": 0.28444444444444444,
+        "served_all_percent": 76.0,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    },
+    "dynamic_n25_d12": {
+      "greedy_insert": {
+        "vehicles": 6.322222222222222,
+        "distance": 647.4549407340114,
+        "risk_delay": 0.19925551680837925,
+        "objective": 0.8859648908150515,
+        "runtime_seconds": 7.264686730594646,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.21746972866830905,
+        "within_instance_objective_sd": 0.09874672070998693,
+        "unserved": 0.8888888888888888,
+        "served_all_percent": 40.0,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "cold_restart": {
+        "vehicles": 6.144444444444445,
+        "distance": 604.5126043942533,
+        "risk_delay": 0.14525525290854063,
+        "objective": 0.8016570452444218,
+        "runtime_seconds": 25.783820870157182,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.17426148112006193,
+        "within_instance_objective_sd": 0.06801916880061759,
+        "unserved": 0.9644444444444444,
+        "served_all_percent": 39.888888888888886,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "warm_alns": {
+        "vehicles": 6.082222222222223,
+        "distance": 585.9254765850673,
+        "risk_delay": 0.14139297494844377,
+        "objective": 0.7809214279436018,
+        "runtime_seconds": 25.25662620656383,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.1827150959910887,
+        "within_instance_objective_sd": 0.06509658898878684,
+        "unserved": 0.9388888888888889,
+        "served_all_percent": 40.44444444444444,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    },
+    "dynamic_n25_d25": {
+      "greedy_insert": {
+        "vehicles": 8.466666666666667,
+        "distance": 879.4528240945183,
+        "risk_delay": 0.22137433016897123,
+        "objective": 1.1721668716171092,
+        "runtime_seconds": 7.312636848569867,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.270240850795534,
+        "within_instance_objective_sd": 0.10235508672655369,
+        "unserved": 1.8133333333333332,
+        "served_all_percent": 36.0,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "cold_restart": {
+        "vehicles": 7.763333333333334,
+        "distance": 778.4544548680609,
+        "risk_delay": 0.178847911043839,
+        "objective": 1.0231278142796558,
+        "runtime_seconds": 30.994740213077716,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.19821536985216637,
+        "within_instance_objective_sd": 0.0873292094408587,
+        "unserved": 1.9244444444444444,
+        "served_all_percent": 35.111111111111114,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "warm_alns": {
+        "vehicles": 7.762222222222222,
+        "distance": 750.6834913903448,
+        "risk_delay": 0.17093547412871785,
+        "objective": 0.9879003970741015,
+        "runtime_seconds": 31.016539256662785,
+        "runs": 900,
+        "feasible_percent": 100.0,
+        "objective_std": 0.20397125766503138,
+        "within_instance_objective_sd": 0.07599363990045674,
+        "unserved": 1.8511111111111112,
+        "served_all_percent": 35.44444444444444,
+        "static_customers": [
+          25
+        ],
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9
+        ]
+      }
+    },
+    "dynamic_n100_d5": {
+      "greedy_insert": {
+        "vehicles": 14.333333333333334,
+        "distance": 1522.582408466023,
+        "risk_delay": 0.11090953199981655,
+        "objective": 0.5226996973999576,
+        "runtime_seconds": 33.31618846774045,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.04789150035795333,
+        "within_instance_objective_sd": 0.02557849882770958,
+        "unserved": 0.1925925925925926,
+        "served_all_percent": 84.07407407407408,
+        "static_customers": [
+          95
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      },
+      "cold_restart": {
+        "vehicles": 14.785185185185185,
+        "distance": 1568.8227031513832,
+        "risk_delay": 0.09389715208561794,
+        "objective": 0.5313465052208787,
+        "runtime_seconds": 97.56867179572701,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.07862341966118026,
+        "within_instance_objective_sd": 0.028752368450921537,
+        "unserved": 0.1925925925925926,
+        "served_all_percent": 84.07407407407408,
+        "static_customers": [
+          95
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      },
+      "warm_alns": {
+        "vehicles": 14.066666666666666,
+        "distance": 1428.944860368681,
+        "risk_delay": 0.07994523987923449,
+        "objective": 0.4799222971083448,
+        "runtime_seconds": 97.7037226224814,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.04931173487210333,
+        "within_instance_objective_sd": 0.020514790258431097,
+        "unserved": 0.21481481481481482,
+        "served_all_percent": 81.85185185185185,
+        "static_customers": [
+          95
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    "dynamic_n100_d12": {
+      "greedy_insert": {
+        "vehicles": 14.392592592592592,
+        "distance": 1501.6061558939052,
+        "risk_delay": 0.13424275163418278,
+        "objective": 0.5392212901184317,
+        "runtime_seconds": 29.916966871844487,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.0734985405070394,
+        "within_instance_objective_sd": 0.03019030894917806,
+        "unserved": 0.5222222222222223,
+        "served_all_percent": 52.592592592592595,
+        "static_customers": [
+          88
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      },
+      "cold_restart": {
+        "vehicles": 14.981481481481481,
+        "distance": 1584.8213982594061,
+        "risk_delay": 0.09871958332513098,
+        "objective": 0.5497007900631398,
+        "runtime_seconds": 92.72753891815934,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.06926929839290216,
+        "within_instance_objective_sd": 0.03151395110515415,
+        "unserved": 0.5407407407407407,
+        "served_all_percent": 51.851851851851855,
+        "static_customers": [
+          88
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      },
+      "warm_alns": {
+        "vehicles": 14.266666666666667,
+        "distance": 1414.829206755469,
+        "risk_delay": 0.09142231998249342,
+        "objective": 0.49116879759787263,
+        "runtime_seconds": 93.0031369025693,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.0597120308022874,
+        "within_instance_objective_sd": 0.021399157250802048,
+        "unserved": 0.5333333333333333,
+        "served_all_percent": 52.592592592592595,
+        "static_customers": [
+          88
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    "dynamic_n100_d25": {
+      "greedy_insert": {
+        "vehicles": 15.892592592592592,
+        "distance": 1648.2271150463619,
+        "risk_delay": 0.14712532154755717,
+        "objective": 0.6760391426543594,
+        "runtime_seconds": 24.908477511944106,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.07081314763312846,
+        "within_instance_objective_sd": 0.035682908592706605,
+        "unserved": 0.6962962962962963,
+        "served_all_percent": 40.74074074074074,
+        "static_customers": [
+          75
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      },
+      "cold_restart": {
+        "vehicles": 14.85925925925926,
+        "distance": 1607.7919811868926,
+        "risk_delay": 0.11935160700010336,
+        "objective": 0.6544752994204212,
+        "runtime_seconds": 85.68112958316676,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.10052269194141661,
+        "within_instance_objective_sd": 0.04040333925630327,
+        "unserved": 0.8148148148148148,
+        "served_all_percent": 37.77777777777778,
+        "static_customers": [
+          75
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      },
+      "warm_alns": {
+        "vehicles": 14.618518518518519,
+        "distance": 1430.4418097778503,
+        "risk_delay": 0.09875836455263373,
+        "objective": 0.5750441882407784,
+        "runtime_seconds": 84.04702146820092,
+        "runs": 270,
+        "feasible_percent": 100.0,
+        "objective_std": 0.07891591022401852,
+        "within_instance_objective_sd": 0.025982902687261125,
+        "unserved": 0.7407407407407407,
+        "served_all_percent": 41.111111111111114,
+        "static_customers": [
+          75
+        ],
+        "seeds": [
+          0,
+          1,
+          2
+        ]
+      }
+    }
+  },
+  "nsga": {
+    "runs": 90,
+    "pareto_rows": 1730,
+    "mean_archive_size": 19.22222222222222,
+    "mean_runtime": 183.86757234672223,
+    "min_vehicles_mean": 25.0
+  },
+  "dynamic_tests": [
+    {
+      "size": 25,
+      "arrivals": 5,
+      "other": "greedy_insert",
+      "pairs": 900,
+      "blocks": 9,
+      "wins": 604,
+      "losses": 40,
+      "delta_f": 0.025018241295858664,
+      "p": 0.0078125,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 25,
+      "arrivals": 5,
+      "other": "cold_restart",
+      "pairs": 900,
+      "blocks": 9,
+      "wins": 413,
+      "losses": 92,
+      "delta_f": 0.016256747107058503,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 25,
+      "arrivals": 12,
+      "other": "greedy_insert",
+      "pairs": 900,
+      "blocks": 9,
+      "wins": 741,
+      "losses": 110,
+      "delta_f": 0.10504346287144976,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 25,
+      "arrivals": 12,
+      "other": "cold_restart",
+      "pairs": 900,
+      "blocks": 9,
+      "wins": 540,
+      "losses": 148,
+      "delta_f": 0.020735617300820124,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 25,
+      "arrivals": 25,
+      "other": "greedy_insert",
+      "pairs": 900,
+      "blocks": 9,
+      "wins": 777,
+      "losses": 113,
+      "delta_f": 0.18426647454300785,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 25,
+      "arrivals": 25,
+      "other": "cold_restart",
+      "pairs": 900,
+      "blocks": 9,
+      "wins": 583,
+      "losses": 239,
+      "delta_f": 0.03522741720555428,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 100,
+      "arrivals": 5,
+      "other": "greedy_insert",
+      "pairs": 270,
+      "blocks": 9,
+      "wins": 246,
+      "losses": 24,
+      "delta_f": 0.04277740029161279,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 100,
+      "arrivals": 5,
+      "other": "cold_restart",
+      "pairs": 270,
+      "blocks": 9,
+      "wins": 221,
+      "losses": 49,
+      "delta_f": 0.051424208112533926,
+      "p": 0.0078125,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 100,
+      "arrivals": 12,
+      "other": "greedy_insert",
+      "pairs": 270,
+      "blocks": 9,
+      "wins": 234,
+      "losses": 36,
+      "delta_f": 0.04805249252055906,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 100,
+      "arrivals": 12,
+      "other": "cold_restart",
+      "pairs": 270,
+      "blocks": 9,
+      "wins": 248,
+      "losses": 22,
+      "delta_f": 0.05853199246526718,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 100,
+      "arrivals": 25,
+      "other": "greedy_insert",
+      "pairs": 270,
+      "blocks": 9,
+      "wins": 250,
+      "losses": 20,
+      "delta_f": 0.10099495441358099,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    },
+    {
+      "size": 100,
+      "arrivals": 25,
+      "other": "cold_restart",
+      "pairs": 270,
+      "blocks": 9,
+      "wins": 213,
+      "losses": 57,
+      "delta_f": 0.07943111117964281,
+      "p": 0.00390625,
+      "holm_p": 0.046875
+    }
+  ],
+  "sensitivity": {
+    "base": {
+      "runs": 90,
+      "F": 0.7844304443273842,
+      "unserved": 0.9333333333333333,
+      "served_all": 41.111111111111114,
+      "runtime": 24.701171294042272
+    },
+    "budget_100": {
+      "runs": 90,
+      "F": 0.7871583511627269,
+      "unserved": 0.9333333333333333,
+      "served_all": 41.111111111111114,
+      "runtime": 10.522159846378296
+    },
+    "budget_250": {
+      "runs": 90,
+      "F": 0.7871426684494304,
+      "unserved": 0.9333333333333333,
+      "served_all": 41.111111111111114,
+      "runtime": 15.912815698879099
+    },
+    "budget_1000": {
+      "runs": 90,
+      "F": 0.7805284775919057,
+      "unserved": 0.9333333333333333,
+      "served_all": 41.111111111111114,
+      "runtime": 43.712666474442486
+    },
+    "epoch_0.025": {
+      "runs": 90,
+      "F": 0.777562800616159,
+      "unserved": 0.8777777777777778,
+      "served_all": 40.0,
+      "runtime": 44.02990374610171
+    },
+    "epoch_0.1": {
+      "runs": 90,
+      "F": 0.7747448336985986,
+      "unserved": 1.5222222222222221,
+      "served_all": 18.88888888888889,
+      "runtime": 15.215460611912487
+    },
+    "epoch_0.2": {
+      "runs": 90,
+      "F": 0.7414639981195974,
+      "unserved": 3.9444444444444446,
+      "served_all": 0.0,
+      "runtime": 10.576559853122712
+    },
+    "trigger_event": {
+      "runs": 90,
+      "F": 0.7780999597028985,
+      "unserved": 0.6777777777777778,
+      "served_all": 50.0,
+      "runtime": 31.438669092988775
+    },
+    "trigger_hybrid": {
+      "runs": 90,
+      "F": 0.7742175709296772,
+      "unserved": 0.6777777777777778,
+      "served_all": 51.111111111111114,
+      "runtime": 40.54482133115428
+    }
+  },
+  "analysis_environment": {
+    "python": "3.12.7 (main, Oct 16 2024, 07:12:08) [Clang 18.1.8 ]",
+    "scipy": "1.18.1"
+  },
+  "source_sha256": {
+    "benchmark/alns/c100_r5_s20_5000/raw.csv": "40f68b45c63e101cc065a6a4d63600a617d8702b8e04af7e2a58b0ec3a9a49b1",
+    "benchmark/contextual/c100_r5_s20_5000/raw.csv": "200b6002acf7c23439a53fcc580c9656b6cd657384de540419c6843f5f41fcb8",
+    "phase1/results/dynamic_n25_d5/raw.csv": "655952cbd05613de98081ade3a63e2088d5b90b1fa99378eac1c39690b287213",
+    "phase1/results/dynamic_n25_d12/raw.csv": "ea3f570bddacfa5630742955d5bef3b811be50165e2c9f9cf4c806d830e40804",
+    "phase1/results/dynamic_n25_d25/raw.csv": "b95bc6d2ef910084cb89ae061f46b8d9b9a174696a290ae64789a79d216c5181",
+    "phase1/results/dynamic_n100_d5/raw.csv": "c7d6e6ee90e87850ce45c0232dae5263bd6bb7ab3ddb1925402f55d380d96811",
+    "phase1/results/dynamic_n100_d12/raw.csv": "c60f35499fc8354d783bf338f118745d9c8858b54a2143370060841eba1bcd2c",
+    "phase1/results/dynamic_n100_d25/raw.csv": "67937f507b714352916bbc8de666e700a8a2d9ab70b72a46e319560378b6f888",
+    "benchmark/nsga/c100_r5_s10_35/nsga3_pareto_raw.csv": "1b2cf16496db596353fe728afb2a304bbee263e572176452593c6fc4e3f2285e",
+    "phase1/results/ablation/base/raw.csv": "5db382956abbfc376ba7fab2779656de62c1756f187729ea68ea1342164f64ce",
+    "phase1/results/ablation/budget_100/raw.csv": "7a7ade2ce5efd385a4f2214ccb1d3feaf7f39973071714513485be2d34f27110",
+    "phase1/results/ablation/budget_250/raw.csv": "f1db5179a65aba75d10577b76bbfc226390fc550f859f91293e2e159a99b242c",
+    "phase1/results/ablation/budget_1000/raw.csv": "0d94dfd692c2ea64d0c40610773767ab79a799951058a060224b49e535830669",
+    "phase1/results/ablation/epoch_0.025/raw.csv": "318eea227fecd5caf4656580e30fc304296f30a1fda9ea19ee2738ecf3a48f3e",
+    "phase1/results/ablation/epoch_0.1/raw.csv": "2692cd2bc5c764a14fca15b34856424c4b0fe589a0ed65bed22a44ff3aa4128e",
+    "phase1/results/ablation/epoch_0.2/raw.csv": "ff28709fea04999f6f80afd6e4510b2f2c0c1fe26972ccb703d73eddffc521f6",
+    "phase1/results/ablation/trigger_event/raw.csv": "4ea3e8908bf5c8860bf93a9f5a287e29ef8e467a59616fcd0d9e0c662be43434",
+    "phase1/results/ablation/trigger_hybrid/raw.csv": "72a4396c5a7b25e372f0529ad3b0928e94ae30e92606762fb287c0065c88f97f"
+  }
+}
