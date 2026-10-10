@@ -107,6 +107,12 @@ Task chạy một smoke benchmark với một generation và một seed trước
 benchmark thành công, task mới chạy toàn bộ config. Artifact NSGA-III được tải
 về `phase1_NSGA/results/sky/<run-id>/`.
 
+Trong khi NSGA-III đang chạy, mỗi case hoàn thành được checkpoint tại
+`phase1_NSGA/results/sky/<run-id>/.tmp/run-<id>/<index>.json`. Có thể dùng
+`rsync` trực tiếp từ cluster để sao lưu các checkpoint này trước khi job kết
+thúc. Thư mục `.tmp` được giữ lại nếu benchmark lỗi và chỉ bị xóa sau khi hai
+CSV cuối đã được ghi thành công.
+
 `run` thực hiện preflight, launch, theo dõi job, tải artifact từ S3 rồi hủy cluster. Nếu launch, log-follow hoặc download thất bại, wrapper cố lấy log hiện có và hủy cluster để giới hạn chi phí.
 
 Với luồng tách rời, `launch` trả về ngay sau khi gửi job. EC2 có thể autodown sau khi job kết thúc, nhưng bucket S3 vẫn được giữ lại.

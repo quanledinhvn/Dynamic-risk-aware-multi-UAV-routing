@@ -1,0 +1,743 @@
+\documentclass{article}
+\usepackage[utf8]{vietnam} % Hỗ trợ tiếng Việt
+\usepackage{amsmath, amssymb} % Hỗ trợ công thức toán học
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{indentfirst}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{6pt}
+
+\begin{document}
+
+\section{Giới thiệu}
+
+Đề tài \textbf{Dynamic Risk-Aware Multi-UAV Routing} tập trung vào bài toán lập kế hoạch và điều phối tuyến đường cho nhiều UAV trong môi trường có các yêu cầu về thời gian, sức chứa và mức độ rủi ro. Mục tiêu là xây dựng các tuyến đường hiệu quả, đồng thời ưu tiên phục vụ sớm các khách hàng có mức độ rủi ro cao.
+
+Trong bài toán, mỗi khách hàng được xác định bởi vị trí, nhu cầu phục vụ, khung thời gian (\textit{time window}) và thời gian phục vụ. Không gian hoạt động có thể chứa nhiều vùng rủi ro (\textit{risk zones}), trong đó mức độ ảnh hưởng của các vùng này được sử dụng để xác định độ ưu tiên rủi ro (\textit{risk priority}) của từng khách hàng. Vì vậy, việc tối ưu tuyến đường không chỉ hướng đến giảm quãng đường di chuyển mà còn phải cân bằng với yêu cầu giảm độ trễ đối với các khách hàng có mức độ rủi ro cao.
+
+Trong giai đoạn triển khai hiện tại, nhóm tập trung xây dựng mô hình bài toán với tối đa số lượng UAV xác định, các ràng buộc và hàm mục tiêu, đồng thời triển khai hai thuật toán cơ sở (\textit{baseline}) là \textbf{NSGA-III} và \textbf{Adaptive Large Neighborhood Search (ALNS)}. Các kết quả được đánh giá thông qua tính khả thi, số lượng UAV sử dụng, tổng quãng đường, độ trễ rủi ro (\textit{risk delay}), hàm mục tiêu (\textit{objective}) và thời gian chạy.
+
+Đây là cơ sở để nhóm tiếp tục phân tích độ phức tạp và hiệu năng của các thuật toán, đồng thời phát triển các cơ chế cải tiến trong các giai đoạn nghiên cứu tiếp theo.
+\section{Đặc tả bài toán}
+
+\subsection{Tập hợp và tham số}
+
+Gọi $N = \{1, 2, \dots, n\}$ là tập khách hàng và $K = \{1, 2, \dots, K_{\max}\}$ là tập UAV khả dụng. Mỗi khách hàng $i \in N$ có các thuộc tính:
+\begin{itemize}
+    \item Tọa độ: $(x_i, y_i)$;
+    \item Nhu cầu phục vụ: $d_i$;
+    \item Thời điểm sẵn sàng: $e_i$;
+    \item Hạn phục vụ: $l_i$;
+    \item Thời gian phục vụ: $s_i^{\text{service}}$;
+    \item Mức độ ưu tiên rủi ro: $p_i$.
+\end{itemize}
+
+Depot được ký hiệu là nút $0$, có tọa độ $(x_0, y_0)$ và thời hạn quay về $l_0$. Mỗi UAV có sức chứa tối đa $Q$. Khoảng cách giữa hai nút $i$ và $j$ được tính bằng khoảng cách Euclid:
+\begin{equation}
+    c_{ij} = \sqrt{(x_i - x_j)^2 + (y_i - y_j)^2}
+\end{equation}
+
+Trong mô hình hiện tại, vận tốc UAV được chuẩn hóa bằng $1$, do đó thời gian di chuyển giữa hai nút cũng bằng khoảng cách $c_{ij}$.
+
+Số UAV tối đa $K_{\max}$ được đọc từ trường \texttt{NUMBER} trong bộ dữ liệu Solomon. Với các \textit{instance} đang sử dụng, giá trị này thường là $25$, trong khi số khách hàng được xét có thể được giới hạn ở $25$ hoặc $100$.
+\subsection{Mức độ rủi ro của khách hàng}
+
+Mỗi vùng rủi ro $z$ được mô tả bởi tâm $(x_z, y_z)$ và bán kính $r_z$. Khoảng cách từ khách hàng $i$ đến tâm vùng rủi ro $z$ là:
+\begin{equation}
+    d_{iz} = \sqrt{(x_i - x_z)^2 + (y_i - y_z)^2}
+\end{equation}
+
+Mức ảnh hưởng của vùng rủi ro $z$ lên khách hàng $i$ được xác định bởi:
+\begin{equation}
+    p_{iz} = \max \left( 0, 1 - \frac{d_{iz}}{r_z} \right)
+\end{equation}
+
+Nếu có nhiều vùng rủi ro trong tập các vùng rủi ro $Z$, độ ưu tiên rủi ro (\textit{risk priority}) của khách hàng $i$ được lấy bằng mức ảnh hưởng lớn nhất:
+\begin{equation}
+    p_i = \max_{z \in Z} p_{iz}
+\end{equation}
+
+Theo đó, $p_i \in [0, 1]$. Giá trị $p_i$ càng lớn cho thấy khách hàng càng gần vùng rủi ro và cần được ưu tiên phục vụ sớm hơn.
+
+\subsection{Biến quyết định}
+
+Một nghiệm $S$ gồm một tập các tuyến UAV:
+\begin{equation}
+    S = \{ R_1, R_2, \dots, R_K \}, \quad K \le K_{\max}
+\end{equation}
+
+Mỗi tuyến $R_k$ có dạng:
+\begin{equation}
+    R_k = (0, i_{1}, i_{2}, \dots, i_{m}, 0)
+\end{equation}
+trong đó UAV xuất phát từ depot (nút $0$), phục vụ một hoặc nhiều khách hàng, sau đó quay trở lại depot. 
+
+Các biến quyết định chính gồm:
+\begin{itemize}
+    \item UAV nào được sử dụng;
+    \item Khách hàng nào được gán cho UAV nào;
+    \item Thứ tự phục vụ khách hàng trên mỗi tuyến;
+    \item Thời điểm bắt đầu phục vụ tại mỗi khách hàng.
+\end{itemize}
+
+\subsection{Các ràng buộc}
+
+\subsubsection{Ràng buộc sức chứa}
+Tổng nhu cầu của các khách hàng trên mỗi tuyến không được vượt quá sức chứa tối đa của UAV:
+\begin{equation}
+    \sum_{i \in R_k} d_i \le Q, \quad \forall k \in K
+\end{equation}
+
+\subsubsection{Ràng buộc phục vụ đầy đủ và duy nhất}
+Mỗi khách hàng phải được phục vụ đúng một lần:
+\begin{equation}
+    \sum_{k \in K} x_{ik} = 1, \quad \forall i \in N,
+\end{equation}
+trong đó $x_{ik} = 1$ nếu khách hàng $i$ thuộc tuyến của UAV $k$, và bằng $0$ trong trường hợp ngược lại.
+
+\subsubsection{Ràng buộc cửa sổ thời gian (\textit{Time Window})}
+Gọi $a_i$ là thời điểm UAV đến khách hàng $i$, và $t_i$ là thời điểm bắt đầu phục vụ tại khách hàng $i$. Khi đó:
+\begin{equation}
+    a_i = t_j + s_j^{\text{service}} + c_{ji},
+\end{equation}
+với $j$ là khách hàng được phục vụ ngay trước $i$. Thời điểm bắt đầu phục vụ phải thỏa mãn:
+\begin{equation}
+    e_i \le t_i \le l_i.
+\end{equation}
+Nếu UAV đến trước thời điểm $e_i$, UAV được phép chờ đến khi cửa sổ thời gian mở.
+
+\subsubsection{Ràng buộc hạn quay về depot}
+Sau khi hoàn thành tuyến, UAV phải quay về depot trước thời hạn $l_0$:
+\begin{equation}
+    t_{\text{return}, k} \le l_0, \quad \forall k \in K.
+\end{equation}
+
+\subsubsection{Ràng buộc số lượng UAV}
+Số tuyến không rỗng không được vượt quá số UAV khả dụng:
+\begin{equation}
+    K(S) \le K_{\max}.
+\end{equation}
+trong đó $K(S)$ là số tuyến thực tế được sử dụng trong nghiệm $S$.
+
+\subsection{Phạm vi mô hình hiện tại}
+
+Trong giai đoạn hiện tại, mô hình sử dụng dữ liệu Solomon VRPTW được mở rộng với các vùng rủi ro tĩnh. Do đó, \textit{risk priority} của khách hàng không thay đổi trong quá trình một lần chạy thuật toán. Mô hình chưa xét các yếu tố động như sự thay đổi bản đồ rủi ro (\textit{risk map}) theo thời gian, thời tiết, mức pin, vùng cấm bay (\textit{no-fly zone}) hoặc sự xuất hiện của các nhiệm vụ mới.
+
+Vì vậy, phiên bản hiện tại được xem là \textit{baseline} tĩnh cho bài toán \textbf{Dynamic Risk-Aware Multi-UAV Routing}. Trong các giai đoạn tiếp theo, mô hình có thể được mở rộng bằng cơ chế \textit{rolling horizon}, cập nhật \textit{risk priority} trực tuyến và tái tối ưu tuyến đường khi trạng thái môi trường thay đổi.
+\section{Thuật toán ALNS}
+
+\subsection{Tổng quan ALNS}
+
+Adaptive Large Neighborhood Search (ALNS) là thuật toán \textit{metaheuristic} dùng để tìm nghiệm cho bài toán định tuyến nhiều UAV có ràng buộc về sức chứa (\textit{capacity}), cửa sổ thời gian (\textit{time window}), hạn quay về depot (\textit{depot deadline}) và giới hạn số lượng UAV.
+
+Mỗi nghiệm gồm nhiều tuyến UAV. Trong mỗi vòng lặp (\textit{iteration}), ALNS thực hiện các bước sau:
+\begin{enumerate}
+    \item Chọn một \textit{destroy operator} để loại bỏ một số khách hàng khỏi các tuyến hiện tại.
+    \item Chọn một \textit{repair operator} để chèn lại các khách hàng bị loại bỏ vào vị trí phù hợp.
+    \item Kiểm tra tính khả thi của nghiệm mới.
+    \item So sánh nghiệm mới với nghiệm hiện tại.
+    \item Cập nhật nghiệm tốt nhất và trọng số của các \textit{operator}.
+\end{enumerate}
+
+Thuật toán luôn duy trì nghiệm hiện tại $S$, nghiệm tốt nhất $S_{\text{best}}$ và nghiệm ban đầu $S_0$.
+
+\subsection{Hàm mục tiêu}
+
+ALNS tối ưu theo điểm số từ điển (\textit{lexicographical score}):
+\begin{equation}
+    \operatorname{Score}(S) = \big( K(S), \, F(S) \big)
+\end{equation}
+trong đó $K(S)$ là số UAV sử dụng và hàm mục tiêu kết hợp $F(S)$ được tính bằng:
+\begin{equation}
+    F(S) = \alpha \cdot \frac{D(S)}{D_{\text{ref}}} + \beta \cdot R(S)
+\end{equation}
+
+Ở đây, $D(S)$ là tổng quãng đường di chuyển, $D_{\text{ref}}$ là quãng đường của nghiệm \textit{greedy} ban đầu và $R(S)$ là \textit{risk delay}:
+\begin{equation}
+    R(S) = \frac{\sum_{i \in N} p_i \cdot q_i}{\sum_{i \in N} p_i}
+\end{equation}
+với $q_i$ là độ trễ tương đối $\text{delay}_i$ tại khách hàng $i$.
+
+Mục tiêu luôn ưu tiên giảm số UAV trước. Nếu hai nghiệm sử dụng cùng số UAV, thuật toán mới so sánh đến mục tiêu quãng đường - rủi ro $F(S)$.
+
+\subsection{Các bước của ALNS}
+
+Nghiệm ban đầu $S_0$ được xây dựng bằng \textit{heuristic greedy}, trong đó các khách hàng được lần lượt chèn vào vị trí khả thi có mức tăng chi phí nhỏ nhất.
+
+Trong bước phá hủy (\textit{destroy step}), ALNS sử dụng các \textit{operator}:
+\begin{itemize}
+    \item \textbf{Random Removal:} Loại bỏ ngẫu nhiên một số khách hàng.
+    \item \textbf{Worst Removal:} Loại bỏ các khách hàng có chi phí đóng góp vào hàm mục tiêu cao nhất.
+    \item \textbf{Related Removal:} Loại bỏ các khách hàng có tính chất tương tự nhau (khoảng cách, vị trí...).
+    \item \textbf{Route Removal:} Loại bỏ toàn bộ một tuyến UAV để giảm số lượng xe.
+    \item \textbf{Risk Priority Removal:} Ưu tiên loại bỏ các khách hàng có rủi ro cao để tái sắp xếp lại vị trí phục vụ sớm hơn.
+\end{itemize}
+
+Trong bước sửa chữa (\textit{repair step}), các \textit{operator} gồm:
+\begin{itemize}
+    \item \textbf{Greedy Repair:} Chèn lại khách hàng vào vị trí có chi phí phát sinh thấp nhất.
+    \item \textbf{Regret-2 Repair:} Ưu tiên chèn khách hàng có sự chênh lệch chi phí lớn giữa vị trí tốt nhất và vị trí tốt thứ hai.
+    \item \textbf{Risk Priority Repair:} Ưu tiên chèn các khách hàng có $p_i$ cao vào các vị trí đầu tuyến.
+\end{itemize}
+
+Nghiệm ứng viên (\textit{candidate}) $S'$ chỉ được chấp nhận nếu đảm bảo tính đầy đủ và khả thi. Với ứng viên có cùng số UAV nhưng có mục tiêu $F(S')$ xấu hơn $F(S)$, ALNS có thể chấp nhận theo xác suất của Mô phỏng tôi kim loại (\textit{Simulated Annealing}):
+\begin{equation}
+    P(\text{accept}) = \exp\left( -\frac{F(S') - F(S)}{T} \right)
+\end{equation}
+
+Trọng số của các \textit{operator} được cập nhật dựa trên phần thưởng (\textit{reward}). \textit{Operator} tạo ra nghiệm tốt sẽ tích lũy điểm thưởng cao hơn và có xác suất được chọn thường xuyên hơn trong các vòng lặp tiếp theo.
+
+\subsection{Benchmark}
+
+\textit{Benchmark} nhỏ sử dụng các \textit{instance} \texttt{Solomon-RISK} với $25$ và $100$ khách hàng, số vùng rủi ro (\textit{risk zones}) dao động từ $0$ đến $5$, kết hợp chạy trên nhiều giá trị hạt giống ngẫu nhiên (\textit{seed}) khác nhau. Các chỉ số đánh giá bao gồm:
+\begin{itemize}
+    \item Tính khả thi;
+    \item Số UAV sử dụng;
+    \item Tổng quãng đường;
+    \item \textit{Risk delay};
+    \item Giá trị hàm mục tiêu (\textit{objective});
+    \item Thời gian thực thi (\textit{runtime}).
+\end{itemize}
+
+Ví dụ, đối với \textit{instance} \texttt{C101} gồm $25$ khách hàng, $1$ vùng rủi ro và thực hiện $1.000$ vòng lặp (\textit{iterations}), thuật toán ALNS đạt các kết quả trung bình như trong Bảng~\ref{tab:benchmark_c101}.
+
+\begin{table}[htbp]
+    \centering
+    \label{tab:benchmark_c101}
+    \begin{tabular}{|l|c|}
+        \hline
+        \textbf{Chỉ số} & \textbf{Giá trị} \\ \hline
+        Số UAV & $3.00$ \\ \hline
+        Tổng quãng đường & $239.33$ \\ \hline
+        Risk delay & $0.0358$ \\ \hline
+        Objective & $0.6418$ \\ \hline
+        Runtime & $5.10$ giây \\ \hline
+    \end{tabular}
+    \caption{Kết quả đánh giá trung bình của ALNS trên tập dữ liệu C101 (25 khách hàng)}
+\end{table}
+\subsection{Phân tích độ phức tạp}
+
+Gọi $n$ là số lượng khách hàng, $q$ là số lượng khách hàng bị loại bỏ trong mỗi vòng lặp (\textit{iteration}), $K$ là số UAV và $I$ là tổng số vòng lặp.
+
+Việc đánh giá tính khả thi và chi phí của một nghiệm có độ phức tạp thời gian (\textit{time complexity}) là $\mathcal{O}(n)$.
+
+Các \textit{destroy operator} có độ phức tạp khác nhau tùy thuộc vào chiến lược lựa chọn khách hàng (xem Bảng~\ref{tab:destroy_complexity}).
+
+\begin{table}[htbp]
+    \centering
+    \caption{Độ phức tạp thời gian của các Destroy Operator}
+    \label{tab:destroy_complexity}
+    \begin{tabular}{|l|c|}
+        \hline
+        \textbf{Operator} & \textbf{Complexity (Implementation)} \\ \hline
+        Random Removal & $\mathcal{O}(n)$ \\ \hline
+        Route Removal & $\mathcal{O}(n)$ \\ \hline
+        Risk Priority Removal & $\mathcal{O}(q n \log n)$ \\ \hline
+        Worst Removal & $\mathcal{O}(q n^2)$ \\ \hline
+        Related Removal & $\mathcal{O}(q n^3)$ \\ \hline
+    \end{tabular}
+\end{table}
+
+Các \textit{repair operator} là phần tiêu tốn chi phí tính toán lớn nhất do phải duyệt qua nhiều vị trí chèn ứng viên và đánh giá lại toàn bộ các ràng buộc (xem Bảng~\ref{tab:repair_complexity}).
+
+\begin{table}[htbp]
+    \centering
+    \caption{Độ phức tạp thời gian của các Repair Operator}
+    \label{tab:repair_complexity}
+    \begin{tabular}{|l|c|}
+        \hline
+        \textbf{Operator / Heuristic} & \textbf{Time Complexity} \\ \hline
+        Greedy Repair & $\mathcal{O}(q^2 n(n + K))$ \\ \hline
+        Regret-2 Repair & $\mathcal{O}(q^2 n(n + K))$ \\ \hline
+        Risk Priority Repair & $\mathcal{O}(q n(n + K))$ \\ \hline
+    \end{tabular}
+\end{table}
+
+Trong trường hợp xấu nhất (\textit{worst-case}), độ phức tạp tính toán của một vòng lặp ALNS là:
+\begin{equation}
+    \mathcal{O}\big(q n^3 + q^2 n (n + K)\big)
+\end{equation}
+
+Do đó, tổng độ phức tạp thời gian của toàn bộ thuật toán ALNS qua $I$ vòng lặp là:
+\begin{equation}
+    \mathcal{O}\big(n^3 + I (q n^3 + q^2 n^2)\big)
+\end{equation}
+Trong trường hợp $q$ là một hằng số nhỏ ($q \ll n$), độ phức tạp gần đúng của thuật toán sẽ là $\mathcal{O}(I \cdot n^3)$.
+
+Về độ phức tạp không gian (\textit{space complexity}), bộ nhớ sử dụng chủ yếu dành cho ma trận khoảng cách giữa các cặp nút nên có độ phức tạp là $\mathcal{O}(n^2)$.
+\subsection{Phân tích runtime}
+
+Thời gian thực thi (\textit{runtime}) được đo bao gồm thời gian xây dựng nghiệm ban đầu, thực hiện các vòng lặp (\textit{iterations}) và kiểm tra nghiệm cuối cùng. Thời gian đọc và phân tích dữ liệu đầu vào không được tính vào runtime. Mỗi giá trị trong các bảng dưới đây là giá trị trung bình thu được từ $10$ hạt giống ngẫu nhiên (\textit{seed}) khác nhau.
+
+\subsubsection{Runtime với 25 khách hàng và 1.000 iterations}
+
+Bảng~\ref{tab:runtime_25_0risk} và Bảng~\ref{tab:runtime_25_1risk} thể hiện thời gian chạy của thuật toán với các \textit{instance} có 25 khách hàng tương ứng với $0$ và $1$ vùng rủi ro.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Runtime với 25 khách hàng, 0 vùng risk (1.000 iterations)}
+    \label{tab:runtime_25_0risk}
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Instance} & \textbf{Risk zones} & \textbf{Runtime trung bình (s)} & \textbf{Độ lệch chuẩn (s)} \\ \hline
+        C101 & 0 & 5.02 & 0.19 \\ \hline
+        C102 & 0 & 5.67 & 0.26 \\ \hline
+        C103 & 0 & 6.13 & 0.29 \\ \hline
+        R101 & 0 & 3.76 & 0.28 \\ \hline
+        R102 & 0 & 4.63 & 0.15 \\ \hline
+        R103 & 0 & 4.53 & 0.25 \\ \hline
+        RC101 & 0 & 4.47 & 0.29 \\ \hline
+        RC102 & 0 & 5.34 & 0.37 \\ \hline
+        RC103 & 0 & 5.47 & 0.18 \\ \hline
+        \textbf{Trung bình} & -- & \textbf{4.99} & -- \\ \hline
+    \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+    \centering
+    \caption{Runtime với 25 khách hàng, 1 vùng risk (1.000 iterations)}
+    \label{tab:runtime_25_1risk}
+    \begin{tabular}{|l|c|c|}
+        \hline
+        \textbf{Instance} & \textbf{Runtime trung bình (s)} & \textbf{Độ lệch chuẩn (s)} \\ \hline
+        C101 & 5.10 & 0.17 \\ \hline
+        C102 & 5.42 & 0.34 \\ \hline
+        C103 & 6.27 & 0.29 \\ \hline
+        R101 & 3.76 & 0.21 \\ \hline
+        R102 & 4.46 & 0.12 \\ \hline
+        R103 & 4.67 & 0.25 \\ \hline
+        RC101 & 4.72 & 0.30 \\ \hline
+        RC102 & 5.52 & 0.37 \\ \hline
+        RC103 & 5.83 & 0.25 \\ \hline
+        \textbf{Trung bình} & \textbf{5.08} & -- \\ \hline
+    \end{tabular}
+\end{table}
+
+Với 25 khách hàng, runtime nằm trong khoảng từ $3.76$ đến $6.27$ giây. Chênh lệch giữa 0 và 1 vùng rủi ro là không đáng kể, do \textit{risk priority} chỉ được sử dụng trong hàm mục tiêu và các \textit{operator}, trong khi kích thước tuyến (\textit{route}) vẫn giữ nguyên.
+
+\subsubsection{Runtime với 100 khách hàng, 5 risk zones và 1.000 iterations}
+
+Kết quả tổng hợp thời gian chạy theo các nhóm \textit{instance} trên quy mô 100 khách hàng được thể hiện trong Bảng~\ref{tab:runtime_100_5risk}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Runtime với 100 khách hàng, 5 risk zones (1.000 iterations)}
+    \label{tab:runtime_100_5risk}
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \textbf{Nhóm instance} & \textbf{Số instance} & \textbf{Runtime trung bình (s)} & \textbf{Nhỏ nhất (s)} & \textbf{Lớn nhất (s)} \\ \hline
+        C1 & 17 & 218.53 & 140.75 & 353.12 \\ \hline
+        R2 & 23 & 243.32 & 149.38 & 434.14 \\ \hline
+        RC1 & 16 & 214.68 & 155.29 & 375.02 \\ \hline
+        \textbf{Toàn bộ} & \textbf{56} & \textbf{227.61} & \textbf{140.75} & \textbf{434.14} \\ \hline
+    \end{tabular}
+\end{table}
+
+So với \textit{benchmark} 25 khách hàng, runtime trung bình tăng từ khoảng $5$ giây lên $227.61$ giây. Như vậy, khi số lượng khách hàng tăng 4 lần (từ 25 lên 100), thời gian thực thi tăng xấp xỉ $45.6$ lần.
+
+\subsubsection{Nhận xét}
+
+Runtime tăng gần như tuyến tính theo số vòng lặp $I$, do mỗi vòng lặp đều thực hiện một chu trình \textit{destroy-repair} tương tự nhau. Tuy nhiên, runtime tăng phi tuyến tính theo số lượng khách hàng $n$. Nguyên nhân chính bao gồm:
+\begin{itemize}
+    \item Bước \textit{repair} phải duyệt thử nhiều vị trí chèn khả thi;
+    \item Mỗi vị trí chèn đều yêu cầu tính toán và đánh giá lại toàn bộ \textit{route} cũng như nghiệm bộ phận (\textit{partial solution});
+    \item \textbf{Worst Removal} phải tính toán đánh giá chi phí đóng góp của nhiều phương án loại bỏ;
+    \item \textbf{Related Removal} trong cài đặt hiện tại phải tính toán lại việc chuẩn hóa độ tương quan (\textit{relatedness normalization}) nhiều lần.
+\end{itemize}
+
+Đối với \textit{benchmark} 25 khách hàng, runtime trung bình đạt khoảng $5$ giây cho 1.000 vòng lặp, tương đương khoảng $0.005$ giây cho mỗi vòng lặp. Với \textit{benchmark} 100 khách hàng, runtime trung bình tăng lên $227.61$ giây, tương đương khoảng $0.228$ giây cho mỗi vòng lặp.
+
+Kết quả cho thấy ALNS rất phù hợp với các \textit{instance} có quy mô vừa và nhỏ, nhưng chi phí tính toán tăng đáng kể khi bài toán mở rộng quy mô lớn. Một số hướng nâng cấp để tối ưu runtime bao gồm:
+\begin{itemize}
+    \item Bộ nhớ đệm (\textit{cache}) cho độ tương quan \textit{relatedness};
+    \item Đánh giá tăng đoạn (\textit{incremental evaluation});
+    \item Chỉ đánh giá lại các phần \textit{route} chịu sự thay đổi trực tiếp.
+\end{itemize}
+\section{Thuật toán NSGA-III}
+
+\subsection{Tổng quan}
+
+NSGA-III là thuật toán tiến hóa đa mục tiêu (\textit{multi-objective evolutionary algorithm}), được sử dụng để tìm tập nghiệm cân bằng cho bài toán \textbf{Dynamic Risk-Aware Multi-UAV Routing}.
+
+Khác với ALNS sử dụng một điểm số từ điển (\textit{lexicographical score}), NSGA-III tối ưu đồng thời ba mục tiêu:
+\begin{itemize}
+    \item Giảm số UAV sử dụng;
+    \item Giảm tổng quãng đường di chuyển;
+    \item Giảm độ trễ rủi ro (\textit{risk delay}).
+\end{itemize}
+
+Mỗi cá thể biểu diễn một nghiệm \textit{routing} dưới dạng một hoán vị (\textit{permutation}) của các ID khách hàng. Một bộ giải mã (\textit{decoder}) sẽ chuyển đổi chuỗi hoán vị thành các tuyến UAV khả thi, đồng thời kiểm tra chặt chẽ các ràng buộc về sức chứa (\textit{capacity}), cửa sổ thời gian (\textit{time window}), hạn quay về depot (\textit{depot deadline}) và giới hạn số lượng UAV.
+
+NSGA-III duy trì một quần thể các nghiệm qua nhiều thế hệ. Ở mỗi thế hệ, thuật toán tạo ra các cá thể con bằng các phép lai ghép (\textit{crossover}) và đột biến (\textit{mutation}), sau đó gộp quần thể cha và con để chọn ra quần thể cho thế hệ tiếp theo dựa trên:
+\begin{enumerate}
+    \item Sắp xếp không bị trội (\textit{nondominated sorting});
+    \item Chuẩn hóa không gian mục tiêu (\textit{objective normalization});
+    \item Các hướng tham chiếu (\textit{reference directions});
+    \item Phép chọn lọc dựa trên ngách (\textit{niching selection}).
+\end{enumerate}
+
+Kết quả cuối cùng thu được là một tập biên Pareto (\textit{Pareto front}), bao gồm tập hợp các nghiệm không bị trội bởi bất kỳ nghiệm nào khác.
+
+\subsection{Hàm mục tiêu}
+
+Với một nghiệm $S$, cả ba mục tiêu của NSGA-III đều được tối thiểu hóa.
+
+\subsubsection{Số UAV sử dụng}
+\begin{equation}
+    f_1(S) = K(S)
+\end{equation}
+trong đó $K(S)$ là số tuyến (\textit{route}) không rỗng thực tế được sử dụng trong nghiệm $S$.
+
+\subsubsection{Tổng quãng đường}
+\begin{equation}
+    f_2(S) = D(S) = \sum_{k=1}^{K(S)} \sum_{(i,j) \in R_k} c_{ij}
+\end{equation}
+Khoảng cách giữa hai nút $i$ và $j$ được tính bằng khoảng cách Euclid:
+\begin{equation}
+    c_{ij} = \sqrt{(x_i - x_j)^2 + (y_i - y_j)^2}
+\end{equation}
+
+\subsubsection{Độ trễ rủi ro (Risk delay)}
+Đối với khách hàng $i$, độ trễ tương đối $q_i$ được tính bằng:
+\begin{equation}
+    q_i = \frac{s_i - e_i}{\max(1, l_i - e_i)}
+\end{equation}
+trong đó $s_i$ là thời điểm bắt đầu phục vụ khách hàng $i$, còn $[e_i, l_i]$ là cửa sổ thời gian (\textit{time window}).
+
+\textit{Risk delay} của toàn bộ nghiệm $S$ được tính bởi:
+\begin{equation}
+    f_3(S) = R(S) = \frac{\sum_{i \in N} p_i q_i}{\sum_{i \in N} p_i}
+\end{equation}
+Nếu tổng độ ưu tiên rủi ro $\sum_{i \in N} p_i = 0$, quy ước đặt $R(S) = 0$.
+
+Mức độ ưu tiên rủi ro $p_i$ của khách hàng $i$ được xác định từ tập các vùng rủi ro $Z$:
+\begin{equation}
+    p_i = \max_{z \in Z} \max \left( 0, 1 - \frac{d_{iz}}{r_z} \right)
+\end{equation}
+
+Do đó, bài toán tối ưu đa mục tiêu được phát biểu là:
+\begin{equation}
+    \min \mathbf{F}(S) = \big( K(S), \, D(S), \, R(S) \big)
+\end{equation}
+
+Một nghiệm $S_1$ được gọi là **trội** (\textit{dominate}) nghiệm $S_2$ ($S_1 \succ S_2$) nếu:
+\begin{equation}
+    f_j(S_1) \le f_j(S_2), \quad \forall j \in \{1, 2, 3\}
+\end{equation}
+và tồn tại ít nhất một mục tiêu thỏa mãn:
+\begin{equation}
+    f_j(S_1) < f_j(S_2)
+\end{equation}
+
+NSGA-III không gộp ba mục tiêu thành một giá trị vô hướng (\textit{scalar}) duy nhất trong quá trình chọn lọc. Giá trị kết hợp:
+\begin{equation}
+    F(S) = \alpha \frac{D(S)}{D_{\text{ref}}} + \beta R(S)
+\end{equation}
+chỉ được tính toán và báo cáo thêm nhằm thuận tiện cho việc so sánh trực tiếp với thuật toán cơ sở ALNS, chứ không phải là mục tiêu duy nhất của NSGA-III.
+
+\subsection{Các bước của NSGA-III}
+
+\subsubsection{Khởi tạo quần thể}
+Mỗi cá thể ban đầu là một hoán vị (\textit{permutation}) của toàn bộ các ID khách hàng. Một nghiệm \textit{greedy} khả thi được đưa trực tiếp vào quần thể ban đầu. Các cá thể còn lại được tạo bằng cách xáo trộn ngẫu nhiên thứ tự khách hàng.
+
+Sau đó, bộ giải mã (\textit{decoder}) lần lượt chèn từng khách hàng vào các vị trí khả thi của các \textit{route} hiện tại. Ba vị trí có mức tăng quãng đường thấp nhất được giữ lại làm tập lựa chọn ứng viên. Một vị trí trong tập này sẽ được chọn ngẫu nhiên nhằm duy trì tính đa dạng cho quần thể. Nếu không thể chèn khách hàng vào các \textit{route} hiện tại do vi phạm ràng buộc, \textit{decoder} sẽ khởi tạo một \textit{route} mới nếu tổng số \textit{route} chưa vượt quá $K_{\max}$.
+
+\subsubsection{Tournament selection}
+Hai cá thể được chọn ngẫu nhiên từ quần thể để tham gia thi đấu. Cá thể sẽ được ưu tiên chọn nếu nó **trội** (\textit{dominate}) cá thể còn lại. Trong trường hợp hai cá thể không trội lẫn nhau, một cá thể sẽ được chọn ngẫu nhiên.
+
+\subsubsection{Order crossover}
+NSGA-III sử dụng phép lai ghép thứ tự (\textit{Order Crossover - OX}) cho hai hoán vị cha mẹ:
+\begin{enumerate}
+    \item Chọn ngẫu nhiên một đoạn chuỗi trên hoán vị của cha/mẹ thứ nhất;
+    \item Sao chép nguyên vẹn đoạn chuỗi này sang cá thể con;
+    \item Điền các ID khách hàng còn thiếu vào các vị trí trống theo đúng thứ tự xuất hiện của chúng trong hoán vị của cha/mẹ thứ hai.
+\end{enumerate}
+Phép toán này bảo đảm mỗi khách hàng xuất hiện đúng một lần trong chuỗi hoán vị của cá thể con.
+
+\subsubsection{Swap mutation}
+Hai vị trí ngẫu nhiên trên chuỗi hoán vị được chọn và tiến hành hoán đổi giá trị cho nhau. Phép đột biến này giúp khám phá các thứ tự phục vụ mới và tránh cho quần thể bị hội tụ sớm vào các cực trị địa phương.
+
+\subsubsection{Nondominated sorting}
+Quần thể cha và quần thể con được gộp lại thành tập hợp ứng viên. Các cá thể sau đó được phân chia thành các tập mặt phẳng không bị trội (\textit{nondominated fronts}):
+\begin{itemize}
+    \item \textbf{Front 1}: Gồm các nghiệm không bị trội bởi bất kỳ nghiệm nào khác;
+    \item \textbf{Front 2}: Gồm các nghiệm chỉ bị trội bởi các nghiệm thuộc Front 1;
+    \item Các \textbf{Front} tiếp theo được xây dựng tương tự theo thứ tự phân cấp.
+\end{itemize}
+Các \textit{front} lần lượt được đưa vào quần thể của thế hệ mới cho đến khi không thể thêm toàn bộ các cá thể của \textit{front} tiếp theo do vượt quá kích thước quần thể $P$.
+
+\subsubsection{Reference directions và niching}
+NSGA-III tạo các hướng tham chiếu (\textit{reference directions}) phân bố đều trên không gian ba mục tiêu. Trong cấu hình hiện tại:
+\begin{itemize}
+    \item Số lượng mục tiêu: $3$;
+    \item Số chia tham chiếu (\textit{reference divisions}): $6$;
+    \item Số lượng hướng tham chiếu (\textit{reference directions}): $28$;
+    \item Kích thước quần thể (\textit{population size}): $P = 28$.
+\end{itemize}
+
+Các giá trị mục tiêu được chuẩn hóa dựa trên giá trị nhỏ nhất trong quần thể. Mỗi cá thể được gán vào hướng tham chiếu gần nhất dựa trên khoảng cách vuông góc từ điểm mục tiêu đến đường tham chiếu.
+
+Khi \textit{front} cuối cùng không thể đưa toàn bộ vào quần thể mới, cơ chế duy trì ngách (\textit{niching selection}) sẽ ưu tiên chọn:
+\begin{enumerate}
+    \item Hướng tham chiếu đang có ít cá thể được gán nhất;
+    \item Nếu hướng tham chiếu đó chưa có cá thể nào, chọn cá thể có khoảng cách vuông góc gần hướng tham chiếu đó nhất;
+    \item Nếu hướng tham chiếu đã có cá thể, chọn ngẫu nhiên một cá thể chưa được chọn thuộc hướng đó.
+\end{enumerate}
+Cơ chế này giúp biên Pareto (\textit{Pareto front}) phân bố đồng đều và rộng khắp hơn trên các hướng đánh đổi giữa số lượng UAV, tổng quãng đường và độ trễ rủi ro.
+
+\subsubsection{Thuật toán giả (Pseudo-code)}
+
+Cấu trúc từng bước của thuật toán NSGA-III được thể hiện trong Thuật toán~\ref{alg:nsga3}.
+
+\begin{algorithm}[H]
+\SetAlgoLineterminator{}
+\KwIn{Thông tin \textit{instance}, cấu hình \textit{config} (gồm $P, G, p_c, p_m$)}
+\KwOut{\textit{Pareto front}, nghiệm đại diện $S^*$, \textit{runtime}}
+
+Khởi tạo bộ sinh số ngẫu nhiên từ \textit{seed}\;
+Xây dựng nghiệm \textit{greedy} khả thi $S_0$\;
+Tính $D_{\text{ref}}$ từ $S_0$\;
+Tạo tập $P$ hướng tham chiếu (\textit{reference directions})\;
+Khởi tạo quần thể $\mathcal{P}$ gồm $P$ cá thể\;
+
+\For{\textit{generation} $= 1$ \KwTo $G$}{
+    $\mathcal{Q} \leftarrow \emptyset$ \tcc*{Tập cá thể con (offspring)}
+    \While{$|\mathcal{Q}| < P$}{
+        \text{parent}_1 $\leftarrow$ TournamentSelection($\mathcal{P}$)\;
+        \text{parent}_2 $\leftarrow$ TournamentSelection($\mathcal{P}$)\;
+        \text{child} $\leftarrow$ OrderCrossover(\text{parent}_1, \text{parent}_2) với xác suất $p_c$\;
+        \text{child} $\leftarrow$ SwapMutation(\text{child}) với xác suất $p_m$\;
+        $\text{routes} \leftarrow$ DecodePermutation(\text{child})\;
+        Đánh giá 3 mục tiêu $\mathbf{F}(\text{child}) = \big(K(\text{child}), D(\text{child}), R(\text{child})\big)$\;
+        $\mathcal{Q} \leftarrow \mathcal{Q} \cup \{\text{child}\}\;$
+    }
+    $\mathcal{R} \leftarrow \mathcal{P} \cup \mathcal{Q}$ \tcc*{Gộp quần thể cha và con}
+    Phân chia $\mathcal{R}$ thành các \textit{nondominated fronts} $(\mathcal{F}_1, \mathcal{F}_2, \dots)$\;
+    $\mathcal{P}_{\text{new}} \leftarrow \emptyset$\;
+    Thêm lần lượt từng $\mathcal{F}_i$ vào $\mathcal{P}_{\text{new}}$ cho đến khi không thể thêm trọn vẹn $\mathcal{F}_l$\;
+    Chuẩn hóa các giá trị mục tiêu của các cá thể trong $\mathcal{R}$\;
+    Gán các cá thể vào các hướng tham chiếu gần nhất\;
+    Sử dụng \textit{Niching Selection} để chọn đủ $P$ cá thể từ $\mathcal{F}_l$ vào $\mathcal{P}_{\text{new}}$\;
+    $\mathcal{P} \leftarrow \mathcal{P}_{\text{new}}$\;
+}
+
+$\mathcal{PF} \leftarrow$ Tập các cá thể không bị trội trong quần thể $\mathcal{P}$ cuối cùng\;
+Chọn nghiệm đại diện $S^*$ từ $\mathcal{PF}$ theo thứ tự ưu tiên từ điển:
+\begin{equation}
+    g(S) = \big( K(S), \, D(S), \, R(S) \big)
+\end{equation}
+\Return{$\mathcal{PF}$, $S^*$, \textit{runtime}}\;
+\caption{Thuật toán NSGA-III cho bài toán Multi-UAV Routing}
+\label{alg:nsga3}
+\end{algorithm}
+
+Nghiệm đại diện $S^*$ trong cài đặt hiện tại được chọn theo thứ tự ưu tiên từ điển $g(S) = \big( K(S), D(S), R(S) \big)$. Tuy nhiên, toàn bộ biên Pareto ($\mathcal{PF}$) vẫn được lưu trữ đầy đủ để phục vụ việc phân tích sự đánh đổi (\textit{trade-off}) giữa các mục tiêu.
+
+
+\subsection{Benchmark}
+
+\subsubsection{Cấu hình benchmark}
+
+Thực nghiệm \textit{benchmark} nhỏ sử dụng ba \textit{instance} \texttt{Solomon-RISK} tiêu biểu trên quy mô $25$ khách hàng với cấu hình được mô tả trong Bảng~\ref{tab:nsga3_instances}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Cấu hình các instance trong thực nghiệm benchmark}
+    \label{tab:nsga3_instances}
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        \textbf{Instance} & \textbf{Số khách hàng} & \textbf{Số vùng risk} & \textbf{Số seed} \\ \hline
+        C101 & 25 & 1 & 5 \\ \hline
+        R101 & 25 & 1 & 5 \\ \hline
+        RC101 & 25 & 1 & 5 \\ \hline
+    \end{tabular}
+\end{table}
+
+Các tham số chạy thuật toán NSGA-III được thiết lập chi tiết trong Bảng~\ref{tab:nsga3_params}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Cấu hình tham số của thuật toán NSGA-III}
+    \label{tab:nsga3_params}
+    \begin{tabular}{|l|c|}
+        \hline
+        \textbf{Tham số} & \textbf{Giá trị} \\ \hline
+        Kích thước quần thể (\textit{Population size}) & 28 \\ \hline
+        Số chia tham chiếu (\textit{Reference divisions}) & 6 \\ \hline
+        Số thế hệ (\textit{Generations}) & 100 \\ \hline
+        Xác suất lai ghép (\textit{Crossover probability}, $p_c$) & 0.9 \\ \hline
+        Xác suất đột biến (\textit{Mutation probability}, $p_m$) & 0.15 \\ \hline
+        Kích thước đấu giá (\textit{Tournament size}) & 2 \\ \hline
+        Trọng số quãng đường ($\alpha$) & 0.5 \\ \hline
+        Trọng số rủi ro ($\beta$) & 0.5 \\ \hline
+    \end{tabular}
+\end{table}
+
+Các chỉ số chất lượng được ghi nhận và báo cáo bao gồm:
+\begin{itemize}
+    \item Số lượng UAV sử dụng;
+    \item Tổng quãng đường di chuyển;
+    \item Độ trễ rủi ro (\textit{risk delay});
+    \item Mục tiêu kết hợp quãng đường - rủi ro (\textit{objective distance-risk});
+    \item Kích thước tập biên Pareto (\textit{Pareto size});
+    \item Tính khả thi của nghiệm (\textit{feasibility});
+    \item Thời gian thực thi (\textit{runtime}).
+\end{itemize}
+
+\subsubsection{Kết quả smoke benchmark}
+
+Kết quả thực nghiệm sơ bộ đã xác nhận thuật toán hoạt động ổn định với cấu hình kiểm thử nhanh (\textit{smoke test}) gồm $2$ thế hệ (\textit{generations}) và hạt giống ngẫu nhiên \texttt{seed = 0} (xem Bảng~\ref{tab:smoke_benchmark}).
+
+\begin{table}[htbp]
+    \centering
+    \caption{Kết quả thực nghiệm smoke benchmark của NSGA-III (2 generations, seed = 0)}
+    \label{tab:smoke_benchmark}
+    \begin{tabular}{|l|c|c|c|c|c|c|}
+        \hline
+        \textbf{Instance} & \textbf{UAV} & \textbf{Distance} & \textbf{Risk delay} & \textbf{Objective} & \textbf{Pareto size} & \textbf{Runtime (s)} \\ \hline
+        C101 & 3 & 191.81 & 0.5232 & 0.7616 & 5 & 0.315 \\ \hline
+        R101 & 8 & 632.80 & 0.4220 & 0.7110 & 5 & 0.278 \\ \hline
+        RC101 & 6 & 571.13 & 0.2424 & 0.6212 & 5 & 0.293 \\ \hline
+    \end{tabular}
+\end{table}
+
+Tất cả các nghiệm thu được trong thực nghiệm \textit{smoke benchmark} đều đảm bảo tính khả thi $100\%$ và phục vụ đầy đủ $25$ khách hàng.
+
+Các số liệu trên đại diện cho kết quả chạy kiểm thử trên một \textit{seed}. Bài \textit{benchmark} đầy đủ $5$ \textit{seeds} đã được cấu hình trong đường dẫn \texttt{configs/benchmark\_small.json} và có thể được thực thi thông qua lệnh:
+
+\begin{verbatim}
+cd phase1_NSGA3
+uv run python -m nsga3_routing.experiment \
+  --config configs/benchmark_small.json \
+  --output results/benchmark-small-raw.csv
+\end{verbatim}
+
+Dữ liệu thô thu được được ghi nhận chi tiết theo từng cặp \textit{instance-seed}. Tệp kết quả tổng hợp (\textit{aggregate}) sẽ tự động tính toán các giá trị trung bình tương ứng cho số lượng UAV, quãng đường, độ trễ rủi ro, hàm mục tiêu kết hợp và thời gian chạy.
+
+\subsection{Phân tích độ phức tạp}
+
+Để đánh giá độ phức tạp thuật toán NSGA-III, ta quy ước các ký hiệu sau:
+\begin{itemize}
+    \item $n$: Số lượng khách hàng;
+    \item $P$: Kích thước quần thể (\textit{population size});
+    \item $G$: Số lượng thế hệ (\textit{generations});
+    \item $K$: Số lượng tuyến UAV (\textit{routes});
+    \item $M$: Số lượng mục tiêu (với bài toán này $M = 3$).
+\end{itemize}
+
+\subsubsection{Khởi tạo quần thể}
+Mỗi cá thể được giải mã (\textit{decode}) từ một chuỗi hoán vị. Bộ giải mã thử nhiều vị trí chèn và đánh giá lại \textit{route} sau mỗi phép thử. Trong trường hợp xấu nhất, chi phí giải mã một cá thể là $\mathcal{O}(n^3)$. Do quần thể ban đầu gồm $P$ cá thể, độ phức tạp bước khởi tạo là:
+\begin{equation}
+    T_{\text{initialization}} = \mathcal{O}(P n^3)
+\end{equation}
+
+\subsubsection{Các toán tử biến dị (Variation operators)}
+Các phép toán chọn lọc đấu giá (\textit{tournament selection}), lai ghép (\textit{crossover}) và đột biến (\textit{mutation}) làm việc trực tiếp trên chuỗi hoán vị nên có chi phí thấp hơn đáng kể so với bộ giải mã:
+\begin{equation}
+    T_{\text{variation}} = \mathcal{O}(P n)
+\end{equation}
+
+\subsubsection{Sắp xếp không bị trội (Nondominated sorting)}
+Mỗi thế hệ tiến hành xử lý gộp cả quần thể cha và con với kích thước tổng cộng là $2P$. Thuật toán sắp xếp không bị trội nhanh (\textit{Fast nondominated sorting}) cần so sánh từng cặp cá thể với độ phức tạp $\mathcal{O}((2P)^2 M)$. Vì $M = 3$ là một hằng số nhỏ, chi phí này được rút gọn thành:
+\begin{equation}
+    T_{\text{sorting}} = \mathcal{O}(P^2)
+\end{equation}
+
+\subsubsection{Chuẩn hóa và duy trì ngách (Normalization và Niching)}
+Bước chuẩn hóa không gian mục tiêu có chi phí là $\mathcal{O}(P M)$. Việc tính toán khoảng cách vuông góc từ các điểm mục tiêu đến tập các hướng tham chiếu (\textit{reference directions}) có chi phí:
+\begin{equation}
+    T_{\text{niching}} = \mathcal{O}(P H M)
+\end{equation}
+trong đó $H$ là số lượng hướng tham chiếu. Với cấu hình mặc định hiện tại ($H = P = 28$), thành phần này có độ phức tạp tương đương:
+\begin{equation}
+    T_{\text{niching}} = \mathcal{O}(P^2)
+\end{equation}
+
+\subsubsection{Độ phức tạp trong một thế hệ}
+Tổng chi phí tính toán chính cho mỗi thế hệ $g$ được xác định bởi:
+\begin{equation}
+    T_{\text{generation}} = \mathcal{O}(P n^3 + P^2)
+\end{equation}
+
+\subsubsection{Độ phức tạp tổng thể của NSGA-III}
+Thực thi qua $G$ thế hệ, tổng độ phức tạp thời gian (\textit{time complexity}) của toàn bộ thuật toán NSGA-III là:
+\begin{equation}
+    T_{\text{NSGA-III}} = \mathcal{O}\Big( P n^3 + G(P n^3 + P^2) \Big)
+\end{equation}
+
+Nếu kích thước quần thể $P$ được cố định ở một giá trị nhỏ, độ phức tạp thời gian gần đúng theo số lượng khách hàng $n$ và số thế hệ $G$ sẽ là:
+\begin{equation}
+    T_{\text{NSGA-III}} = \mathcal{O}(G \cdot n^3)
+\end{equation}
+
+\subsubsection{Độ phức tạp không gian (Space complexity)}
+Bộ nhớ sử dụng trong suốt quá trình chạy thuật toán bao gồm:
+\begin{itemize}
+    \item Ma trận khoảng cách (\textit{distance matrix}): $\mathcal{O}(n^2)$;
+    \item Quần thể cha và quần thể con (\textit{population \& offspring}): $\mathcal{O}(P n)$;
+    \item Tập các hướng tham chiếu (\textit{reference directions}): $\mathcal{O}(P M)$;
+    \item Các tuyến ứng viên tạm thời (\textit{candidate routes}): Tối đa khoảng $\mathcal{O}(n^2)$.
+\end{itemize}
+
+Do đó, độ phức tạp bộ nhớ tổng thể được biểu diễn bởi:
+\begin{equation}
+    M_{\text{NSGA-III}} = \mathcal{O}(n^2 + P n)
+\end{equation}
+
+\subsection{Phân tích runtime}
+
+Thời gian thực thi (\textit{runtime}) được đo bằng hàm \texttt{time.perf\_counter()} trong hàm \texttt{run\_nsga3}. Khoảng thời gian đo bao gồm toàn bộ các bước:
+\begin{itemize}
+    \item Xây dựng nghiệm ban đầu;
+    \item Khởi tạo quần thể;
+    \item Tạo thế hệ con (\textit{offspring});
+    \item Sắp xếp không bị trội (\textit{nondominated sorting});
+    \item Ánh xạ hướng tham chiếu (\textit{reference-direction association});
+    \item Chọn lọc dựa trên ngách (\textit{niching selection});
+    \item Đánh giá tập biên Pareto (\textit{Pareto front}) cuối cùng.
+\end{itemize}
+
+Thời gian phân tích (\textit{parse}) tệp dữ liệu đầu vào không được tính vào runtime của NSGA-III.
+
+Thời gian chạy thực tế phụ thuộc chủ yếu vào các yếu tố:
+\begin{itemize}
+    \item Số lượng khách hàng ($n$);
+    \item Kích thước quần thể ($P$);
+    \item Số lượng thế hệ ($G$);
+    \item Số lượng tuyến (\textit{routes}) trung gian;
+    \item Số phép thử chèn (\textit{insertion}) trong bộ giải mã (\textit{decoder});
+    \item Cấu hình phần cứng và hạt giống ngẫu nhiên (\textit{seed}).
+\end{itemize}
+
+Kết quả thực nghiệm kiểm thử nhanh (\textit{smoke benchmark}) cho thấy runtime của $2$ thế hệ nằm trong khoảng từ $0.278$ đến $0.315$ giây. Runtime trung bình của ba \textit{instance} thử nghiệm là:
+\begin{equation}
+    \bar{t}_{\text{smoke}} = \frac{0.315 + 0.278 + 0.293}{3} \approx 0.295 \text{ giây}
+\end{equation}
+
+Thời gian chạy trung bình trên mỗi thế hệ (\textit{generation}) xấp xỉ:
+\begin{equation}
+    t_{\text{per\_gen}} = \frac{0.295}{2} \approx 0.148 \text{ giây}
+\end{equation}
+
+Kết quả này dùng để kiểm tra tính đúng đắn trong hoạt động của chương trình trên một \textit{seed}. Khi thực hiện bài \textit{benchmark} đầy đủ trên $s$ giá trị \textit{seed} khác nhau, runtime trung bình $\overline{t}$ được tính theo công thức:
+\begin{equation}
+    \overline{t} = \frac{1}{s} \sum_{j=1}^{s} t_j
+\end{equation}
+
+Độ lệch chuẩn của runtime ($\sigma_t$) được xác định bởi:
+\begin{equation}
+    \sigma_t = \sqrt{ \frac{1}{s - 1} \sum_{j=1}^{s} (t_j - \overline{t})^2 }
+\end{equation}
+
+Runtime tăng gần như tuyến tính theo số lượng thế hệ $G$, do mỗi thế hệ đều phải khởi tạo, biến dị và đánh giá lại một quần thể con mới. Tuy nhiên, thời gian chạy sẽ tăng phi tuyến tính theo số lượng khách hàng $n$ do bộ giải mã phải kiểm tra nhiều vị trí chèn ứng viên và đánh giá lại các ràng buộc trên từng tuyến.
+
+So với thuật toán ALNS, NSGA-III chịu thêm một số chi phí tính toán đặc thù bao gồm:
+\begin{itemize}
+    \item Duy trì đồng thời cả quần thể cha (\textit{population}) và quần thể con (\textit{offspring});
+    \item Thuật toán phân loại không bị trội (\textit{nondominated sorting});
+    \item Chuẩn hóa không gian mục tiêu (\textit{normalization});
+    \item Ánh xạ khoảng cách tới các hướng tham chiếu (\textit{association});
+    \item Phép chọn lọc duy trì đa dạng (\textit{niching selection}).
+\end{itemize}
+
+Đổi lại, NSGA-III cung cấp một tập hợp đa dạng các nghiệm Pareto trong một lần chạy duy nhất, cho phép nhà quản lý phân tích trực quan sự đánh đổi (\textit{trade-off}) giữa số lượng UAV, tổng quãng đường di chuyển và độ trễ rủi ro (\textit{risk delay}) thay vì chỉ nhận về một nghiệm vô hướng đơn lẻ như ALNS.
+\end{document}

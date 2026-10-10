@@ -3,10 +3,12 @@
 import argparse
 import csv
 import json
+import shutil
 import statistics
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, replace
 from pathlib import Path
+from uuid import uuid4
 
 from .nsga3 import NSGA3Config, run_nsga3
 from .parser import parse_instance
@@ -51,6 +53,38 @@ class BenchmarkConfig:
     divisions: int = 4
     workers: int = 1
     output: Path = Path("results/nsga3_pareto_raw.csv")
+
+
+def _create_run_directory(output: Path) -> Path:
+    """Create the directory that stores per-case checkpoints."""
+    temporary_root = output.parent / ".tmp"
+    run_dir = temporary_root / f"run-{uuid4().hex}"
+
+    run_dir.mkdir(parents=True, exist_ok=False)
+
+    return run_dir
+
+
+def _write_checkpoint(path: Path, rows: list[dict[str, object]]) -> None:
+    """Atomically write one completed benchmark case."""
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    payload = json.dumps(rows, indent=2)
+
+    temporary.write_text(payload + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def _read_checkpoint(path: Path) -> list[dict[str, object]]:
+    """Read one completed benchmark case."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+
+    if not isinstance(payload, list):
+        raise ValueError(f"invalid checkpoint payload: {path}")
+
+    if any(not isinstance(row, dict) for row in payload):
+        raise ValueError(f"invalid checkpoint row: {path}")
+
+    return [dict(row) for row in payload]
 
 
 def load_benchmark_config(path: Path) -> BenchmarkConfig:
@@ -261,7 +295,7 @@ def run_benchmark(
     workers: int = 1,
 ) -> None:
     selected_risk_limits = risk_limits or (risk_limit,)
-    jobs = [
+    case_arguments = [
         (
             data_dir,
             name,
@@ -276,14 +310,68 @@ def run_benchmark(
         for name in names
         for seed in seeds
     ]
+    run_dir = _create_run_directory(output)
+    jobs = [
+        (arguments, run_dir / f"{index:04d}.json")
+        for index, arguments in enumerate(case_arguments)
+    ]
 
-    if workers == 1:
-        groups = [_solve_case(job) for job in jobs]
+    try:
+        if workers == 1:
+            for arguments, result_path in jobs:
+                _write_checkpoint(result_path, _solve_case(arguments))
+        else:
+            _run_parallel_jobs(jobs, workers)
+
+        groups = [_read_checkpoint(path) for _, path in jobs]
+        rows = [row for group in groups for row in group]
+
+        _write_benchmark_results(
+            rows,
+            output,
+            population_size,
+            generations,
+            divisions,
+        )
+    except BaseException:
+        raise
     else:
-        with ProcessPoolExecutor(max_workers=workers) as executor:
-            groups = list(executor.map(_solve_case, jobs))
+        shutil.rmtree(run_dir)
 
-    rows = [row for group in groups for row in group]
+        try:
+            run_dir.parent.rmdir()
+        except OSError:
+            pass
+
+
+def _run_parallel_jobs(
+    jobs: list[tuple[tuple, Path]],
+    workers: int,
+) -> None:
+    futures = {}
+
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        for arguments, result_path in jobs:
+            future = executor.submit(_solve_case, arguments)
+            futures[future] = result_path
+
+        try:
+            for future in as_completed(futures):
+                _write_checkpoint(futures[future], future.result())
+        except BaseException:
+            for future in futures:
+                future.cancel()
+
+            raise
+
+
+def _write_benchmark_results(
+    rows: list[dict[str, object]],
+    output: Path,
+    population_size: int,
+    generations: int,
+    divisions: int,
+) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
 
     with output.open("w", newline="", encoding="utf-8") as handle:

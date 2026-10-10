@@ -10,6 +10,11 @@ Each benchmark writes two files in the selected output directory:
   seed contributes its best value for each objective before the cross-seed
   mean, standard deviation, best, and worst values are calculated.
 
+While a benchmark is running, each completed instance/seed/risk case is
+atomically checkpointed as `.tmp/run-<id>/<index>.json` below the output
+directory. Checkpoints remain available if the benchmark fails and are removed
+only after both final CSV files are written successfully.
+
 Run the configured benchmark from `phase1_NSGA`:
 
 ```bash

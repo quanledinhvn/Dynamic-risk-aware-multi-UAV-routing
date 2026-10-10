@@ -198,3 +198,58 @@ def test_benchmark_runs_with_configured_worker_count(tmp_path, workers):
     assert len(aggregate) == 1
     assert aggregate[0]["instance"] == "c101"
     assert aggregate[0]["runs"] == "1"
+    assert not (tmp_path / ".tmp").exists()
+
+
+def test_benchmark_keeps_completed_case_checkpoint_after_failure(
+    tmp_path,
+    monkeypatch,
+):
+    completed_row = {
+        "instance": "c101",
+        "risk_limit": 0,
+        "seed": 0,
+        "pareto_index": 0,
+        "vehicles": 1.0,
+        "distance": 2.0,
+        "risk_delay": 3.0,
+        "max_load": 4.0,
+        "total_lateness": 5.0,
+        "runtime_seconds": 6.0,
+    }
+    calls = 0
+
+    def fake_solve_case(_job):
+        nonlocal calls
+        calls += 1
+
+        if calls == 2:
+            raise RuntimeError("interrupted benchmark")
+
+        return [completed_row]
+
+    monkeypatch.setattr(
+        "uav_routing_nsga.experiment._solve_case",
+        fake_solve_case,
+    )
+    output = tmp_path / "raw.csv"
+
+    with pytest.raises(RuntimeError, match="interrupted benchmark"):
+        run_benchmark(
+            data_dir=ROOT / "dataset/solomon_risk",
+            names=("c101",),
+            seeds=(0, 1),
+            output=output,
+            customer_limit=5,
+            risk_limits=(0,),
+            population_size=4,
+            generations=1,
+            divisions=1,
+            workers=1,
+        )
+
+    checkpoints = list((tmp_path / ".tmp").glob("run-*/*.json"))
+
+    assert len(checkpoints) == 1
+    assert json.loads(checkpoints[0].read_text()) == [completed_row]
+    assert not list((tmp_path / ".tmp").rglob("*.json.tmp"))

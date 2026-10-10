@@ -1,0 +1,21 @@
+{
+  "instances": [
+    "c101",
+    "c104",
+    "c201",
+    "r101",
+    "r104",
+    "r201",
+    "rc101",
+    "rc104",
+    "rc201"
+  ],
+  "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  "customer_limit": 100,
+  "risk_limits": [5],
+  "population_size": 28,
+  "generations": 1000,
+  "divisions": 4,
+  "workers": 8,
+  "output": "results/benchmark_c100_r5_s10_g1000.csv"
+}

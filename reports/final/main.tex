@@ -1,0 +1,432 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{natbib}
+
+\geometry{margin=25mm}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  citecolor=green!40!black,
+  urlcolor=blue!60!black,
+  pdftitle={Định tuyến đa UAV động có xét rủi ro}
+}
+
+\newcommand{\method}{RH--RA--ALNS}
+\newcommand{\riskdelay}{R_{\mathrm{delay}}}
+\newcommand{\objective}{F}
+
+\title{Định tuyến đa UAV động có xét rủi ro\\
+\large Tái tối ưu bằng Rolling Horizon với tìm kiếm Risk-Aware và Contextual}
+\author{%
+\textbf{Nhóm 1}\\[0.5em]
+Lê Đình Quân -- 20261225M\\
+Nguyễn Minh Phương -- 20252637M\\
+Nguyễn Nhật Minh -- 20252093M\\
+Tạ Công Nam -- 20252640M\\
+Nguyễn Hoàng Hải -- 20252583M\\[0.5em]
+Học viên cao học\\
+\textbf{Trường Công nghệ Thông tin và Truyền thông -- Đại học Bách khoa Hà Nội}\\
+Học phần Phân tích và Thiết kế thuật toán}
+\date{Tháng 10 năm 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Trong môi trường thiên tai biến đổi nhanh, một đội phương tiện bay không người
+lái (UAV) phải phục vụ các địa điểm khẩn cấp trong khi yêu cầu mới, vùng rủi ro
+và thời hạn liên tục xuất hiện trong quá trình thực hiện nhiệm vụ. Nghiên cứu
+này mô hình hóa bài toán dưới dạng một mở rộng động, có xét rủi ro của bài toán
+định tuyến phương tiện với cửa sổ thời gian. Mục tiêu tĩnh ưu tiên tối thiểu hóa
+số UAV, sau đó tối thiểu hóa tổ hợp chuẩn hóa giữa quãng đường và độ trễ phục vụ
+có trọng số ưu tiên. Phương pháp \method{} đề xuất nhúng tìm kiếm lân cận lớn
+thích nghi (ALNS) vào cơ chế rolling horizon. Phương pháp bảo toàn các tiền tố
+tuyến đường đã thực hiện, chiếu phương án trước đó sang mỗi epoch mới, dùng
+repair operator để khôi phục tính khả thi và tái tối ưu bằng warm start. Các
+destroy/repair operator theo mức ưu tiên rủi ro và bộ chọn LinUCB contextual là
+hai cơ chế bổ trợ giúp tập trung quá trình tìm kiếm vào khách hàng khẩn cấp.
+Thực nghiệm sử dụng các bộ Solomon được bổ sung rủi ro theo cách tái lập được và
+các kịch bản động gồm yêu cầu mới, cập nhật bản đồ rủi ro và thay đổi thời hạn.
+Trên sáu nhóm benchmark động đã hoàn tất, warm-start ALNS giảm giá trị mục tiêu
+trung bình 2,6--15,0\% so với cold restart và 3,9--15,7\% so với chèn tham
+lam. Kiểm định Wilcoxon theo cặp với hiệu chỉnh Holm cho kết quả có ý nghĩa
+thống kê ở mọi so sánh được báo cáo. Kết quả ủng hộ rolling-horizon
+re-optimization với warm start, đồng thời cho thấy contextual operator selection
+không mặc nhiên tốt hơn trọng số thích nghi truyền thống. Mô hình pin cụ thể
+và thực nghiệm NSGA-III quy mô lớn hoàn chỉnh được dành cho nghiên cứu tiếp theo.
+\end{abstract}
+
+\section{Giới thiệu}
+\label{sec:introduction}
+
+Đội UAV có thể khảo sát hạ tầng bị hư hỏng, chuyển tiếp thông tin và vận chuyển
+vật tư khi giao thông đường bộ bị hạn chế. Trong các nhiệm vụ này, chỉ tối thiểu
+hóa quãng đường là chưa đủ: một tuyến dài hơn đôi chút có thể tốt hơn nếu phục
+vụ được một địa điểm rủi ro cao sớm hơn đáng kể. Kế hoạch cũng phải thay đổi khi
+mục tiêu mới xuất hiện, ước lượng rủi ro tại địa phương thay đổi hoặc thời hạn
+bị rút ngắn. Các yêu cầu này liên hệ bài toán lập kế hoạch đa UAV với định tuyến
+phương tiện động và lập lịch có xét mức ưu tiên. Bài toán giám sát thiên tai bằng
+nhiều UAV còn đặt ra những vấn đề về phối hợp, truyền thông, khả năng chống chịu
+và an toàn \citep{chandran2024multi}.
+
+Nghiên cứu tập trung vào câu hỏi: \emph{Warm-start Risk-Aware ALNS trong cơ chế
+rolling horizon có thể cải thiện tuyến đường đa UAV động mà
+vẫn thỏa mãn các ràng buộc tải trọng và cửa sổ thời gian hay không?} Nghiên cứu
+cũng khảo sát liệu một contextual bandit có thể chọn toán tử lân cận hiệu quả
+hơn cơ chế trọng số thích nghi chỉ dựa trên lịch sử hay không.
+
+Các đóng góp chính gồm:
+
+\begin{enumerate}
+  \item một mở rộng có xét rủi ro và tái lập được của bộ benchmark Solomon VRPTW;
+  \item một hàm mục tiêu theo thứ tự từ điển kết hợp số UAV, quãng đường chuẩn hóa
+        và độ trễ có trọng số ưu tiên;
+  \item các destroy/repair operator theo ưu tiên rủi ro và cơ chế chọn toán tử
+        contextual cho ALNS;
+  \item một bộ điều khiển rolling-horizon khóa các tiền tố đã thực hiện và
+        tái sử dụng phương án khả thi trước đó; và
+  \item đánh giá trên các kịch bản tĩnh và động bằng kiểm định thống kê theo cặp
+        cùng các thực nghiệm độ nhạy.
+\end{enumerate}
+
+Cài đặt hiện tại mô hình hóa tải trọng và thời lượng nhiệm vụ thông qua sức chứa,
+cửa sổ thời gian và thời hạn quay về depot. Mô hình chưa biểu diễn trực tiếp
+trạng thái pin hoặc mức tiêu thụ năng lượng phi tuyến; đây là điểm cần phân biệt
+khi diễn giải khái niệm ``khả thi về pin'' trong đề bài của dự án.
+
+\section{Nghiên cứu liên quan}
+\label{sec:related-work}
+
+Bài toán định tuyến phương tiện với cửa sổ thời gian (VRPTW) là nền tảng tổ hợp
+của nghiên cứu này. Solomon đã giới thiệu các họ bộ dữ liệu C, R và RC được sử
+dụng rộng rãi, đồng thời chỉ ra hiệu quả của heuristic chèn trên nhiều cấu trúc
+không gian và thời gian khác nhau \citep{solomon1987algorithms}. Do tối ưu chính
+xác trở nên tốn kém với các bộ dữ liệu có kích thước thực tế, tìm kiếm lân cận
+lớn và các biến thể thích nghi của nó là hướng tiếp cận phổ biến. Ropke và
+Pisinger đề xuất ALNS, trong đó các destroy và repair operator nhận điểm thưởng,
+còn xác suất lựa chọn chúng được điều chỉnh trong quá trình tìm kiếm
+\citep{ropke2006adaptive}.
+
+Định tuyến phương tiện động phân loại bài toán dựa trên thời điểm thông tin xuất
+hiện và tính tất định hoặc ngẫu nhiên của thông tin đó \citep{pillac2013review}.
+Các phương pháp rolling horizon liên tục giải một bài toán bị giới hạn, thực
+hiện một phần kế hoạch và tái tối ưu khi có thông tin mới. Bộ điều khiển trong
+nghiên cứu này tuân theo mô hình đó nhưng bổ sung các tiền tố tuyến đường bất
+biến, cập nhật bản đồ rủi ro và cơ chế phân loại theo rủi ro đối với những yêu
+cầu không còn có thể chèn một cách khả thi.
+
+Contextual bandit sử dụng đặc trưng của trạng thái quyết định hiện tại để cân
+bằng giữa khám phá và khai thác. LinUCB ước lượng một mô hình phần thưởng tuyến
+tính riêng cho mỗi hành động và cộng thêm một thành phần bất định khi lựa chọn
+\citep{li2010contextual}. Trong bài toán này, mỗi hành động là một cặp
+destroy--repair operator; context mô tả tiến độ tìm kiếm, nhiệt độ, mức đình trệ, tỷ lệ
+chấp nhận và cải thiện gần đây, chênh lệch số UAV, chênh lệch giá trị mục tiêu và
+độ trễ rủi ro hiện tại.
+
+Các thuật toán tiến hóa đa mục tiêu là một lựa chọn thay thế cho cách gộp nhiều
+mục tiêu thành một hàm duy nhất. NSGA-III sử dụng các hướng tham chiếu để duy trì
+một quần thể non-dominated đa dạng \citep{deb2014nsga3}. Vì vậy, mã nguồn còn
+chứa một baseline NSGA-III cho ba mục tiêu: số UAV, quãng đường
+và độ trễ rủi ro. Benchmark tổng hợp quy mô lớn của thuật toán này chưa hoàn tất
+tại thời điểm viết báo cáo, nên nghiên cứu chỉ mô tả phương pháp và không đưa ra
+kết luận so sánh. Các nghiên cứu gần đây về định tuyến trong thiên tai cũng nhấn
+mạnh độ trễ theo mức độ khẩn cấp và sự đánh đổi giữa ưu tiên phản ứng với chi
+phí di chuyển \citep{coco2024probabilistic,chen2026rescue}.
+
+\section{Phương pháp đề xuất}
+\label{sec:method}
+
+\subsection{Mô hình bài toán}
+
+Gọi $V=\{0,1,\ldots,n\}$ là tập đỉnh, trong đó đỉnh $0$ là depot và
+$V\setminus\{0\}$ là tập các yêu cầu phục vụ. Khách hàng $i$ có tọa độ
+$(x_i,y_i)$, nhu cầu $q_i$, thời gian phục vụ $s_i$ và cửa sổ thời gian
+$[a_i,b_i]$. Mỗi UAV có sức chứa $Q$. Khoảng cách Euclid được dùng làm thời gian
+di chuyển. Một phương án $S=(r_1,\ldots,r_K)$ là tập có thứ tự gồm các tuyến đi
+từ depot và quay về depot, trong đó mỗi khách hàng đang hoạt động được phục vụ
+đúng một lần. Một tuyến khả thi nếu tổng nhu cầu không vượt quá $Q$, thời điểm
+bắt đầu phục vụ mỗi khách hàng không muộn hơn $b_i$ và UAV quay về trước thời
+hạn của depot.
+
+Với vùng rủi ro $z$ có tâm $(x_z,y_z)$ và bán kính $\rho_z$, mức ưu tiên của
+khách hàng $i$ được xác định bởi
+
+\begin{equation}
+  p_i = \max_{z}\left\{0,
+  1-\frac{\sqrt{(x_i-x_z)^2+(y_i-y_z)^2}}{\rho_z}\right\}.
+  \label{eq:risk-priority}
+\end{equation}
+
+Mức ưu tiên giảm tuyến tính từ một tại tâm vùng rủi ro xuống không tại biên.
+Nếu $t_i$ là thời điểm bắt đầu phục vụ, độ trễ rủi ro chuẩn hóa là
+
+\begin{equation}
+  \riskdelay(S)=
+  \frac{\sum_{i=1}^{n} p_i
+  \dfrac{t_i-a_i}{\max\{1,b_i-a_i\}}}
+  {\sum_{i=1}^{n}p_i},
+  \label{eq:risk-delay}
+\end{equation}
+
+và nhận giá trị không nếu mọi mức ưu tiên đều bằng không. Gọi $D(S)$ là tổng
+quãng đường và $D_{\mathrm{ref}}$ là quãng đường của phương án khả thi ban đầu.
+Hàm mục tiêu tổng hợp được xác định bởi
+
+\begin{equation}
+  \objective(S)=\alpha\frac{D(S)}{D_{\mathrm{ref}}}
+  +\beta\riskdelay(S), \qquad \alpha+\beta=1.
+  \label{eq:objective}
+\end{equation}
+
+Các phương án khả thi được so sánh theo thứ tự từ điển bằng
+$\bigl(K(S),\objective(S)\bigr)$, do đó giảm số UAV được ưu tiên hơn cải thiện
+hàm mục tiêu tổng hợp. Trong thực nghiệm động, số khách hàng chưa được phục vụ còn
+được so sánh trước số UAV và giá trị mục tiêu.
+
+\subsection{Risk-Aware ALNS}
+
+Phương án ban đầu chèn khách hàng theo thứ tự thời hạn và rủi ro. Tại mỗi vòng
+lặp ALNS, một destroy operator và một repair operator biến đổi phương án hiện
+tại. Các destroy operator gồm random removal, worst removal, related removal,
+route removal và risk-priority removal. Các repair operator gồm greedy
+insertion, regret-2 insertion và risk-priority insertion. Related removal kết
+hợp sai khác đã chuẩn hóa về khoảng cách, cửa sổ thời gian, nhu cầu và rủi ro.
+Risk-priority insertion sắp xếp các khách hàng
+đã loại bỏ theo $p_i$ giảm dần trước khi đánh giá các vị trí chèn khả thi.
+
+Phương án ứng viên có ít UAV hơn hoặc giá trị mục tiêu thấp hơn được chấp nhận.
+Khi số UAV bằng nhau, simulated annealing có thể chấp nhận một bước đi xấu hơn
+với xác suất
+
+\begin{equation}
+  P(\text{chấp nhận})=
+  \exp\left(-\frac{\objective(S')-\objective(S)}{T}\right),
+\end{equation}
+
+trong đó $T$ giảm theo cấp số nhân. Phần thưởng toán tử phân biệt nghiệm tốt nhất
+toàn cục mới, sự cải thiện phương án hiện tại và bước đi xấu hơn được chấp nhận.
+Sau mỗi đoạn, ALNS chuẩn cập nhật trọng số toán tử bằng một hệ số phản ứng.
+
+Trong cơ chế contextual operator selection, mỗi cặp destroy--repair là một arm
+của LinUCB. Với context vector $x_t$, arm $a$ nhận điểm
+
+\begin{equation}
+  u_{t,a}=x_t^{\mathsf T}A_a^{-1}b_a
+  +\gamma\sqrt{x_t^{\mathsf T}A_a^{-1}x_t},
+\end{equation}
+
+trong đó $\gamma$ điều khiển mức độ khám phá. Arm được chọn được cập nhật bằng
+phần thưởng ALNS quan sát được. Cơ chế này chọn toán tử dựa trên trạng thái tìm
+kiếm hiện tại, thay vì chỉ dựa trên điểm lịch sử tổng hợp của
+toán tử.
+
+\subsection{Tái tối ưu bằng Rolling Horizon}
+
+Kịch bản động gồm các sự kiện khách hàng xuất hiện, vùng rủi ro thay đổi và thời
+hạn thay đổi. Epoch có thể được kích hoạt định kỳ, theo sự kiện hoặc kết hợp cả
+hai. Tại mỗi epoch, \method{} thực hiện các bước sau:
+
+\begin{enumerate}
+  \item khóa mọi tiền tố tuyến đường đã được thực hiện;
+  \item áp dụng các sự kiện mới và cố định mức ưu tiên rủi ro của những khách
+        hàng đã hoàn thành;
+  \item chiếu phương án trước đó lên bộ dữ liệu đã cập nhật;
+  \item dùng repair operator để chèn các khách hàng bị dịch chuyển và khách
+        hàng mới, đồng thời ghi nhận những khách hàng không thể phục vụ; và
+  \item warm start ALNS trên các hậu tố tuyến đường còn tự do, trong khi vẫn
+        bảo toàn mọi tiền tố đã khóa.
+\end{enumerate}
+
+Ba chính sách được dùng để tách riêng tác động của tái tối ưu. \emph{Greedy
+insert} chỉ thực hiện phép chiếu và repair. \emph{Cold restart} xây dựng lại
+phần chưa khóa rồi chạy ALNS. \emph{Warm-start ALNS} tối ưu trực tiếp từ phương
+án hiện tại sau phép chiếu. Một lời giải clairvoyant, tức biết trước toàn bộ sự
+kiện, cung cấp giá trị mục tiêu tham chiếu nhưng không phải là chính sách có thể
+triển khai.
+
+\subsection{Mở rộng đa mục tiêu và độ phức tạp}
+
+Mở rộng NSGA-III biểu diễn phương án bằng một hoán vị, giải mã hoán vị thành các
+tuyến thỏa mãn sức chứa và cửa sổ thời gian, đồng thời tối thiểu hóa
+$(K,D,\riskdelay)$. Phép lai có thứ tự, đột biến, non-dominated sorting, chuẩn
+hóa mục tiêu, gán hướng tham chiếu và niching được sử dụng để tạo thế hệ tiếp
+theo.
+
+Với $n$ khách hàng, tiền xử lý độ liên quan từng cặp cần $O(n^2)$ thời gian và
+bộ nhớ. Khi số phần tử loại bỏ $q$ bị chặn, việc đánh giá trực tiếp các vị trí
+chèn cho một vòng ALNS có cận trên $O(qn^2)$; do đó một lần chạy
+$I$ vòng có độ phức tạp $O(Iqn^2)$. LinUCB bổ sung $O(Ad^2)$ cho mỗi quyết định
+với $A$ arm và số chiều ngữ cảnh $d=9$, nhỏ so với chi phí đánh giá tuyến trong
+cài đặt này. Với kích thước quần thể $N$, số mục tiêu $m$ và số thế hệ $G$,
+NSGA-III bị chi phối bởi non-dominated sorting và chọn lọc, xấp xỉ
+$O(GmN^2)$, ngoài chi phí giải mã tuyến.
+
+\section{Kết quả thực nghiệm}
+\label{sec:results}
+
+\subsection{Thiết lập thực nghiệm}
+
+Nghiên cứu mở rộng 56 bộ dữ liệu Solomon bằng năm vùng rủi ro tất định. Bán kính
+các vùng là những số nguyên khác nhau từ 2 đến 10, tâm vùng không bao phủ depot
+và seed của bộ sinh được cố định. Thực nghiệm tĩnh sử dụng 100 khách hàng, năm
+vùng rủi ro, mười seed ngẫu nhiên, 1.000 vòng ALNS và $\alpha=\beta=0{,}5$.
+Baseline và biến thể contextual sử dụng cùng tập destroy/repair operator.
+
+Các kịch bản động sử dụng chín bộ dữ liệu gốc (C101--C103, R101--R103 và
+RC101--RC103), 25 khách hàng được biết ban đầu và 5, 12 hoặc 25 khách hàng xuất
+hiện động. Mỗi kịch bản còn có hai lần cập nhật rủi ro và hai lần cập nhật thời
+hạn. Độ dài epoch bằng 5\% chân trời lập kế hoạch; epoch đầu nhận 2.000 vòng
+ALNS và các epoch sau nhận 500 vòng. Các nhóm tối đa 50 khách hàng chứa 900 lần
+chạy cho mỗi chính sách (90 kịch bản nhân mười seed thuật toán). Các nhóm 100
+khách hàng chứa 270 lần chạy cho mỗi chính sách (90 kịch bản nhân ba seed thuật
+toán).
+
+Mọi giá trị được báo cáo đều được đọc từ các tệp CSV và tệp phân tích đã hoàn
+tất trong mã nguồn dự án. Kết quả cloud 5.000/10.000 vòng chưa hoàn tất không được
+trộn vào các bảng này.
+
+\subsection{Benchmark tĩnh}
+
+Bảng~\ref{tab:static} lấy trung bình vĩ mô từ giá trị trung bình theo từng bộ dữ
+liệu của toàn bộ 56 bộ dữ liệu. Trọng số thích nghi truyền thống tốt hơn một
+chút so với cấu hình contextual đã đánh giá cả về giá trị mục tiêu và thời
+gian chạy. Cơ chế contextual thắng về giá trị mục tiêu trên 22 trong 56 bộ dữ
+liệu nhưng không vượt trội một cách ổn định. Kết quả này cho thấy cần tiếp tục
+hiệu chỉnh tham số hoặc dùng shared prior thay vì khẳng định ưu thế tổng quát.
+
+\begin{table}[t]
+  \centering
+  \caption{Benchmark tĩnh: trung bình vĩ mô trên 56 bộ dữ liệu, mười seed cho
+  mỗi bộ dữ liệu và 1.000 vòng lặp. Giá trị thấp hơn là tốt hơn.}
+  \label{tab:static}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lrrrrr}
+    \toprule
+    Phương pháp & UAV & Quãng đường & Độ trễ rủi ro & Mục tiêu & Thời gian (s) \\
+    \midrule
+    ALNS thích nghi & 8,221 & 1219,56 & 0,0858 & 0,4140 & 227,61 \\
+    Contextual ALNS & 8,230 & 1221,44 & 0,0913 & 0,4173 & 248,65 \\
+    \bottomrule
+  \end{tabular}
+  }
+\end{table}
+
+\subsection{Benchmark động}
+
+Bảng~\ref{tab:dynamic} trình bày các thực nghiệm rolling-horizon đã hoàn tất.
+Tỷ lệ trong ngoặc là mức giảm giá trị mục tiêu của warm-start ALNS so với
+chính sách ở cột tương ứng. Warm-start ALNS đạt giá trị mục tiêu trung bình
+thấp nhất trên cả sáu nhóm. Ưu thế nhìn chung tăng theo số khách hàng xuất hiện
+động, trong khi thời gian chạy xấp xỉ gấp ba đến bốn lần chèn tham lam.
+
+\begin{table*}[t]
+  \centering
+  \caption{Benchmark động. Các giá trị là mục tiêu trung bình $\objective$;
+  thấp hơn là tốt hơn. Tỷ lệ phần trăm là mức giảm của warm-start ALNS.}
+  \label{tab:dynamic}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    Tổng khách hàng & Khách động & Số lần chạy & Greedy insert & Cold restart & Warm-start ALNS & Thời gian (s) \\
+    \midrule
+    30  & 5  & 900 & 0,6449 (3,88\%)  & 0,6362 (2,56\%)  & \textbf{0,6199} & 23,1 \\
+    37  & 12 & 900 & 0,8860 (11,86\%) & 0,8017 (2,59\%)  & \textbf{0,7809} & 25,3 \\
+    50  & 25 & 900 & 1,1722 (15,72\%) & 1,0231 (3,44\%)  & \textbf{0,9879} & 31,0 \\
+    100 & 5  & 270 & 0,5227 (8,19\%)  & 0,5313 (9,68\%)  & \textbf{0,4799} & 97,7 \\
+    100 & 12 & 270 & 0,5392 (8,90\%)  & 0,5497 (10,65\%) & \textbf{0,4912} & 93,0 \\
+    100 & 25 & 270 & 0,6760 (14,94\%) & 0,6545 (12,15\%) & \textbf{0,5750} & 84,0 \\
+    \bottomrule
+  \end{tabular}
+  }
+\end{table*}
+
+Các so sánh theo cặp sử dụng thứ tự từ điển (số khách hàng chưa phục vụ, số UAV,
+giá trị mục tiêu) trên cùng một kịch bản và seed thuật toán. Trong mỗi nhóm nhỏ
+900 cặp, warm-start ALNS thắng greedy insert 604--777 lần; trong mỗi nhóm lớn
+270 cặp, phương pháp thắng 234--250 lần. So với cold restart, các khoảng
+tương ứng là 413--583 và 213--248 lần. Kiểm định Wilcoxon signed-rank hai phía
+trên giá trị mục tiêu, sau hiệu chỉnh Holm trong từng nhóm, cho $p$ hiệu chỉnh từ
+$1{,}02\times10^{-45}$ đến $4{,}53\times10^{-139}$ đối với các nhóm có tỷ lệ yêu cầu động
+cao hơn và các nhóm 100 khách hàng. Mọi so sánh được báo cáo với hai baseline
+đều có ý nghĩa thống kê.
+
+Warm-start ALNS cũng giảm optimality gap trung bình trên các lần phục vụ được
+toàn bộ khách hàng xuống 5,51--11,78\%, so với 12,35--35,76\% của greedy insert
+và 10,67--22,02\% của cold restart. Khả năng phục vụ toàn bộ vẫn là một thách
+thức: tỷ lệ phục vụ hết của warm-start ALNS nằm trong khoảng
+35,4--81,9\%. Điều này phản ánh cửa sổ thời gian chặt và yêu cầu xuất hiện muộn,
+không phải các vi phạm ràng buộc bị bỏ qua.
+
+\section{Thảo luận}
+\label{sec:discussion}
+
+Kết quả động ủng hộ giả thuyết trung tâm: bảo toàn cấu trúc của phương án hiện
+tại có giá trị hơn việc xây dựng lại mọi hậu tố tự do từ đầu. Warm-start ALNS
+bắt đầu từ một phương án khả thi đã tích lũy kết quả của quá trình tìm kiếm
+trước đó, trong khi các tiền tố bị khóa giới hạn thay đổi vào những quyết định
+vẫn còn khả thi về mặt vận hành. Ưu thế so với cold restart đặc biệt rõ
+trên các nhóm 100 khách hàng, nơi việc xây dựng lại một phương án chất lượng cao
+có chi phí lớn.
+
+So sánh cũng cho thấy ba đánh đổi. Thứ nhất, chèn tham lam nhanh hơn nhiều và có
+thể phù hợp hơn khi mỗi epoch có giới hạn thời gian thực nghiêm ngặt. Thứ hai,
+cải thiện giá trị mục tiêu không bảo đảm tỷ lệ phục vụ hết cao hơn trong mọi
+nhóm vì phép đánh giá sử dụng thứ tự từ điển và một số kịch bản có thể trở nên
+bất khả thi sau khi thông tin muộn xuất hiện. Thứ ba, contextual selection
+nhạy với đặc trưng, thang phần thưởng, hệ số chính quy, hệ số khám phá và chân
+trời huấn luyện ngắn. Kết quả tĩnh cho thấy chỉ bổ sung bandit chưa đủ để cải
+thiện thuật toán; pretraining ngoại tuyến, shared prior hoặc tập arm nhỏ
+hơn cần được đánh giá trên các bộ dữ liệu kiểm tra độc lập.
+
+Độ tin cậy của thực nghiệm được củng cố bằng bộ sinh kịch bản tất định, nhiều
+seed, bước kiểm tra lại tính khả thi, so sánh theo cặp và sự đa dạng giữa các họ
+bộ dữ liệu. Tuy nhiên, benchmark sử dụng quãng đường Euclid đối xứng, vận tốc
+không đổi và các
+vùng rủi ro tròn tổng hợp. Mô hình chưa xét gió, mất liên lạc, tránh va chạm,
+chuyển động ba chiều, đội UAV không đồng nhất hoặc mô hình tiêu thụ pin cụ thể.
+Ngoài ra, mức ưu tiên rủi ro sử dụng cường độ lớn nhất trong các vùng chồng lấn
+thay vì một mô hình nguy hiểm xác suất. Các giả định này hạn chế khả năng khái
+quát trực tiếp sang vận hành thực tế.
+
+Cài đặt NSGA-III riêng biệt hữu ích để trực quan hóa trade-off surface mà không
+cần cố định $\alpha$ và $\beta$, nhưng so sánh công bằng đòi hỏi ngân sách thời
+gian chạy bằng nhau, các chỉ số hypervolume hoặc inverted generational distance,
+nhiều seed và tệp kết quả tổng hợp hoàn chỉnh. Thực nghiệm tương lai cũng nên báo
+cáo tính khả thi về năng lượng, số lần vi phạm thời hạn, tail risk và độ bền
+vững khi thời gian di chuyển bị nhiễu.
+
+\section{Kết luận}
+\label{sec:conclusion}
+
+Nghiên cứu đã xây dựng một khung tái lập được cho bài toán định tuyến đa UAV
+động có xét rủi ro. Khung này kết hợp mục tiêu độ trễ có trọng số ưu tiên, các
+lân cận ALNS có xét rủi ro, contextual operator selection tùy chọn và warm start
+theo rolling horizon, đồng thời khóa các đoạn tuyến đã thực hiện. Trên mọi
+nhóm benchmark động đã hoàn tất, warm-start ALNS đạt giá trị mục tiêu trung
+bình thấp nhất và cải thiện có ý nghĩa thống kê theo cặp so với chèn tham lam và
+cold restart. Bằng chứng mạnh nhất thuộc về cơ chế warm start; bộ chọn
+contextual hiện tại cần được hiệu chỉnh thêm trước khi có thể khẳng định là
+một cải tiến.
+
+Các bước tiếp theo là bổ sung mô hình năng lượng UAV cụ thể, hoàn tất các
+benchmark tĩnh và NSGA-III 20 seed với 5.000/10.000 vòng, so sánh chất lượng
+Pareto dưới cùng ngân sách tính toán, đồng thời kiểm chứng phương pháp trên bản
+đồ rủi ro thực tế và điều kiện di chuyển bất định. Các mở rộng này sẽ đưa cài
+đặt đến gần hơn với yêu cầu lập kế hoạch ứng phó thiên tai có thể triển khai.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
