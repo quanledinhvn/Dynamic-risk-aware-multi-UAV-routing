@@ -1,0 +1,11 @@
+# Raw per-job results (2,430 JSON, ~11 MB): kept locally, summarized in results.csv
+results/jobs/
+results*/jobs/
+
+# Runtime state and logs written by code/runner.py
+results*/runner.log
+results*/state.json
+results*/state.json.tmp
+results*/console*.log
+results*/errors.jsonl
+results*/STOP
