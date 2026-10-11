@@ -48,7 +48,7 @@ Nguyễn Hoàng Hải & 20252583M
 \vspace{-1.5em}
 \begin{abstract}
 \noindent
-Nghiên cứu xét bài toán lập tuyến nhiều UAV với ràng buộc sức chứa, cửa sổ thời gian và mức ưu tiên phục vụ suy ra từ các vùng rủi ro. Mục tiêu là giảm số UAV trước, sau đó cân bằng quãng đường và độ chậm phục vụ có trọng số ưu tiên. Trên nền thuật toán tìm kiếm lân cận lớn thích nghi (ALNS), nghiên cứu đề xuất hai cơ chế: lựa chọn cặp toán tử bằng LinUCB dựa trên trạng thái tìm kiếm và tái lập kế hoạch theo cửa sổ trượt (rolling horizon) khi có nhiệm vụ mới hoặc cập nhật rủi ro, thời hạn phục vụ. Thực nghiệm tĩnh gồm 56 bộ dữ liệu Solomon, mỗi bộ chạy với 20 hạt giống ngẫu nhiên (seed), chưa ghi nhận cải thiện có ý nghĩa thống kê của Contextual ALNS so với ALNS. Trong các kịch bản động tổng hợp, ALNS tái sử dụng kế hoạch trước đó (Warm ALNS) đạt giá trị hàm mục tiêu trung bình thấp hơn phương pháp chèn tham lam và khởi tạo lại, nhưng không luôn tăng tỷ lệ phục vụ đầy đủ nhiệm vụ. Phân tích độ nhạy cho thấy thời điểm tái lập kế hoạch cần được xem xét cùng ngân sách tìm kiếm; hệ số khám phá là tham số LinUCB có ảnh hưởng rõ nhất. Trên cấu hình động tích hợp đã khảo sát, Contextual Warm ALNS chưa cải thiện có ý nghĩa so với Warm ALNS và có thời gian chạy cao hơn khoảng 33\%.
+Nghiên cứu xét bài toán lập tuyến nhiều UAV với ràng buộc sức chứa, cửa sổ thời gian và mức ưu tiên phục vụ suy ra từ các vùng rủi ro. Mục tiêu là giảm số UAV trước, sau đó cân bằng quãng đường và độ chậm phục vụ có trọng số ưu tiên. Trên nền thuật toán tìm kiếm lân cận lớn thích nghi (ALNS), nghiên cứu đề xuất hai cơ chế: lựa chọn cặp toán tử bằng LinUCB dựa trên trạng thái tìm kiếm và tái lập kế hoạch theo cửa sổ trượt (rolling horizon) khi có nhiệm vụ mới hoặc cập nhật rủi ro, thời hạn phục vụ. Thực nghiệm tĩnh gồm 56 bộ dữ liệu Solomon, mỗi bộ chạy với 20 hạt giống ngẫu nhiên (seed), chưa ghi nhận cải thiện có ý nghĩa thống kê của Contextual ALNS so với ALNS. Trong các kịch bản động tổng hợp, ALNS tái sử dụng kế hoạch trước đó (Warm ALNS) đạt giá trị hàm mục tiêu trung bình thấp hơn phương pháp chèn tham lam và khởi tạo lại, nhưng không luôn tăng tỷ lệ phục vụ đầy đủ nhiệm vụ. Phân tích độ nhạy cho thấy thời điểm tái lập kế hoạch cần được xem xét cùng ngân sách tìm kiếm; hệ số khám phá là tham số LinUCB có ảnh hưởng rõ nhất. Benchmark rolling horizon đầy đủ trên 540 kịch bản cho thấy Contextual Warm ALNS không cải thiện Warm ALNS; ở các cấu hình 100 nhiệm vụ, Warm ALNS còn có giá trị hàm mục tiêu thấp hơn và thời gian chạy ngắn hơn.
 \end{abstract}
 
 \section{Giới thiệu}
@@ -58,10 +58,10 @@ Báo cáo tập trung vào ba câu hỏi nghiên cứu:
 \begin{enumerate}[label=\textbf{RQ\arabic*.}]
 \item Với cùng tập toán tử và ngân sách 5\,000 vòng lặp, cơ chế chọn cặp toán tử loại bỏ--chèn lại bằng LinUCB ảnh hưởng thế nào đến số UAV, giá trị hàm mục tiêu và thời gian tính toán so với roulette thích nghi của ALNS?
 \item Trong các kịch bản nhiệm vụ và dữ liệu thay đổi, ALNS tái lập kế hoạch với warm start tạo ra sự đánh đổi như thế nào giữa khả năng phục vụ đầy đủ nhiệm vụ, giá trị hàm mục tiêu và thời gian tính toán so với chèn tham lam và khởi tạo lại?
-\item Kết hợp lựa chọn theo ngữ cảnh với rolling horizon có cải thiện kết quả so với Warm ALNS, và lợi ích có phụ thuộc cơ chế kích hoạt hoặc ngân sách mỗi kỳ không?
+\item Trong rolling horizon kích hoạt định kỳ, việc thay roulette thích nghi bằng lựa chọn cặp toán tử theo ngữ cảnh có thay đổi thế nào khả năng phục vụ, số UAV, giá trị hàm mục tiêu và thời gian chạy so với Warm ALNS trên các quy mô và mức độ động khác nhau?
 \end{enumerate}
 
-Nghiên cứu xây dựng mô hình VRPTW có ưu tiên rủi ro, đề xuất hai cơ chế mở rộng dựa trên ALNS và đánh giá chúng bằng các thí nghiệm đối chứng. Đóng góp tập trung vào việc kiểm chứng cách kết hợp các kỹ thuật đã biết trong lập tuyến có ưu tiên phục vụ và thông tin động. Kết quả trả lời RQ1 và RQ2; đối chứng tích hợp cung cấp câu trả lời bước đầu cho RQ3, nhưng chưa tách được tương tác với cơ chế kích hoạt.
+Nghiên cứu xây dựng mô hình VRPTW có ưu tiên rủi ro, đề xuất hai cơ chế mở rộng dựa trên ALNS và đánh giá chúng bằng các thí nghiệm đối chứng. Đóng góp tập trung vào việc kiểm chứng cách kết hợp các kỹ thuật đã biết trong lập tuyến có ưu tiên phục vụ và thông tin động. Kết quả trả lời RQ1, RQ2 và RQ3 trong phạm vi cấu hình rolling horizon kích hoạt định kỳ đã khảo sát.
 
 \section{Các nghiên cứu liên quan}
 \textbf{VRPTW và bộ dữ liệu chuẩn.} Solomon~\cite{solomon} nghiên cứu lập tuyến với cửa sổ thời gian và cung cấp các bộ dữ liệu chuẩn. Các nhóm C, R và RC lần lượt biểu diễn bố trí theo cụm, ngẫu nhiên và hỗn hợp. SINTEF công bố dữ liệu cùng các nghiệm tốt nhất đã biết theo thứ tự ưu tiên số xe rồi quãng đường~\cite{sintef}. Nghiên cứu kế thừa tọa độ, nhu cầu và cửa sổ thời gian, đồng thời bổ sung độ chậm phục vụ có trọng số ưu tiên. Vì vậy, hàm mục tiêu mới không được so sánh trực tiếp với quãng đường tốt nhất đã biết của VRPTW gốc.
@@ -296,7 +296,7 @@ Các cận dưới có thể thấp hơn nhiều so với giá trị tối ưu t
 
 \section{Kết quả thực nghiệm}
 \subsection{Dữ liệu và thiết kế thí nghiệm}
-Thực nghiệm sử dụng bộ dữ liệu Solomon VRPTW, được bổ sung các vùng rủi ro và chuỗi sự kiện động tổng hợp. Với mỗi instance, năm vùng rủi ro có bán kính nguyên khác nhau trong khoảng 2--10 được sinh xác định từ tên tệp và seed; tâm vùng được phân bố quanh các vị trí nhiệm vụ nhưng không trùng nhiệm vụ hoặc bao phủ depot. Mỗi kịch bản động dùng các nhiệm vụ tiếp theo trong instance làm nhiệm vụ mới; thời điểm công bố được lấy không muộn hơn 60\% thời hạn của chính nhiệm vụ đó. Cấu hình mặc định còn sinh hai cập nhật vùng rủi ro tại các thời điểm chia đều thời hạn vận hành và hai cập nhật rút ngắn thời hạn của nhiệm vụ ban đầu. Các bảng kết quả được tổng hợp từ dữ liệu của từng lần chạy. Bộ dữ liệu đầu vào, các tệp kịch bản và cấu hình thuật toán được lưu kèm mã nguồn để hỗ trợ tái lập.
+Thực nghiệm sử dụng bộ dữ liệu Solomon VRPTW, được bổ sung các vùng rủi ro và chuỗi sự kiện động tổng hợp. Với mỗi instance, năm vùng rủi ro có bán kính nguyên khác nhau trong khoảng 2--10 được sinh xác định từ tên tệp và seed; tâm vùng được phân bố quanh các vị trí nhiệm vụ nhưng không trùng nhiệm vụ hoặc bao phủ depot. Mỗi kịch bản động dùng các nhiệm vụ tiếp theo trong instance làm nhiệm vụ mới; thời điểm công bố được lấy không muộn hơn 60\% thời hạn của chính nhiệm vụ đó. Cấu hình mặc định còn sinh hai cập nhật vùng rủi ro tại các thời điểm chia đều thời hạn vận hành và hai cập nhật rút ngắn thời hạn của nhiệm vụ ban đầu. Các bảng kết quả được tổng hợp từ dữ liệu của từng lần chạy. Mã nguồn, dữ liệu đầu vào, tệp kịch bản và cấu hình thuật toán được công bố tại \url{https://github.com/quanledinhvn/Dynamic-risk-aware-multi-UAV-routing} để hỗ trợ tái lập.
 
 \begin{table}[htbp]
 \centering\scriptsize
@@ -307,6 +307,7 @@ Nhóm & Cấu hình thí nghiệm\\\midrule
 Tĩnh & 56 bộ dữ liệu Solomon, 100 nhiệm vụ, 5 vùng rủi ro; seed thuật toán 0--19; 1\,120 lần chạy mỗi thuật toán; 5\,000 vòng lặp.\\
 Động, quy mô nhỏ & 9 bộ dữ liệu gốc C101--C103, R101--R103, RC101--RC103; 25 nhiệm vụ ban đầu, thêm 5/12/25; 10 seed kịch bản $\times$ 10 seed thuật toán (0--9): 900 lần chạy mỗi phương pháp ở mỗi mức.\\
 Động, 100 nhiệm vụ & Cùng 9 bộ dữ liệu gốc; tổng 100 nhiệm vụ, ban đầu 95/88/75 và thêm 5/12/25; 10 seed kịch bản $\times$ 3 seed thuật toán (0--2): 270 lần chạy mỗi phương pháp ở mỗi mức.\\
+Benchmark RQ3 & 9 bộ dữ liệu gốc, hai quy mô 25 và 100 nhiệm vụ, mỗi quy mô có 5/12/25 nhiệm vụ động; 10 seed kịch bản $\times$ 20 seed thuật toán: 1\,800 lần chạy mỗi phương pháp ở mỗi mức. Kích hoạt định kỳ với tỷ lệ kỳ 0.05; 2\,000 vòng ở kỳ đầu và 400 vòng ở các kỳ sau.\\
 NSGA-III & 9 bộ dữ liệu: C101, C104, C201, R101, R104, R201, RC101, RC104, RC201; 100 nhiệm vụ, 5 vùng rủi ro; seed 0--9; quần thể 28 cá thể, 35 thế hệ, số phân chia tạo điểm tham chiếu bằng 4.\\
 \bottomrule
 \end{tabularx}
@@ -314,7 +315,9 @@ NSGA-III & 9 bộ dữ liệu: C101, C104, C201, R101, R104, R201, RC101, RC104,
 
 Hai thuật toán tĩnh sử dụng cùng tham số ALNS: tham số số nhiệm vụ loại bỏ 2--5, chu kỳ cập nhật trọng số 100 vòng lặp, nhiệt độ ban đầu 0.05, hệ số giảm nhiệt 0.99900025 và nhiệt độ tối thiểu $10^{-6}$. Contextual ALNS sử dụng cửa sổ lịch sử 100 vòng, hệ số khám phá 1 và hệ số điều chuẩn 0.25; cơ chế khởi tạo bổ sung dựa trên tuyến ngắn được tắt.
 
-Trong thí nghiệm động, cấu hình mặc định tái lập kế hoạch định kỳ với khoảng cách giữa hai kỳ bằng 0.05 lần thời hạn vận hành. Ngân sách là 2\,000 vòng lặp tại kỳ khởi tạo và 500 vòng ở mỗi kỳ tiếp theo; hệ số giảm nhiệt là 0.9995. Bộ sinh kịch bản mặc định hỗ trợ hai sự kiện cập nhật rủi ro và hai sự kiện cập nhật thời hạn. Nội dung, thời điểm công bố và seed của sự kiện được lưu trong các tệp kịch bản JSON. Cả ba phương pháp đều có giai đoạn tối ưu khởi tạo; ở các kỳ tiếp theo, Greedy insertion chỉ chèn nhiệm vụ, còn Cold restart và Warm ALNS tiếp tục tìm kiếm với ngân sách đã nêu.
+Trong thí nghiệm động đối chứng cho RQ2, cấu hình mặc định tái lập kế hoạch định kỳ với khoảng cách giữa hai kỳ bằng 0.05 lần thời hạn vận hành. Ngân sách là 2\,000 vòng lặp tại kỳ khởi tạo và 500 vòng ở mỗi kỳ tiếp theo; hệ số giảm nhiệt là 0.9995. Bộ sinh kịch bản mặc định hỗ trợ hai sự kiện cập nhật rủi ro và hai sự kiện cập nhật thời hạn. Nội dung, thời điểm công bố và seed của sự kiện được lưu trong các tệp kịch bản JSON. Cả ba phương pháp đều có giai đoạn tối ưu khởi tạo; ở các kỳ tiếp theo, Greedy insertion chỉ chèn nhiệm vụ, còn Cold restart và Warm ALNS tiếp tục tìm kiếm với ngân sách đã nêu.
+
+Benchmark RQ3 giữ cùng cơ chế kích hoạt định kỳ và tỷ lệ kỳ 0.05, nhưng dùng 2\,000 vòng lặp ở kỳ đầu và 400 vòng ở mỗi kỳ sau. Tùy số kỳ thực tế, mỗi lần chạy nhận tổng ngân sách 10\,000 vòng lặp, hoặc 10\,400 vòng khi cần 21 kỳ. Hai chính sách so sánh là Warm ALNS với roulette thích nghi và Contextual Warm ALNS với LinUCB; các tham số ALNS và LinUCB theo cấu hình đầy đủ được giữ cố định giữa sáu mức dữ liệu.
 
 Thời gian chạy là thời gian thực tế từ khi bắt đầu đến khi kết thúc xử lý, tính bằng giây. Các artifact lưu cấu hình, seed và kết quả nhưng không kèm manifest đầy đủ về CPU, RAM, tải cạnh tranh và phiên bản mã tại thời điểm chạy. Vì vậy, thời gian chủ yếu mô tả chi phí tính toán trong từng nhóm thí nghiệm; không dùng chênh lệch giữa các đợt benchmark khác cấu hình để khẳng định tốc độ tương đối.
 
@@ -323,7 +326,7 @@ Chất lượng nghiệm được báo cáo bằng $K,D,R,F$; thời gian chạy
 
 Trong đánh giá động, $F$ cuối được tính trên tập nhiệm vụ còn lại sau khi loại các nhiệm vụ bị mất hoặc bị từ chối. Khoảng cách tham chiếu lấy từ bài toán ban đầu và điểm ưu tiên của nhiệm vụ đã khóa được giữ nguyên. Vì số nhiệm vụ được phục vụ có thể khác nhau giữa các phương pháp, $F$ thấp hơn chưa đủ để kết luận chất lượng phục vụ tốt hơn. Khi đếm thắng/thua, báo cáo ưu tiên ít nhiệm vụ chưa phục vụ hơn, tiếp đến ít UAV hơn, cuối cùng mới xét $F$, tức thứ tự $(|U|,K,F)$. Đây là quy tắc đánh giá kết quả, không phải hàm mục tiêu mới của thuật toán.
 
-Các lần chạy được ghép theo bộ dữ liệu và seed thuật toán ở bài toán tĩnh, theo kịch bản và seed thuật toán ở bài toán động. Để không coi nhiều seed của cùng bộ dữ liệu gốc là các bài toán độc lập, kiểm định chính lấy trung bình theo bộ dữ liệu gốc trước khi dùng Wilcoxon signed-rank hai phía, với mức ý nghĩa 0.05. Thí nghiệm tĩnh có 56 cặp trung bình, hiệu chỉnh Holm trên ba chỉ số $K,F,R$. Thí nghiệm động có 9 cặp trung bình cho mỗi phép so sánh, hiệu chỉnh Holm trên 12 so sánh $F$ (6 cấu hình $\times$ 2 phương pháp đối chứng). Giá trị $p$ được tính bằng SciPy; các chênh lệch bằng 0 bị loại theo quy tắc mặc định.
+Các lần chạy được ghép theo bộ dữ liệu và seed thuật toán ở bài toán tĩnh, theo kịch bản và seed thuật toán ở bài toán động. Để không coi nhiều seed của cùng bộ dữ liệu gốc là các bài toán độc lập, kiểm định chính của các đối chứng tĩnh và RQ2 lấy trung bình theo bộ dữ liệu gốc trước khi dùng Wilcoxon signed-rank hai phía, với mức ý nghĩa 0.05. Thí nghiệm tĩnh có 56 cặp trung bình, hiệu chỉnh Holm trên ba chỉ số $K,F,R$. Đối chứng RQ2 có 9 cặp trung bình cho mỗi phép so sánh, hiệu chỉnh Holm trên 12 so sánh $F$ (6 cấu hình $\times$ 2 phương pháp đối chứng). Với benchmark RQ3, bảng kết quả và kiểm định Wilcoxon được tính trên 1\,800 cặp kịch bản--seed ở mỗi mức; các giá trị $p$ vì vậy bổ sung cho mô tả chênh lệch thực nghiệm, không thay thế phân tích theo instance. Giá trị $p$ được tính bằng SciPy; các chênh lệch bằng 0 bị loại theo quy tắc mặc định.
 
 Thắng/thua ở bài toán tĩnh dùng $(K,F)$; ở bài toán động dùng $(|U|,K,F)$. Kiểm định $F$ không kiểm định trực tiếp thứ tự từ điển và không kiểm soát khác biệt về tập nhiệm vụ được phục vụ. Thống kê thắng/thua ở mức lần chạy chỉ có ý nghĩa mô tả; cỡ mẫu của kiểm định chính là số bộ dữ liệu gốc.
 
@@ -449,40 +452,50 @@ Trong 90 lần chạy, NSGA-III thu được tổng cộng 1\,730 nghiệm trong
 Bộ giải mã so sánh các vị trí chèn theo \emph{quãng đường của tuyến sau khi chèn}, kể cả tuyến chỉ có một nhiệm vụ, thay vì mức tăng quãng đường của toàn bộ kế hoạch. Quy tắc này có thể thiên về mở tuyến ngắn mới và là một yếu tố cần xem xét khi diễn giải kết quả. Đồng thời, mục tiêu vi phạm thời hạn luôn bằng 0 do ràng buộc cửa sổ thời gian cứng. Vì vậy, kết quả chỉ ghi nhận hành vi của cấu hình mã hóa--giải mã đã chạy, không được dùng như một baseline để xếp hạng NSGA-III với ALNS hoặc để kết luận về NSGA-III nói chung.
 
 \subsection{Kết hợp Contextual ALNS và tái lập kế hoạch động}
-Case A và C của khảo sát bổ sung lần lượt chạy Warm ALNS và Contextual Warm ALNS trên cùng 45 kịch bản, cùng seed và cùng ngân sách. Cấu hình cơ sở dùng kích hoạt định kỳ, tỷ lệ kỳ 0.05, 2\,000 vòng ở kỳ đầu và 500 vòng ở mỗi kỳ tiếp theo. Kết quả được trình bày trong Bảng~\ref{tab:integrated-contextual}.
+Benchmark đầy đủ cho RQ3 so sánh Warm ALNS và Contextual Warm ALNS trên cùng kịch bản và seed. Có sáu mức dữ liệu: 25 hoặc 100 nhiệm vụ, mỗi mức với 5, 12 hoặc 25 nhiệm vụ động. Mỗi ô gồm 1\,800 cặp lần chạy (9 instance $\times$ 10 seed kịch bản $\times$ 20 seed thuật toán). Cả hai chính sách dùng rolling horizon kích hoạt định kỳ, tỷ lệ kỳ 0.05, 2\,000 vòng lặp ở kỳ đầu và 400 vòng ở các kỳ sau.
 
 \begin{table}[htbp]
-\centering\small
-\caption{So sánh tích hợp trên chín instance, mỗi instance có năm cặp seed kịch bản--thuật toán. Đầy đủ là tỷ lệ lần chạy có $|U|=0$.}
-\begin{tabular}{@{}lrrrrr@{}}
+\centering\scriptsize
+\caption{Benchmark RQ3. Mỗi hàng gồm 1\,800 lần chạy; Đầy đủ là tỷ lệ lần chạy có $|U|=0$. Giá trị $F$ thấp hơn là tốt hơn.}
+\begin{tabular}{@{}llrrrrr@{}}
 \toprule
-Phương pháp & $K$ & $F$ & $|U|$ & Đầy đủ (\%) & Thời gian (s)\\\midrule
-Warm ALNS & 14.33 & 0.4916 & 0.56 & 48.9 & 544.4\\
-Contextual Warm ALNS & 14.24 & 0.4952 & 0.56 & 48.9 & 726.3\\
+Quy mô/động & Phương pháp & $F$ & $K$ & $|U|$ & Đầy đủ (\%) & Thời gian (s)\\\midrule
+25/+5 & Warm ALNS & 0.6192 & 5.18 & 0.29 & 75.7 & 18.6\\
+& Contextual Warm ALNS & 0.6186 & 5.20 & 0.29 & 75.8 & 21.0\\
+25/+12 & Warm ALNS & 0.7820 & 6.08 & 0.94 & 40.8 & 20.2\\
+& Contextual Warm ALNS & 0.7830 & 6.08 & 0.94 & 40.7 & 22.9\\
+25/+25 & Warm ALNS & 0.9901 & 7.76 & 1.86 & 35.4 & 24.4\\
+& Contextual Warm ALNS & 0.9912 & 7.77 & 1.85 & 35.5 & 27.0\\
+100/+5 & Warm ALNS & 0.4803 & 14.11 & 0.21 & 82.8 & 79.7\\
+& Contextual Warm ALNS & 0.4865 & 14.13 & 0.21 & 82.6 & 92.3\\
+100/+12 & Warm ALNS & 0.4902 & 14.35 & 0.55 & 51.2 & 74.3\\
+& Contextual Warm ALNS & 0.4940 & 14.28 & 0.55 & 51.0 & 88.0\\
+100/+25 & Warm ALNS & 0.5763 & 14.69 & 0.73 & 40.5 & 67.5\\
+& Contextual Warm ALNS & 0.5772 & 14.66 & 0.73 & 40.5 & 78.5\\
 \bottomrule
 \end{tabular}
 \label{tab:integrated-contextual}
 \end{table}
 
-Contextual Warm ALNS dùng ít hơn trung bình 0.09 UAV, nhưng có $F$ cao hơn nhẹ, không thay đổi số nhiệm vụ chưa phục vụ hoặc tỷ lệ phục vụ đầy đủ và tốn thời gian hơn khoảng 33\%. Sau khi lấy trung bình theo từng instance, Contextual Warm ALNS thắng Warm ALNS trên năm instance và thua trên bốn instance theo $(|U|,K,F)$; kiểm định dấu hai phía cho $p=1.0$. Do đó, thí nghiệm chưa cho thấy cơ chế theo ngữ cảnh cải thiện có ý nghĩa khi kết hợp với rolling horizon.
+Ở quy mô 25 nhiệm vụ, hai chính sách gần như tương đương: chênh lệch $F$ trung bình tuyệt đối không vượt quá 0.0012, còn $|U|$, $K$ và tỷ lệ phục vụ đầy đủ gần như không đổi. Với 100 nhiệm vụ, Warm ALNS có $F$ thấp hơn 1.3\% ở mức +5 và 0.8\% ở mức +12; kiểm định Wilcoxon hai phía trên 1\,800 cặp lần lượt cho $p=5.29\times10^{-16}$ và $p=2.55\times10^{-7}$. Ở mức +25, chênh lệch $F$ là 0.0009 và không có ý nghĩa theo kiểm định này ($p=0.306$). Trong cả sáu mức, Contextual Warm ALNS không cải thiện rõ số nhiệm vụ chưa phục vụ hoặc tỷ lệ phục vụ đầy đủ.
 
-Hai phương pháp còn được khảo sát riêng tại các mức 100, 250 và 1\,000 vòng mỗi kỳ, nhưng thiết kế thay một yếu tố chưa kiểm định trực tiếp tương tác giữa phương pháp và ngân sách. Case C cũng chưa chạy kích hoạt theo sự kiện hoặc kết hợp. Vì vậy, kết quả trả lời phần so sánh chính của RQ3, nhưng chưa xác định lợi ích của cơ chế theo ngữ cảnh có phụ thuộc ngân sách hoặc cơ chế kích hoạt hay không.
+Contextual Warm ALNS chậm hơn Warm ALNS từ 11\% đến 18\% tùy mức dữ liệu. Vì hai phương pháp dùng cùng kịch bản, seed và ngân sách, kết quả trả lời RQ3 trong phạm vi rolling horizon kích hoạt định kỳ: thay roulette thích nghi bằng LinUCB không mang lại cải thiện nhất quán, trong khi tăng chi phí tính toán. Kết luận này không tách riêng đóng góp của thông tin ngữ cảnh khỏi việc chọn cặp toán tử, và không suy rộng sang cơ chế kích hoạt hoặc phân bổ ngân sách khác.
 
 \section{Thảo luận}\label{sec:discussion}
 \textbf{Lựa chọn toán tử theo ngữ cảnh (RQ1).} Với cùng ngân sách tìm kiếm, chênh lệch chất lượng nghiệm giữa Contextual ALNS và ALNS chưa có ý nghĩa thống kê, trong khi Contextual ALNS tốn thời gian hơn. Kết quả chưa xác nhận lợi ích của toàn bộ cơ chế lựa chọn đề xuất ở cấu hình khảo sát. Phép so sánh đồng thời chuyển từ chọn destroy/repair độc lập sang chọn theo cặp và từ roulette sang LinUCB có ngữ cảnh, nên không thể quy chênh lệch cho riêng thông tin ngữ cảnh. Ngoài ra, đặc trưng chênh lệch UAV luôn bằng 0 theo quy tắc chấp nhận hiện tại. Khảo sát độ nhạy cho thấy hệ số khám phá có ảnh hưởng, nhưng chưa quan sát được đóng góp riêng của cửa sổ ngữ cảnh hoặc nhiệt độ SA. Việc tách ảnh hưởng của chọn theo cặp khỏi context vẫn cần một đối chứng riêng.
 
 \textbf{Tái sử dụng kế hoạch trong bài toán động (RQ2).} Warm ALNS giảm $F$ trung bình so với hai phương pháp đối chứng, với thời gian chạy gần Cold restart và cao hơn Greedy insertion. Tuy nhiên, tỷ lệ phục vụ đầy đủ và tổng điểm ưu tiên chưa phục vụ không luôn tốt hơn. Warm thắng nhiều hơn thua trong mọi so sánh ghép cặp theo $(|U|,K,F)$; trên tập con mà cả hai phương pháp phục vụ đầy đủ, Warm cũng có $F$ trung bình thấp hơn. Kết quả nhấn mạnh việc đánh giá đồng thời số nhiệm vụ chưa phục vụ, mức ưu tiên của chúng, số UAV và hàm mục tiêu. Khi cơ hội phục vụ đã qua, tăng ngân sách ở kỳ tiếp theo không thể khôi phục nhiệm vụ đã chuyển sang tập mất; kết quả phân tích độ nhạy phù hợp với cơ chế này nhưng chưa chứng minh quan hệ nhân quả giữa từng bước xử lý và kết quả cuối.
 
-\textbf{Trả lời RQ3.} Trên cấu hình tích hợp đã khảo sát, Contextual Warm ALNS chưa cải thiện có ý nghĩa so với Warm ALNS: hai phương pháp có cùng số nhiệm vụ chưa phục vụ và tỷ lệ phục vụ đầy đủ, trong khi phiên bản contextual tốn thêm khoảng 33\% thời gian. Dữ liệu hiện có chưa đủ để kết luận về tương tác với ngân sách hoặc cơ chế kích hoạt, nên câu trả lời cho phần phụ thuộc cấu hình của RQ3 còn để ngỏ.
+\textbf{Trả lời RQ3.} Trong rolling horizon kích hoạt định kỳ, Contextual Warm ALNS không cải thiện nhất quán so với Warm ALNS trên sáu mức dữ liệu. Ở quy mô 25 nhiệm vụ, các chỉ số gần như bằng nhau; ở quy mô 100 nhiệm vụ, Warm ALNS có $F$ thấp hơn tại mức +5 và +12, còn mức +25 không phân biệt được. Số nhiệm vụ chưa phục vụ và tỷ lệ phục vụ đầy đủ gần như không đổi, trong khi phiên bản contextual chậm hơn 11--18\%. Do đó, với cấu hình và phạm vi dữ liệu đã khảo sát, bằng chứng không ủng hộ thay roulette thích nghi bằng LinUCB trong Warm ALNS.
 
 \textbf{Giới hạn nghiên cứu.} Dữ liệu Solomon và các vùng rủi ro tổng hợp cho phép khảo sát thuật toán trong điều kiện kiểm soát, nhưng chưa phản ánh đầy đủ vật lý bay hoặc mức khẩn cấp được hiệu chuẩn từ dữ liệu thiên tai. Các đại lượng nhu cầu, khoảng cách và thời gian dùng đơn vị của bộ dữ liệu chuẩn. Độ ổn định mới được khảo sát theo seed và kịch bản, chưa xét bất định thời tiết, thời gian di chuyển hoặc lỗi cảm biến.
 
-\textbf{Hướng nghiên cứu tiếp theo.} Thiết kế nhân tố đầy đủ giữa phương pháp lựa chọn toán tử, cơ chế kích hoạt và ngân sách mỗi kỳ có thể làm rõ các tương tác mà khảo sát one-at-a-time chưa đo được. Đối chứng chọn cặp toán tử, phân tích từng đặc trưng và khảo sát bộ giải mã NSGA-III giúp xác định đóng góp của các thành phần. Mở rộng sang bộ dữ liệu Homberger cho phép đánh giá quy mô lớn hơn; đưa năng lượng và dữ liệu rủi ro thực vào bài toán đòi hỏi mở rộng cả mô hình lẫn thiết kế thí nghiệm.
+\textbf{Hướng nghiên cứu tiếp theo.} Thiết kế nhân tố đầy đủ giữa phương pháp lựa chọn toán tử, cơ chế kích hoạt và ngân sách mỗi kỳ có thể kiểm tra khả năng tổng quát của kết luận RQ3 ngoài cấu hình định kỳ hiện tại. Đối chứng chọn cặp toán tử, phân tích từng đặc trưng và khảo sát bộ giải mã NSGA-III giúp xác định đóng góp của các thành phần. Mở rộng sang bộ dữ liệu Homberger cho phép đánh giá quy mô lớn hơn; đưa năng lượng và dữ liệu rủi ro thực vào bài toán đòi hỏi mở rộng cả mô hình lẫn thiết kế thí nghiệm.
 
 \section{Kết luận}
 Nghiên cứu trình bày mô hình VRPTW có ưu tiên rủi ro cùng hai cơ chế mở rộng ALNS: lựa chọn toán tử theo ngữ cảnh và tái lập kế hoạch bằng rolling horizon với warm start. Trên 56 bộ dữ liệu Solomon với 20 seed, kết quả chưa xác nhận Contextual ALNS cải thiện chất lượng nghiệm so với ALNS cơ sở; thiết kế hiện tại cũng chưa tách riêng ảnh hưởng của context khỏi cách chọn theo cặp. Trong các kịch bản động, Warm ALNS giảm giá trị hàm mục tiêu trung bình trên tập nhiệm vụ được phục vụ và thắng nhiều hơn thua theo $(|U|,K,F)$, nhưng tỷ lệ phục vụ đầy đủ và tổng mức ưu tiên chưa phục vụ không luôn được cải thiện. Phân tích độ nhạy cho thấy thời điểm tái lập kế hoạch ảnh hưởng trực tiếp đến khả năng phục vụ, còn ngân sách tìm kiếm tạo ra đánh đổi giữa chất lượng nghiệm và chi phí tính toán. Hệ số khám phá là tham số LinUCB có ảnh hưởng rõ nhất trong khảo sát.
 
-Khi kết hợp hai cơ chế, Contextual Warm ALNS chưa cải thiện có ý nghĩa so với Warm ALNS ở cấu hình cơ sở và tốn thêm khoảng 33\% thời gian. Kết quả này chưa loại trừ lợi ích ở cấu hình khác; cần một thiết kế nhân tố có cả kích hoạt và ngân sách để trả lời đầy đủ phần tương tác của RQ3.
+Trong rolling horizon kích hoạt định kỳ, benchmark đầy đủ trên 540 kịch bản và 20 seed thuật toán cho mỗi kịch bản cho thấy Contextual Warm ALNS không cải thiện nhất quán Warm ALNS. Ở quy mô 25 nhiệm vụ, hai phương pháp gần như tương đương; ở quy mô 100 nhiệm vụ, Warm ALNS có $F$ thấp hơn ở hai trong ba mức động. Contextual Warm ALNS không cải thiện khả năng phục vụ đầy đủ và chậm hơn 11--18\%. Kết luận này áp dụng cho cấu hình định kỳ và ngân sách đã khảo sát; các cấu hình khác là hướng đánh giá tiếp theo, không phải phần chưa được trả lời của RQ3.
 
 \begin{thebibliography}{9}
 \bibitem{solomon} M. M. Solomon, ``Algorithms for the Vehicle Routing and Scheduling Problems with Time Window Constraints,'' \emph{Operations Research}, 35(2), 254--265, 1987. \url{https://doi.org/10.1287/opre.35.2.254}.
