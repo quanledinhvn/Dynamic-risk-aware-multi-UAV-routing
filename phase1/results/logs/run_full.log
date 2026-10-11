@@ -1,0 +1,31 @@
+=== 2026-10-09 18:01:53 start n25_d5 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 3600 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n25_d5/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n25_d5/aggregate.csv
+=== 2026-10-09 20:51:49 done n25_d5 (exit 0) ===
+=== 2026-10-09 20:51:49 start n25_d12 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 3600 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n25_d12/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n25_d12/aggregate.csv
+=== 2026-10-10 00:10:36 done n25_d12 (exit 0) ===
+=== 2026-10-10 00:10:36 start n25_d25 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 3600 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n25_d25/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n25_d25/aggregate.csv
+=== 2026-10-10 04:44:39 done n25_d25 (exit 0) ===
+=== 2026-10-10 04:44:39 start n100_d5 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 3600 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n100_d5/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n100_d5/aggregate.csv
+=== 2026-10-10 16:29:37 done n100_d5 (exit 0) ===
+=== 2026-10-10 16:29:37 start n100_d12 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 3600 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n100_d12/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n100_d12/aggregate.csv
+=== 2026-10-11 03:55:23 done n100_d12 (exit 0) ===
+=== 2026-10-11 03:55:23 start n100_d25 ===
+Dynamic Benchmark Started
+Dynamic Benchmark Completed
+completed 3600 runs; raw=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n100_d25/raw.csv; aggregate=/home/hainh/code/projects/Dynamic-risk-aware-multi-UAV-routing/phase1/results/full/n100_d25/aggregate.csv
+=== 2026-10-11 14:44:52 done n100_d25 (exit 0) ===
+=== ALL DONE 2026-10-11 14:44:52 ===
