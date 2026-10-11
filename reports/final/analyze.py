@@ -59,6 +59,42 @@ def summary(rows):
     }
 
 
+def static_difference_figure(pairs):
+    differences = defaultdict(list)
+
+    for base, contextual in pairs:
+        differences[base['instance']].append(
+            float(contextual['objective']) - float(base['objective']))
+
+    means = {Path(name).stem.upper(): st.fmean(values)
+             for name, values in differences.items()}
+    limit = max(abs(value) for value in means.values()) * 1.2
+    panels = []
+
+    for family in ('C', 'R', 'RC'):
+        names = sorted(name for name in means
+                       if name.rstrip('0123456789') == family)
+        coordinates = ' '.join(f'({name},{means[name]:.10f})' for name in names)
+
+        panels.append(
+            '\\begin{tikzpicture}\n'
+            '\\begin{axis}[width=0.95\\linewidth,height=4cm,'
+            'ybar,bar width=4pt,ymin=' + f'{-limit:.8f},ymax={limit:.8f},'
+            'symbolic x coords={' + ','.join(names) + '},xtick=data,'
+            'xticklabel style={rotate=60,anchor=east,font=\\scriptsize},'
+            'yticklabel style={font=\\scriptsize},scaled y ticks=false,'
+            'ylabel={$\\Delta F$},title={Nhóm ' + family + '},'
+            'title style={font=\\small},ymajorgrids=true,'
+            'grid style={gray!20},extra y ticks={0},'
+            'extra y tick labels={},extra y tick style={grid=major,'
+            'grid style={black!65}},enlarge x limits=0.035]\n'
+            '\\addplot[fill=blue!50!black,draw=none] coordinates {'
+            + coordinates + '};\n'
+            '\\end{axis}\n\\end{tikzpicture}\\par\n')
+
+    (OUT / 'static_differences.tex').write_text('\n'.join(panels))
+
+
 def static():
     base = read('benchmark/alns/c100_r5_s20_5000/raw.csv')
     ctx = read('benchmark/contextual/c100_r5_s20_5000/raw.csv')
@@ -70,6 +106,8 @@ def static():
 
     rank = lambda r: (int(r['vehicles']), float(r['objective']))
     pairs = [(keyed[0][k], keyed[1][k]) for k in sorted(keyed[0])]
+    static_difference_figure(pairs)
+
     wins = sum(rank(c) < rank(b) for b, c in pairs)
     losses = sum(rank(c) > rank(b) for b, c in pairs)
 
@@ -120,6 +158,7 @@ def dynamic():
                 assert len(group) == (900 if size == 25 else 270)
                 s = summary(group)
                 s['unserved'] = mean(group, 'unserved')
+                s['unserved_priority'] = mean(group, 'unserved_priority')
 
                 s['served_all_percent'] = 100 * sum(int(r['unserved']) == 0 for r in group) / len(group)
                 s['static_customers'] = sorted({int(r['static_customers']) for r in group})
@@ -129,7 +168,13 @@ def dynamic():
                 short = {'greedy_insert': 'Greedy', 'cold_restart': 'Cold', 'warm_alns': 'Warm'}[policy]
                 total = int(group[0]['static_customers']) + arrivals
 
-                lines.append(f"{total}/{arrivals} & {short} & {s['objective']:.4f} & {s['vehicles']:.2f} & {s['unserved']:.2f} & {s['served_all_percent']:.1f} & {s['runtime_seconds']:.1f}\\\\")
+                lines.append(
+                    f"{total}/{arrivals} & {short} & {s['objective']:.4f} & "
+                    f"{s['vehicles']:.2f} & {s['unserved']:.2f} & "
+                    f"{s['unserved_priority']:.4f} & "
+                    f"{s['served_all_percent']:.1f} & "
+                    f"{s['runtime_seconds']:.1f}\\\\"
+                )
 
             lines.append('\\addlinespace')
 
@@ -139,6 +184,7 @@ def dynamic():
 
 def dynamic_tests():
     tests = []
+    lines = []
 
     for size in (25, 100):
         for arrivals in (5, 12, 25):
@@ -155,15 +201,43 @@ def dynamic_tests():
                     by_instance[b['instance']].append(float(b['objective']) - float(w['objective']))
 
                 diffs = [st.fmean(v) for v in by_instance.values()]
-                tests.append({'size': size, 'arrivals': arrivals, 'other': other,
-                              'pairs': len(pairs), 'blocks': len(diffs),
-                              'wins': sum(rank(w) < rank(b) for b, w in pairs),
-                              'losses': sum(rank(w) > rank(b) for b, w in pairs),
-                              'delta_f': st.fmean(diffs),
-                              'p': float(wilcoxon(diffs, method='auto').pvalue)})
+                wins = sum(rank(w) < rank(b) for b, w in pairs)
+                losses = sum(rank(w) > rank(b) for b, w in pairs)
+                ties = len(pairs) - wins - losses
+
+                full_pairs = [
+                    (b, w) for b, w in pairs
+                    if int(b['unserved']) == 0 and int(w['unserved']) == 0
+                ]
+                full_delta_f = st.fmean(
+                    float(w['objective']) - float(b['objective'])
+                    for b, w in full_pairs
+                )
+
+                tests.append({
+                    'size': size, 'arrivals': arrivals, 'other': other,
+                    'pairs': len(pairs), 'blocks': len(diffs),
+                    'wins': wins, 'losses': losses, 'ties': ties,
+                    'full_service_pairs': len(full_pairs),
+                    'full_service_mean_warm_minus_other_f': full_delta_f,
+                    'delta_f': st.fmean(diffs),
+                    'p': float(wilcoxon(diffs, method='auto').pvalue),
+                })
+
+                total = size + arrivals if size == 25 else 100
+                short = 'Greedy' if other == 'greedy_insert' else 'Cold'
+                lines.append(
+                    f"{total}/{arrivals} & Warm--{short} & "
+                    f"{wins}/{losses}/{ties} & {len(full_pairs)} & "
+                    f"{full_delta_f:.4f}\\\\"
+                )
+
+            lines.append('\\addlinespace')
 
     for item, p in zip(tests, holm([t['p'] for t in tests]), strict=True):
         item['holm_p'] = p
+
+    (OUT / 'dynamic_paired_rows.tex').write_text('\n'.join(lines) + '\n')
 
     return tests
 

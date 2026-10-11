@@ -67,6 +67,7 @@
         "objective_std": 0.1442555667787763,
         "within_instance_objective_sd": 0.05032829964580304,
         "unserved": 0.29555555555555557,
+        "unserved_priority": 0.07910902687215442,
         "served_all_percent": 74.88888888888889,
         "static_customers": [
           25
@@ -95,6 +96,7 @@
         "objective_std": 0.1466948020026074,
         "within_instance_objective_sd": 0.0485901419797333,
         "unserved": 0.3011111111111111,
+        "unserved_priority": 0.0766961681218724,
         "served_all_percent": 74.55555555555556,
         "static_customers": [
           25
@@ -123,6 +125,7 @@
         "objective_std": 0.15235799156925814,
         "within_instance_objective_sd": 0.03926952911577324,
         "unserved": 0.28444444444444444,
+        "unserved_priority": 0.07910902687215442,
         "served_all_percent": 76.0,
         "static_customers": [
           25
@@ -153,6 +156,7 @@
         "objective_std": 0.21746972866830905,
         "within_instance_objective_sd": 0.09874672070998693,
         "unserved": 0.8888888888888888,
+        "unserved_priority": 0.08792005804464141,
         "served_all_percent": 40.0,
         "static_customers": [
           25
@@ -181,6 +185,7 @@
         "objective_std": 0.17426148112006193,
         "within_instance_objective_sd": 0.06801916880061759,
         "unserved": 0.9644444444444444,
+        "unserved_priority": 0.1090640075191113,
         "served_all_percent": 39.888888888888886,
         "static_customers": [
           25
@@ -209,6 +214,7 @@
         "objective_std": 0.1827150959910887,
         "within_instance_objective_sd": 0.06509658898878684,
         "unserved": 0.9388888888888889,
+        "unserved_priority": 0.10746776896339673,
         "served_all_percent": 40.44444444444444,
         "static_customers": [
           25
@@ -239,6 +245,7 @@
         "objective_std": 0.270240850795534,
         "within_instance_objective_sd": 0.10235508672655369,
         "unserved": 1.8133333333333332,
+        "unserved_priority": 0.115042650411357,
         "served_all_percent": 36.0,
         "static_customers": [
           25
@@ -267,6 +274,7 @@
         "objective_std": 0.19821536985216637,
         "within_instance_objective_sd": 0.0873292094408587,
         "unserved": 1.9244444444444444,
+        "unserved_priority": 0.132371286802252,
         "served_all_percent": 35.111111111111114,
         "static_customers": [
           25
@@ -295,6 +303,7 @@
         "objective_std": 0.20397125766503138,
         "within_instance_objective_sd": 0.07599363990045674,
         "unserved": 1.8511111111111112,
+        "unserved_priority": 0.12605098162634742,
         "served_all_percent": 35.44444444444444,
         "static_customers": [
           25
@@ -325,6 +334,7 @@
         "objective_std": 0.04789150035795333,
         "within_instance_objective_sd": 0.02557849882770958,
         "unserved": 0.1925925925925926,
+        "unserved_priority": 0.003703703703703704,
         "served_all_percent": 84.07407407407408,
         "static_customers": [
           95
@@ -346,6 +356,7 @@
         "objective_std": 0.07862341966118026,
         "within_instance_objective_sd": 0.028752368450921537,
         "unserved": 0.1925925925925926,
+        "unserved_priority": 0.003703703703703704,
         "served_all_percent": 84.07407407407408,
         "static_customers": [
           95
@@ -367,6 +378,7 @@
         "objective_std": 0.04931173487210333,
         "within_instance_objective_sd": 0.020514790258431097,
         "unserved": 0.21481481481481482,
+        "unserved_priority": 0.003703703703703704,
         "served_all_percent": 81.85185185185185,
         "static_customers": [
           95
@@ -390,6 +402,7 @@
         "objective_std": 0.0734985405070394,
         "within_instance_objective_sd": 0.03019030894917806,
         "unserved": 0.5222222222222223,
+        "unserved_priority": 0.0011123215881570564,
         "served_all_percent": 52.592592592592595,
         "static_customers": [
           88
@@ -411,6 +424,7 @@
         "objective_std": 0.06926929839290216,
         "within_instance_objective_sd": 0.03151395110515415,
         "unserved": 0.5407407407407407,
+        "unserved_priority": 0.0016684823822355848,
         "served_all_percent": 51.851851851851855,
         "static_customers": [
           88
@@ -432,6 +446,7 @@
         "objective_std": 0.0597120308022874,
         "within_instance_objective_sd": 0.021399157250802048,
         "unserved": 0.5333333333333333,
+        "unserved_priority": 0.0005561607940785282,
         "served_all_percent": 52.592592592592595,
         "static_customers": [
           88
@@ -455,6 +470,7 @@
         "objective_std": 0.07081314763312846,
         "within_instance_objective_sd": 0.035682908592706605,
         "unserved": 0.6962962962962963,
+        "unserved_priority": 0.009440365770771184,
         "served_all_percent": 40.74074074074074,
         "static_customers": [
           75
@@ -476,6 +492,7 @@
         "objective_std": 0.10052269194141661,
         "within_instance_objective_sd": 0.04040333925630327,
         "unserved": 0.8148148148148148,
+        "unserved_priority": 0.0070007091663420685,
         "served_all_percent": 37.77777777777778,
         "static_customers": [
           75
@@ -497,6 +514,7 @@
         "objective_std": 0.07891591022401852,
         "within_instance_objective_sd": 0.025982902687261125,
         "unserved": 0.7407407407407407,
+        "unserved_priority": 0.006753109513254502,
         "served_all_percent": 41.111111111111114,
         "static_customers": [
           75
@@ -525,6 +543,9 @@
       "blocks": 9,
       "wins": 604,
       "losses": 40,
+      "ties": 256,
+      "full_service_pairs": 674,
+      "full_service_mean_warm_minus_other_f": -0.029386559335142143,
       "delta_f": 0.025018241295858664,
       "p": 0.0078125,
       "holm_p": 0.046875
@@ -537,6 +558,9 @@
       "blocks": 9,
       "wins": 413,
       "losses": 92,
+      "ties": 395,
+      "full_service_pairs": 665,
+      "full_service_mean_warm_minus_other_f": -0.018558361612494242,
       "delta_f": 0.016256747107058503,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -549,6 +573,9 @@
       "blocks": 9,
       "wins": 741,
       "losses": 110,
+      "ties": 49,
+      "full_service_pairs": 348,
+      "full_service_mean_warm_minus_other_f": -0.09846372805676858,
       "delta_f": 0.10504346287144976,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -561,6 +588,9 @@
       "blocks": 9,
       "wins": 540,
       "losses": 148,
+      "ties": 212,
+      "full_service_pairs": 355,
+      "full_service_mean_warm_minus_other_f": -0.02587067377194633,
       "delta_f": 0.020735617300820124,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -573,6 +603,9 @@
       "blocks": 9,
       "wins": 777,
       "losses": 113,
+      "ties": 10,
+      "full_service_pairs": 313,
+      "full_service_mean_warm_minus_other_f": -0.20486250083623542,
       "delta_f": 0.18426647454300785,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -585,6 +618,9 @@
       "blocks": 9,
       "wins": 583,
       "losses": 239,
+      "ties": 78,
+      "full_service_pairs": 313,
+      "full_service_mean_warm_minus_other_f": -0.047588167453439516,
       "delta_f": 0.03522741720555428,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -597,6 +633,9 @@
       "blocks": 9,
       "wins": 246,
       "losses": 24,
+      "ties": 0,
+      "full_service_pairs": 220,
+      "full_service_mean_warm_minus_other_f": -0.04179170688170962,
       "delta_f": 0.04277740029161279,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -609,6 +648,9 @@
       "blocks": 9,
       "wins": 221,
       "losses": 49,
+      "ties": 0,
+      "full_service_pairs": 218,
+      "full_service_mean_warm_minus_other_f": -0.04604428191642354,
       "delta_f": 0.051424208112533926,
       "p": 0.0078125,
       "holm_p": 0.046875
@@ -621,6 +663,9 @@
       "blocks": 9,
       "wins": 234,
       "losses": 36,
+      "ties": 0,
+      "full_service_pairs": 141,
+      "full_service_mean_warm_minus_other_f": -0.057954720543928875,
       "delta_f": 0.04805249252055906,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -633,6 +678,9 @@
       "blocks": 9,
       "wins": 248,
       "losses": 22,
+      "ties": 0,
+      "full_service_pairs": 139,
+      "full_service_mean_warm_minus_other_f": -0.06059200946138786,
       "delta_f": 0.05853199246526718,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -645,6 +693,9 @@
       "blocks": 9,
       "wins": 250,
       "losses": 20,
+      "ties": 0,
+      "full_service_pairs": 106,
+      "full_service_mean_warm_minus_other_f": -0.1080382560535428,
       "delta_f": 0.10099495441358099,
       "p": 0.00390625,
       "holm_p": 0.046875
@@ -657,6 +708,9 @@
       "blocks": 9,
       "wins": 213,
       "losses": 57,
+      "ties": 0,
+      "full_service_pairs": 100,
+      "full_service_mean_warm_minus_other_f": -0.08092235145306309,
       "delta_f": 0.07943111117964281,
       "p": 0.00390625,
       "holm_p": 0.046875
