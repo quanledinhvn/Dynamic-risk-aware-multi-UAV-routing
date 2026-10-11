@@ -176,8 +176,17 @@ uv run uav-routing-nsga-benchmark \
   --output-dir results/nsga3
 ```
 
-Kết quả đã chạy được lưu trong `benchmark/`, phân theo `alns/`, `contextual/`
-và `nsga/`.
+Kết quả của mỗi lần chạy được ghi vào thư mục chỉ định bởi `--output-dir`.
+Thư mục `benchmark/` lưu các snapshot kết quả đã được chọn để phục vụ phân
+tích và tái lập, không phải thư mục đầu ra khi chạy lệnh trên. Nội dung hiện có:
+
+- `alns/`: hai benchmark ALNS tĩnh trên 56 instance Solomon;
+- `contextual/`: benchmark Contextual ALNS trên bộ 56 instance và các phép thử
+  nhỏ trên 3 instance với các ngân sách iteration khác nhau;
+- `nsga/`: benchmark NSGA-III, gồm số liệu tổng hợp và các nghiệm Pareto thô;
+- `dynamic/full/`: bộ benchmark động đầy đủ cho 6 mức $n \in \{25, 100\}$ và
+  $d \in \{5, 12, 25\}$, cùng cấu hình, dữ liệu thô, số liệu tổng hợp, phân tích
+  và log chạy.
 
 ## Kiểm thử và kiểm tra mã nguồn
 

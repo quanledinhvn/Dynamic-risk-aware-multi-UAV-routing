@@ -1,6 +1,6 @@
 # Benchmark đầy đủ: rolling horizon + ALNS và rolling horizon + contextual bandit
 
-Theo biên bản 06/10/2026: 10 000 vòng lặp, 20 seed, dữ liệu 25 và 100 khách hàng. Phần của Hải: `warm_alns` (rolling horizon + ALNS roulette) và `contextual_warm_alns` (rolling horizon + ALNS chọn toán tử bằng contextual bandit). Chạy trên nhánh `f/hai-benchmark`, tách từ `master` tại `8f52e60` (sau khi gộp phần tích hợp contextual của Quân). Mọi số liệu trong tài liệu này sinh từ `results/full/*/raw.csv` bằng `uav_routing.dynamic.analysis`; bảng gốc ở `results/analysis/full_policies.md`.
+Theo biên bản 06/10/2026: 10 000 vòng lặp, 20 seed, dữ liệu 25 và 100 khách hàng. Phần của Hải: `warm_alns` (rolling horizon + ALNS roulette) và `contextual_warm_alns` (rolling horizon + ALNS chọn toán tử bằng contextual bandit). Chạy trên nhánh `f/hai-benchmark`, tách từ `master` tại `8f52e60` (sau khi gộp phần tích hợp contextual của Quân). Mọi số liệu trong tài liệu này sinh từ `n*/raw.csv` bằng `uav_routing.dynamic.analysis`; bảng gốc ở `analysis/full_policies.md`.
 
 ## 1. Thiết lập
 
@@ -15,7 +15,7 @@ Theo biên bản 06/10/2026: 10 000 vòng lặp, 20 seed, dữ liệu 25 và 100
 | ALNS | tham số Pha 1 mặc định ($\alpha = \beta = 0.5$, $q \in [2,5]$) |
 | Contextual bandit | mặc định của Quân: `context_window 100`, `linucb_exploration 0.5`, `linucb_regularization 1.0`, `include_temperature true`, `short_route_warm_start false`; trạng thái LinUCB khởi tạo lại ở mỗi epoch |
 | Khối lượng | mỗi mức: 90 kịch bản × 20 seed × 2 chính sách = 3 600 lượt + 1 800 clairvoyant; tổng 21 600 lượt chính sách |
-| Thời gian máy | 44 h 43 trên 16 lõi, 09/10 18:01 → 11/10 14:44; cấu hình `configs/dynamic/full/`, log `results/logs/run_full.log` |
+| Thời gian máy | 44 h 43 trên 16 lõi, 09/10 18:01 → 11/10 14:44; cấu hình nằm cạnh dữ liệu tại `benchmark/dynamic/full/`, log `logs/run_full.log` |
 
 Metric như các tài liệu trước: $F$ (thấp hơn tốt hơn), số UAV $K$, số khách hàng không phục vụ $U$, tỷ lệ lượt phục vụ đủ, và gap tới clairvoyant chỉ tính trên lượt có $U = 0$. Mọi so sánh theo cặp trên cùng kịch bản và seed: thắng/thua theo thứ tự từ điển $(U, K, F)$, Wilcoxon signed-rank hai phía trên $F$.
 
@@ -84,12 +84,12 @@ Theo lớp instance (gộp ba mức của mỗi kích thước, 1 800 cặp mỗ
 ## 5. Tái lập
 
 ```bash
+bash benchmark/dynamic/full/run_full.sh  # 6 cấu hình, ~45 h trên 16 lõi
 cd phase1
-bash results/logs/run_full.sh            # 6 cấu hình trong configs/dynamic/full/, ~45 h trên 16 lõi
 uv run python -m uav_routing.dynamic.analysis \
-  --results results/full/n25_d5 results/full/n25_d12 results/full/n25_d25 \
-            results/full/n100_d5 results/full/n100_d12 results/full/n100_d25 \
-  --reference contextual_warm_alns --output results/analysis/full_policies.md
+  --results ../benchmark/dynamic/full/n25_d5 ../benchmark/dynamic/full/n25_d12 ../benchmark/dynamic/full/n25_d25 \
+            ../benchmark/dynamic/full/n100_d5 ../benchmark/dynamic/full/n100_d12 ../benchmark/dynamic/full/n100_d25 \
+  --reference contextual_warm_alns --output ../benchmark/dynamic/full/analysis/full_policies.md
 ```
 
-Mỗi thư mục `results/full/<mức>/` có `raw.csv` (một dòng cho mỗi kịch bản × seed × chính sách, kèm clairvoyant và gap) và `aggregate.csv`. Cùng kịch bản, cấu hình và seed tái tạo đúng từng dòng.
+Mỗi thư mục `benchmark/dynamic/full/<mức>/` có cấu hình `benchmark_<mức>.json`, `raw.csv` (một dòng cho mỗi kịch bản × seed × chính sách, kèm clairvoyant và gap) và `aggregate.csv`. Cùng kịch bản, cấu hình và seed tái tạo đúng từng dòng.
