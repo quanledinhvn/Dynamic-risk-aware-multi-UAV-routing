@@ -433,12 +433,12 @@ Khi tăng $\beta$ từ 0.5 lên 0.75, độ chậm rủi ro trung bình giảm k
 \begin{tabularx}{\linewidth}{@{}llXr@{}}
 \toprule
 Case & Tham số & Hiệu ứng mô tả & $p_{\rm Holm}$\\\midrule
-A & \code{epoch_fraction} & Mức 0.025 giảm $|U|$ từ 0.56 xuống 0.27; thời gian tăng 98\%. & $<0.001$\\
+A & Tỷ lệ kỳ & Mức 0.025 giảm $|U|$ từ 0.56 xuống 0.27; thời gian tăng 98\%. & $<0.001$\\
 A & Ngân sách mỗi kỳ & 1\,000 vòng giảm $F$ từ 0.4916 xuống 0.4874; thời gian tăng 90\%. & 0.003\\
 A & Cơ chế kích hoạt & Theo sự kiện và kết hợp cùng giảm $|U|$ từ 0.56 xuống 0.13. & 0.003\\
 B & Tổng số vòng lặp & 2\,000 vòng giảm $F$ từ 0.4841 xuống 0.4728; thời gian tăng 139\%. & 0.007\\
 B & Hệ số khám phá & Mức 0 làm $F$ tăng lên 0.5306; mức 1 giảm $F$ xuống 0.4706. & 0.015\\
-C & \code{epoch_fraction} & Mức 0.025 giảm $|U|$ từ 0.56 xuống 0.27; thời gian tăng 59\%. & $<0.001$\\
+C & Tỷ lệ kỳ & Mức 0.025 giảm $|U|$ từ 0.56 xuống 0.27; thời gian tăng 59\%. & $<0.001$\\
 C & Ngân sách mỗi kỳ & 1\,000 vòng giảm số UAV từ 14.24 xuống 14.16; thời gian tăng 57\%. & 0.012\\
 C & Hệ số khám phá & Mức 0 làm số UAV tăng từ 14.24 lên 14.71; mức 2 giảm $F$ còn 0.4882. & 0.039\\
 \bottomrule
@@ -454,7 +454,7 @@ Bộ giải mã so sánh các vị trí chèn theo \emph{quãng đường của 
 \subsection{Kết hợp Contextual ALNS và tái lập kế hoạch động}
 Benchmark đầy đủ cho RQ3 so sánh Warm ALNS và Contextual Warm ALNS trên cùng kịch bản và seed. Có sáu mức dữ liệu: 25 hoặc 100 nhiệm vụ, mỗi mức với 5, 12 hoặc 25 nhiệm vụ động. Mỗi ô gồm 1\,800 cặp lần chạy (9 instance $\times$ 10 seed kịch bản $\times$ 20 seed thuật toán). Cả hai chính sách dùng rolling horizon kích hoạt định kỳ, tỷ lệ kỳ 0.05, 2\,000 vòng lặp ở kỳ đầu và 400 vòng ở các kỳ sau.
 
-Tham số LinUCB của benchmark này là cấu hình mặc định của bộ giải động: cửa sổ lịch sử 100 vòng, hệ số khám phá $c=0.5$ và hệ số điều chuẩn $\lambda=1.0$, giữ đặc trưng nhiệt độ. Các giá trị này khác với thí nghiệm tĩnh ở Mục~4.3 ($c=1$, $\lambda=0.25$) và không được tinh chỉnh riêng cho bài toán động; chúng được ghi trong từng dòng của \texttt{results/full/*/raw.csv}. Vì vậy, kết quả RQ3 là kết quả của cấu hình mặc định, không phải của cấu hình LinUCB tốt nhất đã biết; Bảng~\ref{tab:sensitivity-screening} (case C) cho thấy hệ số khám phá có ảnh hưởng đến số UAV và $F$, nên việc chọn $c$ cho bài toán động là một hướng cần khảo sát thêm.
+Tham số LinUCB của benchmark này là cấu hình mặc định của bộ giải động: cửa sổ lịch sử 100 vòng, hệ số khám phá $c=0.5$ và hệ số điều chuẩn $\lambda=1.0$, giữ đặc trưng nhiệt độ. Các giá trị này khác với thí nghiệm tĩnh ở Mục~4.3 ($c=1$, $\lambda=0.25$), không được tinh chỉnh riêng cho bài toán động và được giữ cố định trong toàn bộ benchmark. Vì vậy, kết quả RQ3 phản ánh cấu hình mặc định, không phải cấu hình LinUCB tốt nhất đã biết; Bảng~\ref{tab:sensitivity-screening} (case C) cho thấy hệ số khám phá có ảnh hưởng đến số UAV và $F$, nên việc chọn $c$ cho bài toán động là một hướng cần khảo sát thêm.
 
 \begin{table}[htbp]
 \centering\scriptsize
@@ -486,8 +486,8 @@ Contextual Warm ALNS chậm hơn Warm ALNS từ 11\% đến 18\% tùy mức dữ
 Để xác định chênh lệch ở Bảng~\ref{tab:integrated-contextual} phát sinh ở đâu, hai khảo sát bổ sung được chạy trên các kịch bản 100 nhiệm vụ với cùng seed cho cả hai bộ chọn (Bảng~\ref{tab:bandit-diagnosis}). Khảo sát thứ nhất tách riêng kỳ khởi tạo: giải tĩnh 2\,000 vòng lặp trên tập nhiệm vụ ban đầu của 27 kịch bản (95/88/75 nhiệm vụ) với ba seed, tức 81 cặp. Khảo sát thứ hai giữ nguyên kỳ khởi tạo bằng roulette cho cả hai chính sách và chỉ đổi bộ chọn trong các kỳ tái lập 400 vòng lặp, trên 12 kịch bản 95+5.
 
 \begin{table}[htbp]
-\centering\small
-\caption{Khảo sát bổ sung tách kỳ khởi tạo và các kỳ tái lập. Hàng thứ hai báo cáo $F$ cuối cùng trung bình của 12 kịch bản; cột cuối đếm số cặp mà Contextual có $F$ thấp hơn. Nguồn: \texttt{phase1/results/analysis/bandit\_diagnosis.md}, sinh bởi \texttt{phase1/scripts/diagnose\_bandit.py}.}
+\centering\scriptsize
+\caption{Khảo sát bổ sung nhằm tách ảnh hưởng của kỳ khởi tạo và các kỳ tái lập. Hàng thứ hai báo cáo $F$ cuối cùng trung bình trên 12 kịch bản; cột cuối là số cặp mà Contextual đạt $F$ thấp hơn.}
 \begin{tabular}{@{}lrrrrrr@{}}
 \toprule
 Khảo sát & Cặp & $F$ roulette & $F$ contextual & $K$ roulette & $K$ contextual & Contextual tốt hơn\\\midrule
@@ -516,6 +516,7 @@ Nghiên cứu trình bày mô hình VRPTW có ưu tiên rủi ro cùng hai cơ c
 
 Trong rolling horizon kích hoạt định kỳ, benchmark đầy đủ trên 540 kịch bản và 20 seed thuật toán cho mỗi kịch bản cho thấy Contextual Warm ALNS không cải thiện nhất quán Warm ALNS. Ở quy mô 25 nhiệm vụ, hai phương pháp gần như tương đương; ở quy mô 100 nhiệm vụ, Warm ALNS có $F$ thấp hơn ở hai trong ba mức động. Contextual Warm ALNS không cải thiện khả năng phục vụ đầy đủ và chậm hơn 11--18\%. Kết luận này áp dụng cho cấu hình định kỳ và ngân sách đã khảo sát; các cấu hình khác là hướng đánh giá tiếp theo, không phải phần chưa được trả lời của RQ3.
 
+\clearpage
 \begin{thebibliography}{9}
 \bibitem{solomon} M. M. Solomon, ``Algorithms for the Vehicle Routing and Scheduling Problems with Time Window Constraints,'' \emph{Operations Research}, 35(2), 254--265, 1987. \url{https://doi.org/10.1287/opre.35.2.254}.
 \bibitem{sintef} SINTEF, ``Solomon's VRPTW benchmark: 100 customers.'' \url{https://www.sintef.no/projectweb/top/vrptw/100-customers/}.
