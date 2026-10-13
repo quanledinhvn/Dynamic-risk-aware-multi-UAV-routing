@@ -326,7 +326,7 @@ Chất lượng nghiệm được báo cáo bằng $K,D,R,F$; thời gian chạy
 
 Trong đánh giá động, $F$ cuối được tính trên tập nhiệm vụ còn lại sau khi loại các nhiệm vụ bị mất hoặc bị từ chối. Khoảng cách tham chiếu lấy từ bài toán ban đầu và điểm ưu tiên của nhiệm vụ đã khóa được giữ nguyên. Vì số nhiệm vụ được phục vụ có thể khác nhau giữa các phương pháp, $F$ thấp hơn chưa đủ để kết luận chất lượng phục vụ tốt hơn. Khi đếm thắng/thua, báo cáo ưu tiên ít nhiệm vụ chưa phục vụ hơn, tiếp đến ít UAV hơn, cuối cùng mới xét $F$, tức thứ tự $(|U|,K,F)$. Đây là quy tắc đánh giá kết quả, không phải hàm mục tiêu mới của thuật toán.
 
-Các lần chạy được ghép theo bộ dữ liệu và seed thuật toán ở bài toán tĩnh, theo kịch bản và seed thuật toán ở bài toán động. Để không coi nhiều seed của cùng bộ dữ liệu gốc là các bài toán độc lập, kiểm định chính của các đối chứng tĩnh và RQ2 lấy trung bình theo bộ dữ liệu gốc trước khi dùng Wilcoxon signed-rank hai phía, với mức ý nghĩa 0.05. Thí nghiệm tĩnh có 56 cặp trung bình, hiệu chỉnh Holm trên ba chỉ số $K,F,R$. Đối chứng RQ2 có 9 cặp trung bình cho mỗi phép so sánh, hiệu chỉnh Holm trên 12 so sánh $F$ (6 cấu hình $\times$ 2 phương pháp đối chứng). Với benchmark RQ3, bảng kết quả và kiểm định Wilcoxon được tính trên 1\,800 cặp kịch bản--seed ở mỗi mức; các giá trị $p$ vì vậy bổ sung cho mô tả chênh lệch thực nghiệm, không thay thế phân tích theo instance. Giá trị $p$ được tính bằng SciPy; các chênh lệch bằng 0 bị loại theo quy tắc mặc định.
+Các lần chạy được ghép theo bộ dữ liệu và seed thuật toán ở bài toán tĩnh, theo kịch bản và seed thuật toán ở bài toán động. Để không coi nhiều seed của cùng bộ dữ liệu gốc là các bài toán độc lập, kiểm định chính của các đối chứng tĩnh và RQ2 lấy trung bình theo bộ dữ liệu gốc trước khi dùng Wilcoxon signed-rank hai phía, với mức ý nghĩa 0.05. Thí nghiệm tĩnh có 56 cặp trung bình, hiệu chỉnh Holm trên ba chỉ số $K,F,R$. Đối chứng RQ2 có 9 cặp trung bình cho mỗi phép so sánh, hiệu chỉnh Holm trên 12 so sánh $F$ (6 cấu hình $\times$ 2 phương pháp đối chứng). Lựa chọn này bảo thủ: với $n=9$, giá trị $p$ hai phía nhỏ nhất có thể đạt là $2/2^9\approx0.0039$, nên mọi giá trị $p$ sau Holm của RQ2 đều bằng 0.046875 và chỉ mang ý nghĩa ``chênh lệch cùng chiều trên cả chín bộ dữ liệu''. Để so sánh được với RQ3, Bảng~\ref{tab:dynamic-paired} ghi thêm giá trị $p$ ở mức cặp kịch bản--seed (900 cặp ở nhóm nhỏ, 270 cặp ở nhóm 100 nhiệm vụ), tính bằng Wilcoxon signed-rank hai phía trên $F$ với hiệu chỉnh Holm trong từng mức dữ liệu; hai mức phân tích cho cùng kết luận, mức cặp định lượng độ lớn của bằng chứng còn mức bộ dữ liệu bảo đảm kết luận không phụ thuộc vào một bộ dữ liệu nào. Với benchmark RQ3, bảng kết quả và kiểm định Wilcoxon được tính trên 1\,800 cặp kịch bản--seed ở mỗi mức; các giá trị $p$ vì vậy bổ sung cho mô tả chênh lệch thực nghiệm, không thay thế phân tích theo instance. Giá trị $p$ được tính bằng SciPy; các chênh lệch bằng 0 bị loại theo quy tắc mặc định.
 
 Thắng/thua ở bài toán tĩnh dùng $(K,F)$; ở bài toán động dùng $(|U|,K,F)$. Kiểm định $F$ không kiểm định trực tiếp thứ tự từ điển và không kiểm soát khác biệt về tập nhiệm vụ được phục vụ. Thống kê thắng/thua ở mức lần chạy chỉ có ý nghĩa mô tả; cỡ mẫu của kiểm định chính là số bộ dữ liệu gốc.
 
@@ -378,10 +378,10 @@ Bảng~\ref{tab:dynamic-paired} đánh giá trực tiếp các lần chạy đư
 
 \begin{table}[htbp]
 \centering\small
-\caption{So sánh ghép cặp Warm ALNS với từng đối chứng. Thắng/thua/hòa được tính cho Warm theo thứ tự $(|U|,K,F)$. Cột Cùng đủ là số cặp mà cả hai phương pháp đều có $|U|=0$; $\Delta F_0=F_{\rm Warm}-F_{\text{đối chứng}}$ chỉ tính trên tập con này.}
-\begin{tabular}{@{}llrrr@{}}
+\caption{So sánh ghép cặp Warm ALNS với từng đối chứng. Thắng/thua/hòa được tính cho Warm theo thứ tự $(|U|,K,F)$. Cột Cùng đủ là số cặp mà cả hai phương pháp đều có $|U|=0$; $\Delta F_0=F_{\rm Warm}-F_{\text{đối chứng}}$ chỉ tính trên tập con này. Cột $p$ là kiểm định Wilcoxon hai phía trên $F$ ở mức cặp kịch bản--seed, hiệu chỉnh Holm trong từng mức dữ liệu; kiểm định chính theo bộ dữ liệu gốc cho $p$ Holm bằng 0.046875 ở mọi hàng.}
+\begin{tabular}{@{}llrrrr@{}}
 \toprule
-$N_{\rm total}/N_{\rm new}$ & So sánh & Thắng/thua/hòa & Cùng đủ & $\Delta F_0$\\\midrule
+$N_{\rm total}/N_{\rm new}$ & So sánh & Thắng/thua/hòa & Cùng đủ & $\Delta F_0$ & $p$ (cặp)\\\midrule
 \inputrows{generated/dynamic_paired_rows.tex}
 \bottomrule
 \end{tabular}
@@ -454,6 +454,8 @@ Bộ giải mã so sánh các vị trí chèn theo \emph{quãng đường của 
 \subsection{Kết hợp Contextual ALNS và tái lập kế hoạch động}
 Benchmark đầy đủ cho RQ3 so sánh Warm ALNS và Contextual Warm ALNS trên cùng kịch bản và seed. Có sáu mức dữ liệu: 25 hoặc 100 nhiệm vụ, mỗi mức với 5, 12 hoặc 25 nhiệm vụ động. Mỗi ô gồm 1\,800 cặp lần chạy (9 instance $\times$ 10 seed kịch bản $\times$ 20 seed thuật toán). Cả hai chính sách dùng rolling horizon kích hoạt định kỳ, tỷ lệ kỳ 0.05, 2\,000 vòng lặp ở kỳ đầu và 400 vòng ở các kỳ sau.
 
+Tham số LinUCB của benchmark này là cấu hình mặc định của bộ giải động: cửa sổ lịch sử 100 vòng, hệ số khám phá $c=0.5$ và hệ số điều chuẩn $\lambda=1.0$, giữ đặc trưng nhiệt độ. Các giá trị này khác với thí nghiệm tĩnh ở Mục~4.3 ($c=1$, $\lambda=0.25$) và không được tinh chỉnh riêng cho bài toán động; chúng được ghi trong từng dòng của \texttt{results/full/*/raw.csv}. Vì vậy, kết quả RQ3 là kết quả của cấu hình mặc định, không phải của cấu hình LinUCB tốt nhất đã biết; Bảng~\ref{tab:sensitivity-screening} (case C) cho thấy hệ số khám phá có ảnh hưởng đến số UAV và $F$, nên việc chọn $c$ cho bài toán động là một hướng cần khảo sát thêm.
+
 \begin{table}[htbp]
 \centering\scriptsize
 \caption{Benchmark RQ3. Mỗi hàng gồm 1\,800 lần chạy; Đầy đủ là tỷ lệ lần chạy có $|U|=0$. Giá trị $F$ thấp hơn là tốt hơn.}
@@ -481,12 +483,29 @@ Quy mô/động & Phương pháp & $F$ & $K$ & $|U|$ & Đầy đủ (\%) & Thờ
 
 Contextual Warm ALNS chậm hơn Warm ALNS từ 11\% đến 18\% tùy mức dữ liệu. Vì hai phương pháp dùng cùng kịch bản, seed và ngân sách, kết quả trả lời RQ3 trong phạm vi rolling horizon kích hoạt định kỳ: thay roulette thích nghi bằng LinUCB không mang lại cải thiện nhất quán, trong khi tăng chi phí tính toán. Kết luận này không tách riêng đóng góp của thông tin ngữ cảnh khỏi việc chọn cặp toán tử, và không suy rộng sang cơ chế kích hoạt hoặc phân bổ ngân sách khác.
 
+Để xác định chênh lệch ở Bảng~\ref{tab:integrated-contextual} phát sinh ở đâu, hai khảo sát bổ sung được chạy trên các kịch bản 100 nhiệm vụ với cùng seed cho cả hai bộ chọn (Bảng~\ref{tab:bandit-diagnosis}). Khảo sát thứ nhất tách riêng kỳ khởi tạo: giải tĩnh 2\,000 vòng lặp trên tập nhiệm vụ ban đầu của 27 kịch bản (95/88/75 nhiệm vụ) với ba seed, tức 81 cặp. Khảo sát thứ hai giữ nguyên kỳ khởi tạo bằng roulette cho cả hai chính sách và chỉ đổi bộ chọn trong các kỳ tái lập 400 vòng lặp, trên 12 kịch bản 95+5.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Khảo sát bổ sung tách kỳ khởi tạo và các kỳ tái lập. Hàng thứ hai báo cáo $F$ cuối cùng trung bình của 12 kịch bản; cột cuối đếm số cặp mà Contextual có $F$ thấp hơn. Nguồn: \texttt{phase1/results/analysis/bandit\_diagnosis.md}, sinh bởi \texttt{phase1/scripts/diagnose\_bandit.py}.}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Khảo sát & Cặp & $F$ roulette & $F$ contextual & $K$ roulette & $K$ contextual & Contextual tốt hơn\\\midrule
+Kỳ khởi tạo, giải tĩnh 2\,000 vòng & 81 & 0.4654 & 0.4784 & 12.47 & 12.46 & 34/81\\
+Chỉ các kỳ tái lập, kỳ khởi tạo chung & 12 & 0.5130 & 0.5046 & -- & -- & 11/12\\
+\bottomrule
+\end{tabular}
+\label{tab:bandit-diagnosis}
+\end{table}
+
+Ở kỳ khởi tạo, LinUCB kém roulette: $F$ trung bình 0.4784 so với 0.4654 (cao hơn 2.8\%), roulette tốt hơn ở 46/81 cặp theo $F$ và 45/81 theo $(K,F)$, với số UAV trung bình bằng nhau (12.46 so với 12.47) và cả quãng đường lẫn độ chậm đều cao hơn; chiều chênh lệch giống nhau ở cả ba lớp C, R và RC. Ngược lại, trong các kỳ tái lập, hai bộ chọn không phân biệt được: với 400 vòng lặp, tỷ lệ chọn lớn nhất của một toán tử loại bỏ chỉ là 23--26\% so với 20\% của phân bố đều ở cả hai bộ chọn, phần lớn các kỳ không tìm được nghiệm tốt hơn nghiệm khởi tạo, và khi kỳ khởi tạo giống nhau thì Contextual có $F$ cuối thấp hơn ở 11/12 kịch bản với chênh lệch trung bình 0.0084. Như vậy, phần thua của Contextual Warm ALNS ở Bảng~\ref{tab:integrated-contextual} nằm ở lần giải tĩnh 2\,000 vòng lặp đầu tiên, nơi LinUCB với 15 lựa chọn và 9 đặc trưng chưa hết giai đoạn khám phá, chứ không nằm ở cơ chế tái lập kế hoạch. Điều này cũng giải thích vì sao chênh lệch rõ nhất ở mức +5 và +12 (kỳ khởi tạo quyết định phần lớn kế hoạch) và biến mất ở mức +25 (nhiều nhiệm vụ hơn được bố trí trong các kỳ sau). Kết luận này phù hợp với Mục~4.3: trong giới hạn ngân sách đã khảo sát, LinUCB chưa vượt roulette thích nghi trên bài toán tĩnh, và rolling horizon không làm thay đổi điều đó.
+
 \section{Thảo luận}\label{sec:discussion}
 \textbf{Lựa chọn toán tử theo ngữ cảnh (RQ1).} Với cùng ngân sách tìm kiếm, chênh lệch chất lượng nghiệm giữa Contextual ALNS và ALNS chưa có ý nghĩa thống kê, trong khi Contextual ALNS tốn thời gian hơn. Kết quả chưa xác nhận lợi ích của toàn bộ cơ chế lựa chọn đề xuất ở cấu hình khảo sát. Phép so sánh đồng thời chuyển từ chọn destroy/repair độc lập sang chọn theo cặp và từ roulette sang LinUCB có ngữ cảnh, nên không thể quy chênh lệch cho riêng thông tin ngữ cảnh. Ngoài ra, đặc trưng chênh lệch UAV luôn bằng 0 theo quy tắc chấp nhận hiện tại. Khảo sát độ nhạy cho thấy hệ số khám phá có ảnh hưởng, nhưng chưa quan sát được đóng góp riêng của cửa sổ ngữ cảnh hoặc nhiệt độ SA. Việc tách ảnh hưởng của chọn theo cặp khỏi context vẫn cần một đối chứng riêng.
 
 \textbf{Tái sử dụng kế hoạch trong bài toán động (RQ2).} Warm ALNS giảm $F$ trung bình so với hai phương pháp đối chứng, với thời gian chạy gần Cold restart và cao hơn Greedy insertion. Tuy nhiên, tỷ lệ phục vụ đầy đủ và tổng điểm ưu tiên chưa phục vụ không luôn tốt hơn. Warm thắng nhiều hơn thua trong mọi so sánh ghép cặp theo $(|U|,K,F)$; trên tập con mà cả hai phương pháp phục vụ đầy đủ, Warm cũng có $F$ trung bình thấp hơn. Kết quả nhấn mạnh việc đánh giá đồng thời số nhiệm vụ chưa phục vụ, mức ưu tiên của chúng, số UAV và hàm mục tiêu. Khi cơ hội phục vụ đã qua, tăng ngân sách ở kỳ tiếp theo không thể khôi phục nhiệm vụ đã chuyển sang tập mất; kết quả phân tích độ nhạy phù hợp với cơ chế này nhưng chưa chứng minh quan hệ nhân quả giữa từng bước xử lý và kết quả cuối.
 
-\textbf{Trả lời RQ3.} Trong rolling horizon kích hoạt định kỳ, Contextual Warm ALNS không cải thiện nhất quán so với Warm ALNS trên sáu mức dữ liệu. Ở quy mô 25 nhiệm vụ, các chỉ số gần như bằng nhau; ở quy mô 100 nhiệm vụ, Warm ALNS có $F$ thấp hơn tại mức +5 và +12, còn mức +25 không phân biệt được. Số nhiệm vụ chưa phục vụ và tỷ lệ phục vụ đầy đủ gần như không đổi, trong khi phiên bản contextual chậm hơn 11--18\%. Do đó, với cấu hình và phạm vi dữ liệu đã khảo sát, bằng chứng không ủng hộ thay roulette thích nghi bằng LinUCB trong Warm ALNS.
+\textbf{Trả lời RQ3.} Trong rolling horizon kích hoạt định kỳ, Contextual Warm ALNS không cải thiện nhất quán so với Warm ALNS trên sáu mức dữ liệu. Ở quy mô 25 nhiệm vụ, các chỉ số gần như bằng nhau; ở quy mô 100 nhiệm vụ, Warm ALNS có $F$ thấp hơn tại mức +5 và +12, còn mức +25 không phân biệt được. Số nhiệm vụ chưa phục vụ và tỷ lệ phục vụ đầy đủ gần như không đổi, trong khi phiên bản contextual chậm hơn 11--18\%. Khảo sát tách kỳ (Bảng~\ref{tab:bandit-diagnosis}) cho thấy phần thua nằm ở kỳ khởi tạo tĩnh 2\,000 vòng lặp, nơi LinUCB chưa hết giai đoạn khám phá, còn trong các kỳ tái lập hai bộ chọn không phân biệt được; đây là hạn chế của bộ chọn ở ngân sách khảo sát, không phải của cơ chế rolling horizon. Do đó, với cấu hình và phạm vi dữ liệu đã khảo sát, bằng chứng không ủng hộ thay roulette thích nghi bằng LinUCB trong Warm ALNS.
 
 \textbf{Giới hạn nghiên cứu.} Dữ liệu Solomon và các vùng rủi ro tổng hợp cho phép khảo sát thuật toán trong điều kiện kiểm soát, nhưng chưa phản ánh đầy đủ vật lý bay hoặc mức khẩn cấp được hiệu chuẩn từ dữ liệu thiên tai. Các đại lượng nhu cầu, khoảng cách và thời gian dùng đơn vị của bộ dữ liệu chuẩn. Độ ổn định mới được khảo sát theo seed và kịch bản, chưa xét bất định thời tiết, thời gian di chuyển hoặc lỗi cảm biến.
 

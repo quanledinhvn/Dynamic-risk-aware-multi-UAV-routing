@@ -47,6 +47,16 @@ def holm(values):
     return adjusted
 
 
+def sci(p):
+    """Format a p-value as LaTeX scientific notation with two significant digits."""
+    if p >= 1e-3:
+        return f'{p:.3f}'
+
+    mantissa, exponent = f'{p:.1e}'.split('e')
+
+    return f'${mantissa}\\times10^{{{int(exponent)}}}$'
+
+
 def summary(rows):
     return {field: mean(rows, field) for field in
             ('vehicles', 'distance', 'risk_delay', 'objective', 'runtime_seconds')} | {
@@ -191,6 +201,8 @@ def dynamic_tests():
             rows = read(f'phase1/results/dynamic_n{size}_d{arrivals}/raw.csv')
             cells = {(r['scenario'], r['seed'], r['policy']): r for r in rows}
             keys = {(r['scenario'], r['seed']) for r in rows}
+            level_tests = []
+            level_lines = []
 
             for other in ('greedy_insert', 'cold_restart'):
                 pairs = [(cells[s, k, other], cells[s, k, 'warm_alns']) for s, k in sorted(keys)]
@@ -214,7 +226,10 @@ def dynamic_tests():
                     for b, w in full_pairs
                 )
 
-                tests.append({
+                pair_diffs = [
+                    float(b['objective']) - float(w['objective']) for b, w in pairs
+                ]
+                level_tests.append({
                     'size': size, 'arrivals': arrivals, 'other': other,
                     'pairs': len(pairs), 'blocks': len(diffs),
                     'wins': wins, 'losses': losses, 'ties': ties,
@@ -222,16 +237,26 @@ def dynamic_tests():
                     'full_service_mean_warm_minus_other_f': full_delta_f,
                     'delta_f': st.fmean(diffs),
                     'p': float(wilcoxon(diffs, method='auto').pvalue),
+                    'pair_p': float(wilcoxon(pair_diffs, method='auto').pvalue),
                 })
 
                 total = size + arrivals if size == 25 else 100
                 short = 'Greedy' if other == 'greedy_insert' else 'Cold'
-                lines.append(
+                level_lines.append(
                     f"{total}/{arrivals} & Warm--{short} & "
                     f"{wins}/{losses}/{ties} & {len(full_pairs)} & "
-                    f"{full_delta_f:.4f}\\\\"
+                    f"{full_delta_f:.4f}"
                 )
 
+            # Pair-level Wilcoxon, Holm-adjusted within the level (two comparisons).
+            for item, p, line in zip(
+                level_tests, holm([t['pair_p'] for t in level_tests]), level_lines,
+                strict=True,
+            ):
+                item['pair_holm_p'] = p
+                lines.append(f"{line} & {sci(p)}\\\\")
+
+            tests.extend(level_tests)
             lines.append('\\addlinespace')
 
     for item, p in zip(tests, holm([t['p'] for t in tests]), strict=True):
